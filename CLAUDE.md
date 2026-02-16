@@ -2,7 +2,7 @@
 
 ## 🎯 Project Overview
 
-**Pendy** is a full-featured personal task management application — a self-hosted Todoist Premium clone. It runs on web, desktop (Tauri), and mobile (Capacitor) from a single React codebase, backed by Supabase.
+**Pendy** is a full-featured personal task management application with premium features. It runs on web, desktop (Tauri), and mobile (Capacitor) from a single React codebase, backed by Supabase.
 
 **Philosophy:** Personal productivity app (no collaboration features, no karma/gamification). Fast, offline-capable, beautifully designed, feature-rich.
 
@@ -822,7 +822,7 @@ Using @dnd-kit:
 12. Responsive design (mobile + desktop)
 
 ### Phase 2 — Power Features (Week 3-4)
-**Goal:** Match Todoist core functionality.
+**Goal:** Advanced task management features.
 
 1. Subtasks (unlimited nesting)
 2. Sections within projects
@@ -866,7 +866,7 @@ Using @dnd-kit:
 
 1. Onboarding flow for new users
 2. Settings page (all preferences)
-3. Import from Todoist (CSV/JSON)
+3. Import/Export data (CSV/JSON)
 4. Export data
 5. Performance optimization (virtualized lists, lazy loading)
 6. PWA support (service worker, installable)
