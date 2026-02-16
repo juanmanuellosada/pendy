@@ -1,0 +1,15 @@
+CREATE INDEX idx_tasks_user_id ON tasks(user_id);
+CREATE INDEX idx_tasks_project_id ON tasks(project_id);
+CREATE INDEX idx_tasks_section_id ON tasks(section_id);
+CREATE INDEX idx_tasks_parent_id ON tasks(parent_id);
+CREATE INDEX idx_tasks_due_date ON tasks(user_id, due_date) WHERE NOT is_completed;
+CREATE INDEX idx_tasks_completed ON tasks(user_id, is_completed);
+CREATE INDEX idx_tasks_priority ON tasks(user_id, priority) WHERE NOT is_completed;
+CREATE INDEX idx_projects_user_id ON projects(user_id);
+CREATE INDEX idx_sections_project_id ON sections(project_id);
+CREATE INDEX idx_labels_user_id ON labels(user_id);
+CREATE INDEX idx_task_labels_task ON task_labels(task_id);
+CREATE INDEX idx_task_labels_label ON task_labels(label_id);
+CREATE INDEX idx_comments_task_id ON comments(task_id);
+CREATE INDEX idx_reminders_pending ON reminders(user_id, remind_at) WHERE NOT is_sent;
+CREATE INDEX idx_activity_log_entity ON activity_log(entity_type, entity_id);
