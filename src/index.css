@@ -104,6 +104,61 @@ body {
   animation: slide-in-right 0.3s ease-out;
 }
 
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.92) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes fade-in-backdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-backdrop {
+  animation: fade-in-backdrop 0.15s ease-out;
+}
+
+/* Tiptap editor content styles */
+.tiptap ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+  margin: 0.25rem 0;
+}
+
+.tiptap ol {
+  list-style-type: decimal;
+  padding-left: 1.25rem;
+  margin: 0.25rem 0;
+}
+
+.tiptap li {
+  margin: 0.1rem 0;
+}
+
+.tiptap strong {
+  font-weight: 600;
+}
+
+.tiptap em {
+  font-style: italic;
+}
+
+.tiptap s {
+  text-decoration: line-through;
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--text-muted);
+  pointer-events: none;
+  height: 0;
+}
+
 /* Checkbox styles */
 .checkbox-custom {
   transition: all 0.2s ease;

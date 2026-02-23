@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { taskService } from '@/services/taskService'
+import { labelKeys } from './useLabels'
 import type { Task } from '@/lib/types'
 import { useAuth } from './useAuth'
 
@@ -8,7 +9,11 @@ export const taskKeys = {
   inbox: (userId: string) => [...taskKeys.all, 'inbox', userId] as const,
   today: (userId: string) => [...taskKeys.all, 'today', userId] as const,
   upcoming: (userId: string) => [...taskKeys.all, 'upcoming', userId] as const,
+  completed: (userId: string) => [...taskKeys.all, 'completed', userId] as const,
+  search: (userId: string, q: string) => [...taskKeys.all, 'search', userId, q] as const,
   project: (projectId: string) => [...taskKeys.all, 'project', projectId] as const,
+  detail: (id: string) => [...taskKeys.all, 'detail', id] as const,
+  subtasks: (parentId: string) => [...taskKeys.all, 'subtasks', parentId] as const,
 }
 
 export function useInboxTasks() {
@@ -38,6 +43,15 @@ export function useUpcomingTasks(days = 30) {
   })
 }
 
+export function useCalendarTasks(from: string, to: string) {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: [...taskKeys.all, 'calendar', user?.id ?? '', from, to],
+    queryFn: () => taskService.getTasksByDateRange(user!.id, from, to),
+    enabled: !!user && !!from && !!to,
+  })
+}
+
 export function useProjectTasks(projectId: string) {
   return useQuery({
     queryKey: taskKeys.project(projectId),
@@ -46,26 +60,47 @@ export function useProjectTasks(projectId: string) {
   })
 }
 
+export function useTask(id: string | null) {
+  return useQuery({
+    queryKey: taskKeys.detail(id ?? ''),
+    queryFn: () => taskService.getTaskById(id!),
+    enabled: !!id,
+  })
+}
+
+export function useSubtasks(parentId: string | null) {
+  return useQuery({
+    queryKey: taskKeys.subtasks(parentId ?? ''),
+    queryFn: () => taskService.getSubtasks(parentId!),
+    enabled: !!parentId,
+  })
+}
+
 export function useCreateTask() {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
 
   return useMutation({
     mutationFn: (task: Parameters<typeof taskService.createTask>[0]) =>
       taskService.createTask(task),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      queryClient.invalidateQueries({ queryKey: labelKeys.allTaskLabels(user?.id ?? '') })
     },
   })
 }
 
 export function useUpdateTask() {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
 
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<Task> }) =>
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<Task> & { label_ids?: string[] } }) =>
       taskService.updateTask(id, updates),
-    onSuccess: () => {
+    onSuccess: (_data, { id }) => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      queryClient.invalidateQueries({ queryKey: labelKeys.taskLabels(id) })
+      queryClient.invalidateQueries({ queryKey: labelKeys.allTaskLabels(user?.id ?? '') })
     },
   })
 }
@@ -81,7 +116,7 @@ export function useCompleteTask() {
       const queries = queryClient.getQueriesData<Task[]>({ queryKey: taskKeys.all })
 
       queries.forEach(([key, data]) => {
-        if (data) {
+        if (Array.isArray(data)) {
           queryClient.setQueryData(
             key,
             data.map((t) =>
@@ -103,6 +138,25 @@ export function useCompleteTask() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all })
     },
+  })
+}
+
+export function useCompletedTasks() {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: taskKeys.completed(user?.id ?? ''),
+    queryFn: () => taskService.getCompletedTasks(user!.id),
+    enabled: !!user,
+  })
+}
+
+export function useSearchTasks(query: string) {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: taskKeys.search(user?.id ?? '', query),
+    queryFn: () => taskService.searchTasks(user!.id, query),
+    enabled: !!user && query.trim().length >= 2,
+    staleTime: 0,
   })
 }
 

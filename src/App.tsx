@@ -3,7 +3,10 @@ import { useAuth } from '@/hooks/useAuth'
 import { useTheme } from '@/hooks/useTheme'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { ProjectEditor } from '@/components/projects/ProjectEditor'
+import { TaskEditor } from '@/components/tasks/TaskEditor'
+import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { useUIStore } from '@/stores/uiStore'
+import { useAppStore } from '@/stores/appStore'
 import { lazy, Suspense } from 'react'
 
 // Lazy load pages
@@ -11,10 +14,11 @@ const LandingPage = lazy(() => import('@/pages/LandingPage'))
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
 const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'))
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'))
-const DashboardPage = lazy(() => import('@/pages/app/DashboardPage'))
 const InboxPage = lazy(() => import('@/pages/app/InboxPage'))
 const TodayPage = lazy(() => import('@/pages/app/TodayPage'))
 const UpcomingPage = lazy(() => import('@/pages/app/UpcomingPage'))
+const CompletedPage = lazy(() => import('@/pages/app/CompletedPage'))
+const SearchPage = lazy(() => import('@/pages/app/SearchPage'))
 const ProjectPage = lazy(() => import('@/pages/app/ProjectPage'))
 const SettingsPage = lazy(() => import('@/pages/app/SettingsPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
@@ -53,6 +57,7 @@ export default function App() {
   useTheme()
 
   const { projectEditorOpen, setProjectEditorOpen } = useUIStore()
+  const { quickAddOpen, setQuickAddOpen } = useAppStore()
 
   return (
     <>
@@ -96,10 +101,12 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<DashboardPage />} />
+            <Route index element={<Navigate to="/app/today" replace />} />
             <Route path="inbox" element={<InboxPage />} />
             <Route path="today" element={<TodayPage />} />
             <Route path="upcoming" element={<UpcomingPage />} />
+            <Route path="completed" element={<CompletedPage />} />
+            <Route path="search" element={<SearchPage />} />
             <Route path="project/:projectId" element={<ProjectPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
@@ -114,6 +121,11 @@ export default function App() {
         open={projectEditorOpen}
         onClose={() => setProjectEditorOpen(false)}
       />
+      <TaskEditor
+        open={quickAddOpen}
+        onClose={() => setQuickAddOpen(false)}
+      />
+      <ConfirmDialog />
     </>
   )
 }

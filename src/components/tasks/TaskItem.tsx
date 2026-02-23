@@ -1,23 +1,29 @@
 import { memo, useState } from 'react'
-import { Calendar, Flag, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { Calendar, Flag, MoreHorizontal, Trash2, Clock } from 'lucide-react'
 import { TaskCheckbox } from './TaskCheckbox'
 import { cn } from '@/lib/utils'
 import { formatRelativeDate, isOverdue } from '@/lib/utils'
 import { PRIORITY_COLORS } from '@/lib/constants'
 import { useCompleteTask, useDeleteTask } from '@/hooks/useTasks'
 import { useAppStore } from '@/stores/appStore'
-import type { Task } from '@/lib/types'
+import { useUIStore } from '@/stores/uiStore'
+import type { Task, Label } from '@/lib/types'
 
 interface TaskItemProps {
   task: Task
   onEdit?: (task: Task) => void
   showProject?: boolean
+  labels?: Label[]
 }
 
-export const TaskItem = memo(function TaskItem({ task, onEdit, showProject: _showProject }: TaskItemProps) {
+export const TaskItem = memo(function TaskItem({
+  task,
+  labels = [],
+}: TaskItemProps) {
   const completeTask = useCompleteTask()
   const deleteTask = useDeleteTask()
   const { setSelectedTaskId } = useAppStore()
+  const { showConfirmDialog } = useUIStore()
   const [showMenu, setShowMenu] = useState(false)
   const [completing, setCompleting] = useState(false)
 
@@ -28,9 +34,14 @@ export const TaskItem = memo(function TaskItem({ task, onEdit, showProject: _sho
     }, 300)
   }
 
-  const handleDelete = () => {
-    deleteTask.mutate(task.id)
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation()
     setShowMenu(false)
+    showConfirmDialog({
+      title: '¿Eliminar tarea?',
+      message: 'Esta acción no se puede deshacer. La tarea será eliminada permanentemente.',
+      onConfirm: () => deleteTask.mutate(task.id),
+    })
   }
 
   const dueDateOverdue = task.due_date && isOverdue(task.due_date) && !task.is_completed
@@ -70,7 +81,7 @@ export const TaskItem = memo(function TaskItem({ task, onEdit, showProject: _sho
 
         {task.description && (
           <p className="mt-0.5 text-xs truncate" style={{ color: 'var(--text-muted)' }}>
-            {task.description}
+            {task.description.replace(/<[^>]+>/g, '').slice(0, 80)}
           </p>
         )}
 
@@ -82,6 +93,15 @@ export const TaskItem = memo(function TaskItem({ task, onEdit, showProject: _sho
             >
               <Calendar size={12} />
               {formatRelativeDate(task.due_date)}
+              {task.has_time && task.due_datetime && (
+                <>
+                  <Clock size={11} className="ml-1" />
+                  {new Date(task.due_datetime).toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </>
+              )}
             </span>
           )}
 
@@ -90,24 +110,23 @@ export const TaskItem = memo(function TaskItem({ task, onEdit, showProject: _sho
               <Flag size={12} style={{ color: PRIORITY_COLORS[task.priority] }} />
             </span>
           )}
+
+          {labels.map((label) => (
+            <span
+              key={label.id}
+              className="rounded-full px-2 py-0.5 text-xs font-medium"
+              style={{
+                backgroundColor: label.color + '22',
+                color: label.color,
+              }}
+            >
+              {label.name}
+            </span>
+          ))}
         </div>
       </div>
 
-      {/* Action buttons */}
       <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        {onEdit && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onEdit(task)
-            }}
-            className="rounded p-1 transition-colors hover:opacity-70"
-            style={{ color: 'var(--text-muted)' }}
-            title="Editar"
-          >
-            <Pencil size={14} />
-          </button>
-        )}
         <div className="relative">
           <button
             onClick={(e) => {
@@ -128,10 +147,7 @@ export const TaskItem = memo(function TaskItem({ task, onEdit, showProject: _sho
               }}
             >
               <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleDelete()
-                }}
+                onClick={handleDelete}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-sm text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
               >
                 <Trash2 size={14} />

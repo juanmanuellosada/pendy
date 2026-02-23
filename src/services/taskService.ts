@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { labelService } from './labelService'
 import type { Task } from '@/lib/types'
 
 export const taskService = {
@@ -49,6 +50,20 @@ export const taskService = {
     return data ?? []
   },
 
+  async getTasksByDateRange(userId: string, from: string, to: string): Promise<Task[]> {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('due_date', from)
+      .lte('due_date', to)
+      .order('due_date', { ascending: true })
+      .order('priority', { ascending: true })
+
+    if (error) throw error
+    return data ?? []
+  },
+
   async getInboxTasks(userId: string): Promise<Task[]> {
     const { data: inboxProject } = await supabase
       .from('projects')
@@ -71,6 +86,28 @@ export const taskService = {
     return data ?? []
   },
 
+  async getTaskById(id: string): Promise<Task | null> {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle()
+
+    if (error) throw error
+    return data
+  },
+
+  async getSubtasks(parentId: string): Promise<Task[]> {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('parent_id', parentId)
+      .order('sort_order', { ascending: true })
+
+    if (error) throw error
+    return data ?? []
+  },
+
   async createTask(task: {
     user_id: string
     project_id: string
@@ -79,10 +116,14 @@ export const taskService = {
     due_date?: string | null
     due_datetime?: string | null
     has_time?: boolean
+    duration_minutes?: number | null
     section_id?: string | null
     description?: string | null
     parent_id?: string | null
+    label_ids?: string[]
   }): Promise<Task> {
+    const { label_ids, ...taskData } = task
+
     const { data: maxOrder } = await supabase
       .from('tasks')
       .select('sort_order')
@@ -90,14 +131,14 @@ export const taskService = {
       .is('parent_id', task.parent_id ?? null)
       .order('sort_order', { ascending: false })
       .limit(1)
-      .single()
+      .maybeSingle()
 
     const sort_order = (maxOrder?.sort_order ?? -1) + 1
 
     const { data, error } = await supabase
       .from('tasks')
       .insert({
-        ...task,
+        ...taskData,
         priority: task.priority ?? 4,
         sort_order,
       })
@@ -105,18 +146,33 @@ export const taskService = {
       .single()
 
     if (error) throw error
+
+    if (label_ids && label_ids.length > 0) {
+      await labelService.setTaskLabels(data.id, label_ids)
+    }
+
     return data
   },
 
-  async updateTask(id: string, updates: Partial<Task>): Promise<Task> {
+  async updateTask(
+    id: string,
+    updates: Partial<Task> & { label_ids?: string[] },
+  ): Promise<Task> {
+    const { label_ids, ...taskUpdates } = updates as Partial<Task> & { label_ids?: string[] }
+
     const { data, error } = await supabase
       .from('tasks')
-      .update(updates)
+      .update(taskUpdates)
       .eq('id', id)
       .select()
       .single()
 
     if (error) throw error
+
+    if (label_ids !== undefined) {
+      await labelService.setTaskLabels(id, label_ids)
+    }
+
     return data
   },
 
@@ -138,6 +194,36 @@ export const taskService = {
   async deleteTask(id: string): Promise<void> {
     const { error } = await supabase.from('tasks').delete().eq('id', id)
     if (error) throw error
+  },
+
+  async getCompletedTasks(userId: string, limit = 50): Promise<Task[]> {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_completed', true)
+      .is('parent_id', null)
+      .order('completed_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return data ?? []
+  },
+
+  async searchTasks(userId: string, query: string): Promise<Task[]> {
+    if (!query.trim()) return []
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('user_id', userId)
+      .ilike('title', `%${query.trim()}%`)
+      .is('parent_id', null)
+      .order('is_completed', { ascending: true })
+      .order('due_date', { ascending: true })
+      .limit(50)
+
+    if (error) throw error
+    return data ?? []
   },
 
   async moveTask(id: string, projectId: string, sectionId: string | null): Promise<Task> {

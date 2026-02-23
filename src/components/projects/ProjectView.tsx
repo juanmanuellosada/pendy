@@ -1,10 +1,15 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Plus, MoreHorizontal, Archive, Trash2, Pencil, Star } from 'lucide-react'
 import { useProjectTasks } from '@/hooks/useTasks'
 import { useArchiveProject, useDeleteProject, useToggleProjectFavorite } from '@/hooks/useProjects'
-import { TaskList } from '@/components/tasks/TaskList'
+import { useAllTaskLabelsMap } from '@/hooks/useLabels'
+import { TaskItem } from '@/components/tasks/TaskItem'
+import { TaskGroup } from '@/components/tasks/TaskGroup'
 import { TaskEditor } from '@/components/tasks/TaskEditor'
 import { ProjectEditor } from './ProjectEditor'
+import { ViewOptionsBar } from '@/components/views/ViewOptionsBar'
+import { useUIStore } from '@/stores/uiStore'
+import { applyViewFilters, applyViewSort, groupTasks } from '@/lib/viewUtils'
 import { useNavigate } from 'react-router-dom'
 import type { Project, Task } from '@/lib/types'
 
@@ -14,20 +19,20 @@ interface ProjectViewProps {
 
 export function ProjectView({ project }: ProjectViewProps) {
   const { data: tasks = [], isLoading } = useProjectTasks(project.id)
+  const { data: labelsMap } = useAllTaskLabelsMap()
   const archiveProject = useArchiveProject()
   const deleteProject = useDeleteProject()
   const toggleFavorite = useToggleProjectFavorite()
   const navigate = useNavigate()
 
+  const VIEW_ID = `project-${project.id}`
+  const { getViewOptions, showConfirmDialog } = useUIStore()
+  const opts = getViewOptions(VIEW_ID)
+
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [projectEditorOpen, setProjectEditorOpen] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
-
-  const handleEditTask = (task: Task) => {
-    setEditingTask(task)
-    setEditorOpen(true)
-  }
 
   const handleCloseEditor = () => {
     setEditorOpen(false)
@@ -39,11 +44,29 @@ export function ProjectView({ project }: ProjectViewProps) {
     navigate('/app/today')
   }
 
-  const handleDelete = async () => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este proyecto y todas sus tareas?')) return
-    await deleteProject.mutateAsync(project.id)
-    navigate('/app/today')
+  const handleDelete = () => {
+    showConfirmDialog({
+      title: '¿Eliminar proyecto?',
+      message: `Se eliminará "${project.name}" junto con todas sus tareas. Esta acción no se puede deshacer.`,
+      onConfirm: async () => {
+        await deleteProject.mutateAsync(project.id)
+        navigate('/app/today')
+      },
+    })
   }
+
+  const visibleTasks = useMemo(() => {
+    let list = tasks
+    if (!opts.showCompleted) list = list.filter((t) => !t.is_completed)
+    list = applyViewFilters(list, opts, labelsMap)
+    list = applyViewSort(list, opts)
+    return list
+  }, [tasks, opts, labelsMap])
+
+  const groups = useMemo(
+    () => groupTasks(visibleTasks, opts.groupBy, labelsMap),
+    [visibleTasks, opts.groupBy, labelsMap],
+  )
 
   if (isLoading) {
     return (
@@ -61,7 +84,7 @@ export function ProjectView({ project }: ProjectViewProps) {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: project.color }} />
           <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
@@ -98,10 +121,7 @@ export function ProjectView({ project }: ProjectViewProps) {
                   }}
                 >
                   <button
-                    onClick={() => {
-                      setShowMenu(false)
-                      setProjectEditorOpen(true)
-                    }}
+                    onClick={() => { setShowMenu(false); setProjectEditorOpen(true) }}
                     className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors"
                     style={{ color: 'var(--text-primary)' }}
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
@@ -111,10 +131,7 @@ export function ProjectView({ project }: ProjectViewProps) {
                     Editar proyecto
                   </button>
                   <button
-                    onClick={() => {
-                      toggleFavorite.mutate({ id: project.id, isFavorite: !project.is_favorite })
-                      setShowMenu(false)
-                    }}
+                    onClick={() => { toggleFavorite.mutate({ id: project.id, isFavorite: !project.is_favorite }); setShowMenu(false) }}
                     className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors"
                     style={{ color: 'var(--text-primary)' }}
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
@@ -124,10 +141,7 @@ export function ProjectView({ project }: ProjectViewProps) {
                     {project.is_favorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
                   </button>
                   <button
-                    onClick={() => {
-                      handleArchive()
-                      setShowMenu(false)
-                    }}
+                    onClick={() => { handleArchive(); setShowMenu(false) }}
                     className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors"
                     style={{ color: 'var(--text-primary)' }}
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
@@ -138,10 +152,7 @@ export function ProjectView({ project }: ProjectViewProps) {
                   </button>
                   <div className="my-1 border-t" style={{ borderColor: 'var(--border-primary)' }} />
                   <button
-                    onClick={() => {
-                      handleDelete()
-                      setShowMenu(false)
-                    }}
+                    onClick={() => { handleDelete(); setShowMenu(false) }}
                     className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
                     <Trash2 size={14} />
@@ -160,11 +171,33 @@ export function ProjectView({ project }: ProjectViewProps) {
         </p>
       )}
 
-      <TaskList
-        tasks={tasks}
-        onEditTask={handleEditTask}
-        emptyMessage="No hay tareas en este proyecto"
-      />
+      <ViewOptionsBar viewId={VIEW_ID} />
+
+      {visibleTasks.length === 0 ? (
+        <div className="py-12 text-center">
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            No hay tareas en este proyecto
+          </p>
+        </div>
+      ) : opts.groupBy === 'none' ? (
+        <div className="divide-y rounded-lg border" style={{ borderColor: 'var(--border-secondary)' }}>
+          {visibleTasks.map((task) => (
+            <TaskItem key={task.id} task={task} labels={labelsMap?.get(task.id)} />
+          ))}
+        </div>
+      ) : (
+        <div>
+          {groups.map((group) => (
+            <TaskGroup
+              key={group.key}
+              label={group.label}
+              color={group.color}
+              tasks={group.tasks}
+              labelsMap={labelsMap}
+            />
+          ))}
+        </div>
+      )}
 
       <TaskEditor
         open={editorOpen}
