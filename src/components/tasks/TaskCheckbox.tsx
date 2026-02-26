@@ -2,7 +2,7 @@ import { memo } from 'react'
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PRIORITY_COLORS } from '@/lib/constants'
-import { playCompletionSound } from '@/lib/sound'
+import { playCompletionSound, playUncompleteSound } from '@/lib/sound'
 
 interface TaskCheckboxProps {
   checked: boolean
@@ -21,6 +21,7 @@ export const TaskCheckbox = memo(function TaskCheckbox({
     e.stopPropagation()
     const next = !checked
     if (next) playCompletionSound()
+    else playUncompleteSound()
     onChange(next)
   }
 

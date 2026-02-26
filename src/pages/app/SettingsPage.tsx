@@ -17,7 +17,7 @@ export default function SettingsPage() {
   const { showConfirmDialog } = useUIStore()
 
   const [newLabelName, setNewLabelName] = useState('')
-  const [newLabelColor, setNewLabelColor] = useState(LABEL_COLORS[3])
+  const [newLabelColor, setNewLabelColor] = useState(LABEL_COLORS[3]!)
   const [editingLabelId, setEditingLabelId] = useState<string | null>(null)
   const [editingLabelName, setEditingLabelName] = useState('')
   const editInputRef = useRef<HTMLInputElement>(null)
@@ -27,7 +27,7 @@ export default function SettingsPage() {
     if (!name) return
     await createLabel.mutateAsync({ name, color: newLabelColor })
     setNewLabelName('')
-    setNewLabelColor(LABEL_COLORS[3])
+    setNewLabelColor(LABEL_COLORS[3]!)
   }
 
   const startEditingLabel = (id: string, name: string) => {

@@ -21,7 +21,6 @@ export const taskService = {
       .from('tasks')
       .select('*')
       .eq('user_id', userId)
-      .eq('is_completed', false)
       .lte('due_date', today)
       .order('due_date', { ascending: true })
       .order('priority', { ascending: true })
@@ -40,7 +39,6 @@ export const taskService = {
       .from('tasks')
       .select('*')
       .eq('user_id', userId)
-      .eq('is_completed', false)
       .gte('due_date', today)
       .lte('due_date', future)
       .order('due_date', { ascending: true })
@@ -78,7 +76,6 @@ export const taskService = {
       .from('tasks')
       .select('*')
       .eq('project_id', inboxProject.id)
-      .eq('is_completed', false)
       .is('parent_id', null)
       .order('sort_order', { ascending: true })
 
@@ -121,6 +118,10 @@ export const taskService = {
     description?: string | null
     parent_id?: string | null
     label_ids?: string[]
+    is_recurring?: boolean
+    recurrence_rule?: string | null
+    recurrence_from?: 'due_date' | 'completion_date'
+    deadline?: string | null
   }): Promise<Task> {
     const { label_ids, ...taskData } = task
 

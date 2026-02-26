@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CheckCircle2, Zap, Calendar, Tag, ArrowRight } from 'lucide-react'
+import { CheckCircle2, Zap, Calendar, Tag, ArrowRight, Heart } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 
 export default function LandingPage() {
@@ -332,7 +332,7 @@ export default function LandingPage() {
             className="text-gray-500 dark:text-gray-400"
             style={{ fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif' }}
           >
-            © 2026 Pendy. Hecho con ❤️ para mejorar tu productividad.
+            © 2026 Pendy. Hecho con <Heart size={14} className="inline text-red-500 fill-red-500 mx-0.5" /> para mejorar tu productividad.
           </p>
         </div>
       </footer>

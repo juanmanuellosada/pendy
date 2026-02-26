@@ -22,19 +22,44 @@ export function AppLayout() {
 
       if (isInput) return
 
+      const key = e.key.toLowerCase()
+
       // S → Buscador
-      if (!e.ctrlKey && !e.metaKey && e.key === 's') {
+      if (!e.ctrlKey && !e.metaKey && key === 's') {
         e.preventDefault()
         navigate('/app/search')
         return
       }
 
       // Q → Añadir tarea
-      if (!e.ctrlKey && !e.metaKey && e.key === 'q') {
+      if (!e.ctrlKey && !e.metaKey && key === 'q') {
         e.preventDefault()
         setQuickAddOpen(true)
+        return
+      }
+
+      // Navegación rápida
+      if (!e.ctrlKey && !e.metaKey && key === 'i') {
+        e.preventDefault()
+        navigate('/app/inbox')
+        return
+      }
+      if (!e.ctrlKey && !e.metaKey && key === 'h') {
+        e.preventDefault()
+        navigate('/app/today')
+        return
+      }
+      if (!e.ctrlKey && !e.metaKey && key === 'p') {
+        e.preventDefault()
+        navigate('/app/upcoming')
+        return
+      }
+      if (!e.ctrlKey && !e.metaKey && key === 'c') {
+        e.preventDefault()
+        navigate('/app/completed')
       }
     }
+
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
@@ -48,9 +73,10 @@ export function AppLayout() {
       : location.pathname.startsWith('/app/inbox')
         ? 'inbox'
         : location.pathname.startsWith('/app/project/')
-          ? `project-${location.pathname.split('/').at(-1)}`
+          ? `project-${location.pathname.split('/').pop()}`
           : null
-  const isCalendarMode = viewId ? getViewOptions(viewId).viewStyle === 'calendar' : false
+  const viewStyle = viewId ? getViewOptions(viewId).viewStyle : 'list'
+  const isWideMode = viewStyle === 'calendar' || viewStyle === 'panel'
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: 'var(--bg-primary)' }}>
@@ -81,7 +107,7 @@ export function AppLayout() {
           <div
             className={cn(
               'mx-auto',
-              isCalendarMode ? 'max-w-full' : taskDetailOpen ? 'max-w-2xl' : 'max-w-3xl',
+              isWideMode ? 'max-w-full' : taskDetailOpen ? 'max-w-2xl' : 'max-w-3xl',
             )}
           >
             <Outlet />
@@ -97,3 +123,4 @@ export function AppLayout() {
     </div>
   )
 }
+

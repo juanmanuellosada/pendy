@@ -35,3 +35,6 @@ supabase/.env
 # Temporary files
 *.output
 .claude/
+
+# MCP config (contains API tokens)
+.mcp.json

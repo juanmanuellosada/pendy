@@ -1,7 +1,7 @@
 import type { Task, Label } from './types'
 import type { ViewOptions } from '@/stores/uiStore'
-import { isOverdue } from './utils'
-import { startOfWeek, endOfWeek, parseISO, isWithinInterval } from 'date-fns'
+import { isOverdue, parseLocalDate } from './utils'
+import { startOfWeek, endOfWeek, isWithinInterval } from 'date-fns'
 
 /** Aplica filtros de la ViewOptionsBar a una lista de tareas */
 export function applyViewFilters(
@@ -41,7 +41,7 @@ export function applyViewFilters(
           if (!t.due_date) return false
           const weekStart = startOfWeek(today, { weekStartsOn: 1 })
           const weekEnd = endOfWeek(today, { weekStartsOn: 1 })
-          const d = parseISO(t.due_date)
+          const d = parseLocalDate(t.due_date)
           return isWithinInterval(d, { start: weekStart, end: weekEnd })
         }
         default:

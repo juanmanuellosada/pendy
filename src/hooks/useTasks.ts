@@ -8,7 +8,7 @@ export const taskKeys = {
   all: ['tasks'] as const,
   inbox: (userId: string) => [...taskKeys.all, 'inbox', userId] as const,
   today: (userId: string) => [...taskKeys.all, 'today', userId] as const,
-  upcoming: (userId: string) => [...taskKeys.all, 'upcoming', userId] as const,
+  upcoming: (userId: string, days?: number) => [...taskKeys.all, 'upcoming', userId, days] as const,
   completed: (userId: string) => [...taskKeys.all, 'completed', userId] as const,
   search: (userId: string, q: string) => [...taskKeys.all, 'search', userId, q] as const,
   project: (projectId: string) => [...taskKeys.all, 'project', projectId] as const,
@@ -37,7 +37,7 @@ export function useTodayTasks() {
 export function useUpcomingTasks(days = 30) {
   const { user } = useAuth()
   return useQuery({
-    queryKey: taskKeys.upcoming(user?.id ?? ''),
+    queryKey: taskKeys.upcoming(user?.id ?? '', days),
     queryFn: () => taskService.getTasksUpcoming(user!.id, days),
     enabled: !!user,
   })
@@ -97,7 +97,27 @@ export function useUpdateTask() {
   return useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Task> & { label_ids?: string[] } }) =>
       taskService.updateTask(id, updates),
-    onSuccess: (_data, { id }) => {
+    onMutate: async ({ id, updates }) => {
+      await queryClient.cancelQueries({ queryKey: taskKeys.all })
+      const queries = queryClient.getQueriesData<Task[]>({ queryKey: taskKeys.all })
+
+      queries.forEach(([key, data]) => {
+        if (Array.isArray(data)) {
+          queryClient.setQueryData(
+            key,
+            data.map((t) => (t.id === id ? { ...t, ...updates } : t)),
+          )
+        }
+      })
+
+      return { queries }
+    },
+    onError: (_err, _vars, context) => {
+      context?.queries.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data)
+      })
+    },
+    onSettled: (_data, _err, { id }) => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all })
       queryClient.invalidateQueries({ queryKey: labelKeys.taskLabels(id) })
       queryClient.invalidateQueries({ queryKey: labelKeys.allTaskLabels(user?.id ?? '') })

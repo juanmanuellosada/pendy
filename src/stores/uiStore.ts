@@ -16,6 +16,8 @@ export interface ViewOptions {
   filterLabelId: string | null
   filterDueDate: FilterDueDate
   calendarMode: CalendarMode
+  upcomingDays: number
+  showFutureRecurrences: boolean
 }
 
 export const defaultViewOptions: ViewOptions = {
@@ -27,6 +29,8 @@ export const defaultViewOptions: ViewOptions = {
   filterLabelId: null,
   filterDueDate: 'all',
   calendarMode: 'month',
+  upcomingDays: 30,
+  showFutureRecurrences: false,
 }
 
 interface UIState {
@@ -69,14 +73,18 @@ export const useUIStore = create<UIState>()(
       hideConfirmDialog: () =>
         set({ confirmDialogOpen: false, confirmDialogConfig: null }),
 
-      getViewOptions: (viewId) => get().viewOptions[viewId] ?? defaultViewOptions,
+      getViewOptions: (viewId) => ({
+        ...defaultViewOptions,
+        ...(get().viewOptions[viewId] ?? {}),
+      }),
 
       setViewOption: (viewId, key, value) =>
         set((state) => ({
           viewOptions: {
             ...state.viewOptions,
             [viewId]: {
-              ...(state.viewOptions[viewId] ?? defaultViewOptions),
+              ...defaultViewOptions,
+              ...(state.viewOptions[viewId] ?? {}),
               [key]: value,
             },
           },

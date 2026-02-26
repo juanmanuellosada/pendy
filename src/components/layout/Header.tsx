@@ -1,4 +1,4 @@
-import { Menu } from 'lucide-react'
+import { Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useAppStore } from '@/stores/appStore'
 
 export function Header() {
@@ -23,8 +23,9 @@ export function Header() {
         onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
         className="hidden rounded-lg p-1.5 transition-colors hover:opacity-70 md:block"
         style={{ color: 'var(--text-primary)' }}
+        title={sidebarCollapsed ? 'Expandir barra lateral' : 'Contraer barra lateral'}
       >
-        <Menu size={20} />
+        {sidebarCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
       </button>
     </header>
   )

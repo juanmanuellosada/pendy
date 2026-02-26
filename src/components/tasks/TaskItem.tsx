@@ -1,7 +1,7 @@
 import { memo, useState } from 'react'
 import { Calendar, Flag, MoreHorizontal, Trash2, Clock } from 'lucide-react'
 import { TaskCheckbox } from './TaskCheckbox'
-import { cn } from '@/lib/utils'
+import { cn, stripHtmlTags, stripLabelTokensFromHtml } from '@/lib/utils'
 import { formatRelativeDate, isOverdue } from '@/lib/utils'
 import { PRIORITY_COLORS } from '@/lib/constants'
 import { useCompleteTask, useDeleteTask } from '@/hooks/useTasks'
@@ -14,11 +14,13 @@ interface TaskItemProps {
   onEdit?: (task: Task) => void
   showProject?: boolean
   labels?: Label[]
+  compact?: boolean
 }
 
 export const TaskItem = memo(function TaskItem({
   task,
   labels = [],
+  compact,
 }: TaskItemProps) {
   const completeTask = useCompleteTask()
   const deleteTask = useDeleteTask()
@@ -49,7 +51,8 @@ export const TaskItem = memo(function TaskItem({
   return (
     <div
       className={cn(
-        'group flex items-start gap-3 rounded-lg px-3 py-2.5 transition-colors cursor-pointer animate-fade-in',
+        'group flex items-start gap-3 rounded-lg transition-colors cursor-pointer animate-fade-in',
+        compact ? 'px-2.5 py-2' : 'px-3 py-2.5',
         completing && 'task-completing',
       )}
       style={{ backgroundColor: 'transparent' }}
@@ -69,19 +72,20 @@ export const TaskItem = memo(function TaskItem({
       </div>
 
       <div className="flex-1 min-w-0">
-        <p
+        <span
           className={cn(
-            'text-sm leading-snug transition-all',
+            'tiptap text-sm leading-snug transition-all block',
             (task.is_completed || completing) && 'line-through opacity-50',
           )}
           style={{ color: 'var(--text-primary)' }}
-        >
-          {task.title}
-        </p>
+          dangerouslySetInnerHTML={{
+            __html: stripLabelTokensFromHtml(task.title).replace(/^<p>(.*)<\/p>$/, '$1'),
+          }}
+        />
 
         {task.description && (
           <p className="mt-0.5 text-xs truncate" style={{ color: 'var(--text-muted)' }}>
-            {task.description.replace(/<[^>]+>/g, '').slice(0, 80)}
+            {stripHtmlTags(task.description).slice(0, 80)}
           </p>
         )}
 

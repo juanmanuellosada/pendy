@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { useCreateProject, useUpdateProject } from '@/hooks/useProjects'
 import { useAuth } from '@/hooks/useAuth'
+import { ColorPicker } from '@/components/common/ColorPicker'
 import { PROJECT_COLORS } from '@/lib/constants'
 import type { Project } from '@/lib/types'
 
@@ -99,18 +100,21 @@ export function ProjectEditor({ open, onClose, project }: ProjectEditorProps) {
             <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
               Color
             </label>
-            <div className="flex flex-wrap gap-2">
-              {PROJECT_COLORS.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setColor(c)}
-                  className="h-7 w-7 rounded-full border-2 transition-transform hover:scale-110"
-                  style={{
-                    backgroundColor: c,
-                    borderColor: color === c ? 'var(--text-primary)' : 'transparent',
-                  }}
-                />
-              ))}
+            <div className="flex items-center gap-3">
+              <ColorPicker value={color} onChange={setColor} />
+              <div className="flex flex-wrap gap-1.5">
+                {PROJECT_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setColor(c)}
+                    className="h-6 w-6 rounded-full border-2 transition-transform hover:scale-110"
+                    style={{
+                      backgroundColor: c,
+                      borderColor: color === c ? 'var(--text-primary)' : 'transparent',
+                    }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>

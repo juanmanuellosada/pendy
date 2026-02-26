@@ -14,7 +14,7 @@ function hsvToRgb(h: number, s: number, v: number): [number, number, number] {
   const cases: [number, number, number][] = [
     [v, t, p], [q, v, p], [p, v, t], [p, q, v], [t, p, v], [v, p, q],
   ]
-  return cases[i].map((x) => Math.round(x * 255)) as [number, number, number]
+  return cases[i]!.map((x) => Math.round(x * 255)) as [number, number, number]
 }
 
 function rgbToHex(r: number, g: number, b: number): string {
@@ -23,7 +23,7 @@ function rgbToHex(r: number, g: number, b: number): string {
 
 function hexToRgb(hex: string): [number, number, number] | null {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-  return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : null
+  return m ? [parseInt(m[1]!, 16), parseInt(m[2]!, 16), parseInt(m[3]!, 16)] : null
 }
 
 function rgbToHsv(r: number, g: number, b: number): [number, number, number] {

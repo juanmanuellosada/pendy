@@ -1,9 +1,10 @@
-import { Plus } from 'lucide-react'
+import { Plus, PartyPopper } from 'lucide-react'
 import { useTodayTasks } from '@/hooks/useTasks'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { TaskEditor } from '@/components/tasks/TaskEditor'
 import { TaskItem } from '@/components/tasks/TaskItem'
 import { TaskGroup } from '@/components/tasks/TaskGroup'
+import { TodayCalendarView } from './TodayCalendarView'
 import { ViewOptionsBar } from './ViewOptionsBar'
 import { useState, useMemo } from 'react'
 import { format } from 'date-fns'
@@ -74,24 +75,28 @@ export function TodayView() {
             {todayStr}
           </p>
         </div>
-        <button
-          onClick={() => setEditorOpen(true)}
-          className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-white transition-colors hover:opacity-90"
-          style={{ backgroundColor: '#EC1E2A' }}
-        >
-          <Plus size={16} />
-          Agregar tarea
-        </button>
+        <div className="flex items-center gap-2">
+          <ViewOptionsBar viewId={VIEW_ID} availableStyles={['list', 'calendar']} hideDateFilter hideCalendarMode />
+          <button
+            onClick={() => setEditorOpen(true)}
+            className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-white transition-colors hover:opacity-90"
+            style={{ backgroundColor: '#EC1E2A' }}
+          >
+            <Plus size={16} />
+            Agregar tarea
+          </button>
+        </div>
       </div>
 
-      <ViewOptionsBar viewId={VIEW_ID} />
-
-      {opts.groupBy !== 'none' ? (
+      {opts.viewStyle === 'calendar' ? (
+        /* Day timeline calendar */
+        <TodayCalendarView tasks={visibleTasks} labelsMap={labelsMap} />
+      ) : opts.groupBy !== 'none' ? (
         /* Grouped view */
         <div>
           {visibleTasks.length === 0 ? (
             <div className="py-12 text-center">
-              <p className="text-4xl">🎉</p>
+              <PartyPopper size={48} style={{ color: 'var(--text-muted)', margin: '0 auto' }} />
               <p className="mt-3 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                 ¡Todo listo por hoy!
               </p>
@@ -152,7 +157,7 @@ export function TodayView() {
 
           {visibleTasks.filter((t) => !t.is_completed).length === 0 && (
             <div className="py-12 text-center">
-              <p className="text-4xl">🎉</p>
+              <PartyPopper size={48} style={{ color: 'var(--text-muted)', margin: '0 auto' }} />
               <p className="mt-3 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                 ¡Todo listo por hoy!
               </p>

@@ -124,6 +124,7 @@ export interface Task {
   is_recurring: boolean
   recurrence_rule: string | null
   recurrence_from: 'due_date' | 'completion_date'
+  deadline: string | null
   sort_order: number
   depth: number
   collapsed: boolean

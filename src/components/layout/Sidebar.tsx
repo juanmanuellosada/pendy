@@ -36,10 +36,10 @@ export function Sidebar() {
   const favoriteProjects = projects.filter((p) => p.is_favorite && !p.is_archived)
 
   const navItems = [
-    { icon: Inbox, label: 'Bandeja de entrada', path: '/app/inbox' },
-    { icon: CalendarDays, label: 'Hoy', path: '/app/today' },
-    { icon: Calendar, label: 'Próximo', path: '/app/upcoming' },
-    { icon: CheckCircle2, label: 'Completado', path: '/app/completed' },
+    { icon: Inbox, label: 'Bandeja de entrada', path: '/app/inbox', shortcut: 'I' },
+    { icon: CalendarDays, label: 'Hoy', path: '/app/today', shortcut: 'H' },
+    { icon: Calendar, label: 'Próximo', path: '/app/upcoming', shortcut: 'P' },
+    { icon: CheckCircle2, label: 'Completado', path: '/app/completed', shortcut: 'C' },
   ]
 
   const handleNav = (path: string) => {
@@ -116,7 +116,13 @@ export function Sidebar() {
           style={{ backgroundColor: '#EC1E2A', color: '#FFFFFF' }}
         >
           <Plus size={18} />
-          Añadir tarea
+          <span className="flex-1 text-left">Añadir tarea</span>
+          <span
+            className="rounded px-1.5 py-0.5 font-mono text-[10px]"
+            style={{ backgroundColor: 'rgba(255,255,255,0.18)', color: '#FFFFFF' }}
+          >
+            Q
+          </span>
         </button>
 
         {/* Buscador */}
@@ -149,7 +155,7 @@ export function Sidebar() {
         <div className="my-1 mx-3 border-t" style={{ borderColor: 'var(--border-primary)' }} />
 
         {/* Nav items */}
-        {navItems.map(({ icon: Icon, label, path }) => (
+        {navItems.map(({ icon: Icon, label, path, shortcut }) => (
           <button
             key={path}
             onClick={() => handleNav(path)}
@@ -163,7 +169,17 @@ export function Sidebar() {
             }}
           >
             <Icon size={18} />
-            {label}
+            <span className="flex-1 text-left">{label}</span>
+            <span
+              className="rounded px-1.5 py-0.5 font-mono text-[10px]"
+              style={{
+                backgroundColor: 'var(--bg-secondary)',
+                color: 'var(--text-muted)',
+                opacity: location.pathname === path ? 0.7 : 1,
+              }}
+            >
+              {shortcut}
+            </span>
           </button>
         ))}
       </div>
@@ -289,3 +305,5 @@ export function Sidebar() {
     </div>
   )
 }
+
+
