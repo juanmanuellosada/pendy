@@ -24,7 +24,39 @@ export function useCreateSection() {
   return useMutation({
     mutationFn: (section: { project_id: string; name: string }) =>
       sectionService.createSection({ ...section, user_id: user!.id }),
-    onSuccess: (_data, variables) => {
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({
+        queryKey: sectionKeys.project(variables.project_id),
+      })
+      const prev = queryClient.getQueryData<Section[]>(
+        sectionKeys.project(variables.project_id),
+      )
+      const maxOrder = prev?.reduce((max, s) => Math.max(max, s.sort_order), -1) ?? -1
+      const optimistic: Section = {
+        id: `temp-${Date.now()}`,
+        user_id: user!.id,
+        project_id: variables.project_id,
+        name: variables.name,
+        sort_order: maxOrder + 1,
+        collapsed: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+      queryClient.setQueryData(
+        sectionKeys.project(variables.project_id),
+        [...(prev ?? []), optimistic],
+      )
+      return { prev }
+    },
+    onError: (_err, variables, context) => {
+      if (context?.prev) {
+        queryClient.setQueryData(
+          sectionKeys.project(variables.project_id),
+          context.prev,
+        )
+      }
+    },
+    onSettled: (_data, _err, variables) => {
       queryClient.invalidateQueries({
         queryKey: sectionKeys.project(variables.project_id),
       })
@@ -48,6 +80,35 @@ export function useUpdateSection() {
       queryClient.invalidateQueries({
         queryKey: sectionKeys.project(projectId),
       })
+    },
+  })
+}
+
+export function useReorderSections() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ updates }: { projectId: string; updates: { id: string; sort_order: number }[] }) =>
+      sectionService.reorderSections(updates),
+    onMutate: async ({ projectId, updates }) => {
+      await queryClient.cancelQueries({ queryKey: sectionKeys.project(projectId) })
+      const prev = queryClient.getQueryData<Section[]>(sectionKeys.project(projectId))
+      if (prev) {
+        const map = new Map(updates.map((u) => [u.id, u.sort_order]))
+        queryClient.setQueryData(
+          sectionKeys.project(projectId),
+          [...prev]
+            .map((s) => (map.has(s.id) ? { ...s, sort_order: map.get(s.id)! } : s))
+            .sort((a, b) => a.sort_order - b.sort_order),
+        )
+      }
+      return { prev }
+    },
+    onError: (_err, { projectId }, context) => {
+      if (context?.prev) queryClient.setQueryData(sectionKeys.project(projectId), context.prev)
+    },
+    onSettled: (_d, _e, { projectId }) => {
+      queryClient.invalidateQueries({ queryKey: sectionKeys.project(projectId) })
     },
   })
 }

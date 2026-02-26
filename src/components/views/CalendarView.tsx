@@ -260,6 +260,8 @@ function TimelineGrid({
   const [didMove, setDidMove] = useState(false)
   const didMoveRef = useRef(false)
   const edgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [currentDragCol, setCurrentDragCol] = useState(-1)
+  const [localHourHints, setLocalHourHints] = useState<Record<string, number>>({})
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 60_000)
@@ -342,10 +344,12 @@ function TimelineGrid({
       setGhostOffset({ dx, dy })
 
       const col = getColFromX(ev.clientX)
+      setCurrentDragCol(col)
       if (col >= 0 && col < days.length) {
-        setHighlightCol(col)
+        setHighlightCol(col === drag.originCol ? null : col)
         if (edgeTimer.current) { clearTimeout(edgeTimer.current); edgeTimer.current = null }
       } else {
+        setHighlightCol(null)
         // Auto-navigate on edge after 350ms
         if (!edgeTimer.current && onNavigate) {
           const dir = col < 0 ? -1 : 1
@@ -367,6 +371,20 @@ function TimelineGrid({
                 due_datetime: newDt.toISOString(),
               },
             })
+            // After edge navigation, update drag state so:
+            // - originCol is impossible to match → ghost always shows (no stale same-col detection)
+            // - task.due_date reflects the new date → sameDayAndTime check works correctly
+            // - baseHour reflects the new time
+            setDrag((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    originCol: -999,
+                    task: { ...prev.task, due_date: format(edgeDay, 'yyyy-MM-dd') },
+                    baseHour: h + m / 60,
+                  }
+                : null,
+            )
             onNavigate(dir as 1 | -1)
             edgeTimer.current = null
           }, 350)
@@ -377,6 +395,7 @@ function TimelineGrid({
     const onUp = (ev: MouseEvent) => {
       if (edgeTimer.current) { clearTimeout(edgeTimer.current); edgeTimer.current = null }
       setHighlightCol(null)
+      setCurrentDragCol(-1)
 
       const col = getColFromX(ev.clientX)
       const moved = didMoveRef.current
@@ -385,8 +404,13 @@ function TimelineGrid({
         const clampedCol = Math.max(0, Math.min(col, days.length - 1))
         const targetDay = days[clampedCol]
         if (targetDay) {
-          const hour = getHourFromY(ev.clientY)
-          const totalMin = snapMinutes(Math.round(hour * 60))
+          // Same column: compute from drag offset for accurate block-relative positioning
+          // Cross column: compute from absolute mouse Y position
+          const isSameCol = clampedCol === drag.originCol
+          const rawHour = isSameCol
+            ? pxToHours((drag.baseHour - START_HOUR) * HOUR_HEIGHT + (ev.clientY - drag.startY))
+            : getHourFromY(ev.clientY)
+          const totalMin = snapMinutes(Math.round(rawHour * 60))
           const clampedMin = Math.max(0, Math.min(totalMin, 24 * 60 - drag.baseDuration))
           const h = Math.floor(clampedMin / 60)
           const m = clampedMin % 60
@@ -398,6 +422,9 @@ function TimelineGrid({
             Math.abs(h + m / 60 - drag.baseHour) < 0.01
 
           if (!sameDayAndTime) {
+            if (isSameCol) {
+              setLocalHourHints((prev) => ({ ...prev, [drag.taskId]: h + m / 60 }))
+            }
             updateTask.mutate({
               id: drag.taskId,
               updates: {
@@ -424,6 +451,9 @@ function TimelineGrid({
 
   // Cleanup edge timer on unmount
   useEffect(() => () => { if (edgeTimer.current) clearTimeout(edgeTimer.current) }, [])
+
+  // Whether the currently dragged task is in the same column (smooth vertical movement)
+  const isDragSameCol = !!(drag && didMove && currentDragCol >= 0 && currentDragCol === drag.originCol)
 
   return (
     <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-primary)' }}>
@@ -477,7 +507,9 @@ function TimelineGrid({
                 <TaskTooltip key={task.id} task={task} disabled={!!drag}>
                   <TimelineTaskBlock
                     task={task}
-                    isDragging={drag?.taskId === task.id}
+                    isDragging={!!(drag?.taskId === task.id && didMove && !isDragSameCol)}
+                    activeDragDy={drag?.taskId === task.id && isDragSameCol ? ghostOffset.dy : 0}
+                    localHourHint={localHourHints[task.id]}
                     onDragStart={handleTaskDragStart}
                   />
                 </TaskTooltip>
@@ -500,8 +532,8 @@ function TimelineGrid({
         </div>
       </div>
 
-      {/* Drag ghost (fixed overlay following cursor) */}
-      {drag && didMove && (
+      {/* Drag ghost (fixed overlay following cursor, only for cross-column drag) */}
+      {drag && didMove && !isDragSameCol && (
         <div
           className="pointer-events-none fixed z-50 rounded-md border-l-3 px-1.5 py-0.5 shadow-xl opacity-80"
           style={{
@@ -527,12 +559,16 @@ function TimelineGrid({
 function TimelineTaskBlock({
   task,
   isDragging,
+  activeDragDy = 0,
+  localHourHint,
   onDragStart,
   onMouseEnter,
   onMouseLeave,
 }: {
   task: Task
   isDragging: boolean
+  activeDragDy?: number
+  localHourHint?: number
   onDragStart: (task: Task, e: React.MouseEvent) => void
   onMouseEnter?: (e: React.MouseEvent) => void
   onMouseLeave?: (e: React.MouseEvent) => void
@@ -544,18 +580,30 @@ function TimelineTaskBlock({
   const color = PRIORITY_COLORS[task.priority] ?? PRIORITY_COLORS[4]
 
   const dt = new Date(task.due_datetime!)
-  const hour = dt.getHours() + dt.getMinutes() / 60
+  const serverHour = dt.getHours() + dt.getMinutes() / 60
   const duration = task.duration_minutes || 60
-  const top = (hour - START_HOUR) * HOUR_HEIGHT
+
+  // Use local hour hint for optimistic positioning after same-column drop
+  const effectiveHour =
+    localHourHint != null && Math.abs(serverHour - localHourHint) > 0.01
+      ? localHourHint
+      : serverHour
+
+  const baseTop = (effectiveHour - START_HOUR) * HOUR_HEIGHT
+  const currentTop = baseTop + activeDragDy
   const baseHeight = (duration / 60) * HOUR_HEIGHT
 
   const [resizeDelta, setResizeDelta] = useState(0)
   const [resizing, setResizing] = useState(false)
   const currentHeight = Math.max(baseHeight + resizeDelta, (MIN_DURATION / 60) * HOUR_HEIGHT)
 
+  // Compute display times from current visual position (updates in real-time during drag)
+  const displayHours = pxToHours(Math.max(0, currentTop))
+  const displayH = Math.floor(displayHours)
+  const displayM = Math.round((displayHours - displayH) * 60)
   const durationMin = Math.max(MIN_DURATION, Math.round((currentHeight / HOUR_HEIGHT) * 60))
-  const eHours = hour + durationMin / 60
-  const timeStart = `${String(Math.floor(hour)).padStart(2, '0')}:${String(Math.round((hour % 1) * 60)).padStart(2, '0')}`
+  const eHours = displayHours + durationMin / 60
+  const timeStart = `${String(displayH).padStart(2, '0')}:${String(displayM).padStart(2, '0')}`
   const timeEnd = `${String(Math.min(Math.floor(eHours), 23)).padStart(2, '0')}:${String(Math.round((eHours % 1) * 60) % 60).padStart(2, '0')}`
   const timeStr = `${timeStart}–${timeEnd}`
 
@@ -568,6 +616,8 @@ function TimelineTaskBlock({
   const showDescription = currentHeight >= 60 && description
   const showProject = currentHeight >= 78 && project
   const showLabels = currentHeight >= 96 && labels.length > 0
+
+  const isSameColDrag = activeDragDy !== 0
 
   const handleResizeStart = useCallback(
     (e: React.MouseEvent) => {
@@ -608,14 +658,14 @@ function TimelineTaskBlock({
         'group absolute left-0.5 right-0.5 z-10 select-none overflow-hidden rounded-md border-l-3 px-1.5 py-0.5',
         task.is_completed && 'opacity-50',
         isDragging && 'opacity-30',
-        resizing ? 'shadow-lg z-30' : 'cursor-pointer',
+        isSameColDrag ? 'shadow-lg z-30' : resizing ? 'shadow-lg z-30' : 'cursor-pointer',
       )}
       style={{
-        top,
+        top: currentTop,
         height: currentHeight,
         borderLeftColor: color,
         backgroundColor: `${color}18`,
-        transition: resizing ? 'none' : 'height 0.15s ease',
+        transition: isSameColDrag || isDragging || resizing ? 'none' : 'top 0.15s ease, height 0.15s ease',
       }}
       onMouseDown={handleMouseDown}
       onMouseEnter={onMouseEnter}

@@ -23,20 +23,22 @@ const DAY_HEADERS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do']
 interface DeadlinePickerProps {
   deadline: string | null
   onDeadlineChange: (deadline: string | null) => void
+  shortcutKey?: string
+  inline?: boolean
 }
 
-export function DeadlinePicker({ deadline, onDeadlineChange }: DeadlinePickerProps) {
-  const [open, setOpen] = useState(false)
+export function DeadlinePicker({ deadline, onDeadlineChange, shortcutKey, inline = false }: DeadlinePickerProps) {
+  const [open, setOpen] = useState(inline)
   const [viewMonth, setViewMonth] = useState<Date>(() =>
     deadline ? parseLocalDate(deadline) : new Date(),
   )
   const containerRef = useRef<HTMLDivElement>(null)
-  const floatingStyle = useFloatingPosition(containerRef, open, 288) // w-72 = 288px
+  const floatingStyle = useFloatingPosition(containerRef, open && !inline, 288) // w-72 = 288px
   const today = useMemo(() => new Date(), [])
   const selectedDate = useMemo(() => (deadline ? parseLocalDate(deadline) : null), [deadline])
 
   useEffect(() => {
-    if (!open) return
+    if (!open || inline) return
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false)
@@ -44,7 +46,7 @@ export function DeadlinePicker({ deadline, onDeadlineChange }: DeadlinePickerPro
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [open])
+  }, [open, inline])
 
   useEffect(() => {
     if (deadline) setViewMonth(parseLocalDate(deadline))
@@ -62,15 +64,15 @@ export function DeadlinePicker({ deadline, onDeadlineChange }: DeadlinePickerPro
     (day: Date) => {
       onDeadlineChange(format(day, 'yyyy-MM-dd'))
       if (!isSameMonth(day, viewMonth)) setViewMonth(day)
-      setOpen(false)
+      if (!inline) setOpen(false)
     },
-    [onDeadlineChange, viewMonth],
+    [onDeadlineChange, viewMonth, inline],
   )
 
   const handleClear = useCallback(() => {
     onDeadlineChange(null)
-    setOpen(false)
-  }, [onDeadlineChange])
+    if (!inline) setOpen(false)
+  }, [onDeadlineChange, inline])
 
   // Quick shortcuts relative to today
   const shortcuts = useMemo(() => {
@@ -102,39 +104,48 @@ export function DeadlinePicker({ deadline, onDeadlineChange }: DeadlinePickerPro
   }, [deadline])
 
   return (
-    <div className="relative" ref={containerRef}>
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
-        style={{
-          backgroundColor: deadline ? 'rgba(59,130,246,0.1)' : 'var(--bg-secondary)',
-          borderColor: deadline ? 'rgba(59,130,246,0.3)' : 'var(--border-primary)',
-          color: deadline ? '#3B82F6' : 'var(--text-primary)',
-        }}
-      >
-        <AlarmClock size={14} />
-        {triggerLabel ?? 'Fecha límite'}
-        {deadline && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              handleClear()
-            }}
-            className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-black/10"
-          >
-            <X size={10} />
-          </button>
-        )}
-      </button>
-
-      {open && (
-        <div
-          className="w-72 rounded-xl border shadow-xl"
+    <div className={inline ? '' : 'relative'} ref={containerRef}>
+      {!inline && (
+        <button
+          onClick={() => setOpen(!open)}
+          className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
           style={{
-            ...floatingStyle,
+            backgroundColor: deadline ? 'rgba(59,130,246,0.1)' : 'var(--bg-secondary)',
+            borderColor: deadline ? 'rgba(59,130,246,0.3)' : 'var(--border-primary)',
+            color: deadline ? '#3B82F6' : 'var(--text-primary)',
+          }}
+        >
+          <AlarmClock size={14} />
+          {triggerLabel ?? 'Fecha límite'}
+          {deadline && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleClear()
+              }}
+              className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-black/10"
+            >
+              <X size={10} />
+            </button>
+          )}
+          {shortcutKey && (
+            <span
+              className="rounded px-1 py-0.5 font-mono text-[9px] leading-none"
+              style={{ backgroundColor: deadline ? 'rgba(59,130,246,0.15)' : 'var(--bg-primary)', color: 'var(--text-muted)' }}
+            >
+              {shortcutKey}
+            </span>
+          )}
+        </button>
+      )}
+
+      {(inline || open) && (
+        <div
+          className={inline ? 'w-72 overflow-hidden' : 'w-72 rounded-xl border shadow-xl'}
+          style={{
+            ...(inline ? {} : floatingStyle),
             backgroundColor: 'var(--bg-primary)',
-            borderColor: 'var(--border-primary)',
-            boxShadow: 'var(--shadow-lg)',
+            ...(inline ? {} : { borderColor: 'var(--border-primary)', boxShadow: 'var(--shadow-lg)' }),
           }}
         >
           {/* NLP input */}
@@ -152,10 +163,10 @@ export function DeadlinePicker({ deadline, onDeadlineChange }: DeadlinePickerPro
                     const val = (e.target as HTMLInputElement).value.trim().toLowerCase()
                     if (val === 'hoy') {
                       onDeadlineChange(format(today, 'yyyy-MM-dd'))
-                      setOpen(false)
+                      if (!inline) setOpen(false)
                     } else if (val === 'mañana' || val === 'manana') {
                       onDeadlineChange(format(addDays(today, 1), 'yyyy-MM-dd'))
-                      setOpen(false)
+                      if (!inline) setOpen(false)
                     }
                   }
                 }}
@@ -170,7 +181,7 @@ export function DeadlinePicker({ deadline, onDeadlineChange }: DeadlinePickerPro
                 key={s.label}
                 onClick={() => {
                   onDeadlineChange(format(s.date, 'yyyy-MM-dd'))
-                  setOpen(false)
+                  if (!inline) setOpen(false)
                 }}
                 className="flex w-full items-center gap-2.5 px-3 py-2 text-sm transition-colors"
                 style={{ color: 'var(--text-primary)' }}

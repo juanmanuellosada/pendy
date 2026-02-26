@@ -25,9 +25,11 @@ interface TaskEditorProps {
   task?: Task | null
   defaultProjectId?: string
   defaultDate?: string | null
+  defaultSectionId?: string | null
+  inline?: boolean
 }
 
-export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate }: TaskEditorProps) {
+export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate, defaultSectionId, inline }: TaskEditorProps) {
   const { user } = useAuth()
   const { data: projects = [] } = useProjects()
   const { data: inboxProject } = useInboxProject()
@@ -514,6 +516,7 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate 
         recurrence_from: recurrenceFrom,
         deadline: deadline || null,
         label_ids: finalLabelIds,
+        section_id: defaultSectionId ?? null,
       })
       savedTaskId = created.id
     }
@@ -563,15 +566,9 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate 
       : []
   const atTotalItems = atFilteredProjects.length
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh]">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <div
-        className="relative z-10 w-full max-w-3xl rounded-xl border shadow-2xl"
-        style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}
-      >
-        <div className="p-4">
-          {/* Title with hash autocomplete */}
+  const editorCard = (
+    <>
+      {/* Title with hash autocomplete */}
           <div className="relative">
             <TitleEditor
               content={title}
@@ -1317,7 +1314,6 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate 
               )}
             </div>
           </div>
-        </div>
 
         {/* Footer */}
         <div
@@ -1338,8 +1334,34 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate 
             style={{ backgroundColor: '#283B56' }}
           >
             <span>{task ? 'Guardar' : 'Añadir tarea'}</span>
-            {!task && <span className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-[10px]">Q</span>}
+            {!task && !inline && <span className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-[10px]">Q</span>}
           </button>
+        </div>
+    </>
+  )
+
+  if (inline) {
+    return (
+      <div
+        className="mt-2 w-full rounded-xl border"
+        style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}
+      >
+        <div className="p-4">
+          {editorCard}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh]">
+      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+      <div
+        className="relative z-10 w-full max-w-3xl rounded-xl border shadow-2xl"
+        style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}
+      >
+        <div className="p-4">
+          {editorCard}
         </div>
       </div>
     </div>

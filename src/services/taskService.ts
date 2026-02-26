@@ -227,6 +227,16 @@ export const taskService = {
     return data ?? []
   },
 
+  async reorderTasks(updates: { id: string; sort_order: number }[]): Promise<void> {
+    const results = await Promise.all(
+      updates.map(({ id, sort_order }) =>
+        supabase.from('tasks').update({ sort_order }).eq('id', id),
+      ),
+    )
+    const error = results.find((r) => r.error)?.error
+    if (error) throw error
+  },
+
   async moveTask(id: string, projectId: string, sectionId: string | null): Promise<Task> {
     const { data, error } = await supabase
       .from('tasks')

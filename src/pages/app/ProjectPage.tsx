@@ -4,9 +4,9 @@ import { ProjectView } from '@/components/projects/ProjectView'
 
 export default function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>()
-  const { data: projects = [], isLoading } = useProjects()
+  const { data: projects, isPending } = useProjects()
 
-  if (isLoading) {
+  if (isPending || !projects) {
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (

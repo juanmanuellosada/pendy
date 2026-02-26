@@ -21,6 +21,7 @@ const CompletedPage = lazy(() => import('@/pages/app/CompletedPage'))
 const SearchPage = lazy(() => import('@/pages/app/SearchPage'))
 const ProjectPage = lazy(() => import('@/pages/app/ProjectPage'))
 const SettingsPage = lazy(() => import('@/pages/app/SettingsPage'))
+const TaskPage = lazy(() => import('@/pages/app/TaskPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 function LoadingScreen() {
@@ -108,6 +109,7 @@ export default function App() {
             <Route path="completed" element={<CompletedPage />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="project/:projectId" element={<ProjectPage />} />
+            <Route path="task/:taskId" element={<TaskPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
 

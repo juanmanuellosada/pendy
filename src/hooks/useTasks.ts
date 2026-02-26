@@ -180,6 +180,35 @@ export function useSearchTasks(query: string) {
   })
 }
 
+export function useReorderTasks() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ updates }: { projectId: string; updates: { id: string; sort_order: number }[] }) =>
+      taskService.reorderTasks(updates),
+    onMutate: async ({ projectId, updates }) => {
+      await queryClient.cancelQueries({ queryKey: taskKeys.project(projectId) })
+      const prev = queryClient.getQueryData<Task[]>(taskKeys.project(projectId))
+      if (prev) {
+        const map = new Map(updates.map((u) => [u.id, u.sort_order]))
+        queryClient.setQueryData(
+          taskKeys.project(projectId),
+          [...prev]
+            .map((t) => (map.has(t.id) ? { ...t, sort_order: map.get(t.id)! } : t))
+            .sort((a, b) => a.sort_order - b.sort_order),
+        )
+      }
+      return { prev }
+    },
+    onError: (_err, { projectId }, context) => {
+      if (context?.prev) queryClient.setQueryData(taskKeys.project(projectId), context.prev)
+    },
+    onSettled: (_d, _e, { projectId }) => {
+      queryClient.invalidateQueries({ queryKey: taskKeys.project(projectId) })
+    },
+  })
+}
+
 export function useDeleteTask() {
   const queryClient = useQueryClient()
 

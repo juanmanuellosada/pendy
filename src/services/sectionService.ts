@@ -51,6 +51,16 @@ export const sectionService = {
     return data
   },
 
+  async reorderSections(updates: { id: string; sort_order: number }[]): Promise<void> {
+    const results = await Promise.all(
+      updates.map(({ id, sort_order }) =>
+        supabase.from('sections').update({ sort_order }).eq('id', id),
+      ),
+    )
+    const error = results.find((r) => r.error)?.error
+    if (error) throw error
+  },
+
   async deleteSection(id: string): Promise<void> {
     const { error } = await supabase.from('sections').delete().eq('id', id)
     if (error) throw error

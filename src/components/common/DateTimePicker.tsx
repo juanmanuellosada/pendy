@@ -69,6 +69,8 @@ interface DateTimePickerProps {
   onHasTimeChange: (hasTime: boolean) => void
   onDurationChange: (minutes: number | null) => void
   onRecurrenceChange: (isRecurring: boolean, rule: string | null, from: 'due_date' | 'completion_date') => void
+  shortcutKey?: string
+  inline?: boolean
 }
 
 function generateRecurrencePresets(date: Date) {
@@ -107,8 +109,10 @@ export function DateTimePicker({
   onHasTimeChange,
   onDurationChange,
   onRecurrenceChange,
+  shortcutKey,
+  inline = false,
 }: DateTimePickerProps) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(inline)
   const [viewMonth, setViewMonth] = useState<Date>(() => (date ? parseLocalDate(date) : new Date()))
   const [timeExpanded, setTimeExpanded] = useState(false)
   const [repeatExpanded, setRepeatExpanded] = useState(false)
@@ -122,12 +126,12 @@ export function DateTimePicker({
   const [customHasEnd, setCustomHasEnd] = useState(false)
 
   const containerRef = useRef<HTMLDivElement>(null)
-  const floatingStyle = useFloatingPosition(containerRef, open, 288) // w-72 = 288px
+  const floatingStyle = useFloatingPosition(containerRef, open && !inline, 288) // w-72 = 288px
   const today = useMemo(() => new Date(), [])
   const selectedDate = useMemo(() => (date ? parseLocalDate(date) : null), [date])
 
   useEffect(() => {
-    if (!open) return
+    if (!open || inline) return
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false)
@@ -136,7 +140,7 @@ export function DateTimePicker({
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [open])
+  }, [open, inline])
 
   // Sync viewMonth when date changes externally
   useEffect(() => {
@@ -406,41 +410,51 @@ export function DateTimePicker({
   }, [isRecurring, recurrenceRule, selectedDate, today])
 
   return (
-    <div ref={containerRef} className="relative inline-block">
-      {/* Trigger button */}
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm transition-colors"
-        style={{ color: triggerColor }}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-      >
-        <Calendar size={14} />
-        <span>{triggerLabel ?? 'Fecha'}</span>
-        {isRecurring && (
-          <Repeat size={12} style={{ color: 'var(--text-muted)' }} />
-        )}
-        {selectedDate && (
-          <span
-            className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-black/10"
-            onClick={(e) => {
-              e.stopPropagation()
-              handleClear()
-            }}
-          >
-            <X size={12} />
-          </span>
-        )}
-      </button>
+    <div ref={containerRef} className={inline ? '' : 'relative inline-block'}>
+      {/* Trigger button — only in non-inline mode */}
+      {!inline && (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm transition-colors"
+          style={{ color: triggerColor }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+        >
+          <Calendar size={14} />
+          <span>{triggerLabel ?? 'Fecha'}</span>
+          {isRecurring && (
+            <Repeat size={12} style={{ color: 'var(--text-muted)' }} />
+          )}
+          {selectedDate && (
+            <span
+              className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-black/10"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleClear()
+              }}
+            >
+              <X size={12} />
+            </span>
+          )}
+          {shortcutKey && (
+            <span
+              className="rounded px-1 py-0.5 font-mono text-[9px] leading-none"
+              style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)' }}
+            >
+              {shortcutKey}
+            </span>
+          )}
+        </button>
+      )}
 
-      {open && !showCustomRecurrence && (
+      {(inline || open) && !showCustomRecurrence && (
         <div
-          className="w-72 rounded-xl shadow-xl overflow-hidden"
+          className={inline ? 'w-72 overflow-hidden' : 'w-72 rounded-xl shadow-xl overflow-hidden'}
           style={{
-            ...floatingStyle,
+            ...(inline ? {} : floatingStyle),
             backgroundColor: 'var(--bg-primary)',
-            border: '1px solid var(--border-primary)',
+            ...(inline ? {} : { border: '1px solid var(--border-primary)' }),
           }}
         >
           {/* Date header */}
@@ -708,13 +722,13 @@ export function DateTimePicker({
       )}
 
       {/* Custom recurrence dialog */}
-      {open && showCustomRecurrence && (
+      {(inline || open) && showCustomRecurrence && (
         <div
-          className="w-72 rounded-xl p-4 shadow-xl"
+          className={inline ? 'w-72 p-4' : 'w-72 rounded-xl p-4 shadow-xl'}
           style={{
-            ...floatingStyle,
+            ...(inline ? {} : floatingStyle),
             backgroundColor: 'var(--bg-primary)',
-            border: '1px solid var(--border-primary)',
+            ...(inline ? {} : { border: '1px solid var(--border-primary)' }),
           }}
         >
           <div className="mb-4 flex items-center justify-between">

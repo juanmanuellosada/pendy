@@ -1,6 +1,7 @@
 import { memo, useState } from 'react'
 import { Calendar, Flag, MoreHorizontal, Trash2, Clock } from 'lucide-react'
 import { TaskCheckbox } from './TaskCheckbox'
+import { TaskContextMenu } from './TaskContextMenu'
 import { cn, stripHtmlTags, stripLabelTokensFromHtml } from '@/lib/utils'
 import { formatRelativeDate, isOverdue } from '@/lib/utils'
 import { PRIORITY_COLORS } from '@/lib/constants'
@@ -28,6 +29,13 @@ export const TaskItem = memo(function TaskItem({
   const { showConfirmDialog } = useUIStore()
   const [showMenu, setShowMenu] = useState(false)
   const [completing, setCompleting] = useState(false)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setContextMenu({ x: e.clientX, y: e.clientY })
+  }
 
   const handleComplete = (checked: boolean) => {
     setCompleting(checked)
@@ -49,6 +57,7 @@ export const TaskItem = memo(function TaskItem({
   const dueDateOverdue = task.due_date && isOverdue(task.due_date) && !task.is_completed
 
   return (
+    <>
     <div
       className={cn(
         'group flex items-start gap-3 rounded-lg transition-colors cursor-pointer animate-fade-in',
@@ -62,6 +71,7 @@ export const TaskItem = memo(function TaskItem({
         setShowMenu(false)
       }}
       onClick={() => setSelectedTaskId(task.id)}
+      onContextMenu={handleContextMenu}
     >
       <div className="pt-0.5">
         <TaskCheckbox
@@ -162,5 +172,15 @@ export const TaskItem = memo(function TaskItem({
         </div>
       </div>
     </div>
+
+    {contextMenu && (
+      <TaskContextMenu
+        task={task}
+        x={contextMenu.x}
+        y={contextMenu.y}
+        onClose={() => setContextMenu(null)}
+      />
+    )}
+    </>
   )
 })

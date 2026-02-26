@@ -65,6 +65,9 @@ export function AppLayout() {
     return () => window.removeEventListener('keydown', handler)
   }, [navigate, setQuickAddOpen])
 
+  // Detectar si estamos en la vista de tarea a pantalla completa
+  const isTaskPage = location.pathname.startsWith('/app/task/')
+
   // Detectar si la vista actual está en modo calendario para usar ancho completo
   const viewId = location.pathname.startsWith('/app/upcoming')
     ? 'upcoming'
@@ -107,7 +110,7 @@ export function AppLayout() {
           <div
             className={cn(
               'mx-auto',
-              isWideMode ? 'max-w-full' : taskDetailOpen ? 'max-w-2xl' : 'max-w-3xl',
+              isTaskPage || isWideMode ? 'max-w-full' : taskDetailOpen ? 'max-w-2xl' : 'max-w-3xl',
             )}
           >
             <Outlet />
@@ -115,8 +118,8 @@ export function AppLayout() {
         </main>
       </div>
 
-      {/* Task detail right panel */}
-      {taskDetailOpen && <TaskDetail />}
+      {/* Task detail right panel (hidden on fullscreen task page) */}
+      {taskDetailOpen && !isTaskPage && <TaskDetail />}
 
       {/* Mobile bottom nav */}
       <MobileNav />
