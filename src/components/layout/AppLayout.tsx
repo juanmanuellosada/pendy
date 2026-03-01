@@ -7,6 +7,7 @@ import { CalendarEventEditor } from '@/components/common/CalendarEventEditor'
 import { useAppStore } from '@/stores/appStore'
 import { useUIStore } from '@/stores/uiStore'
 import { useCalendarIntegrations } from '@/hooks/useCalendarIntegrations'
+import { usePushNotifications } from '@/hooks/usePushNotifications'
 import { cn } from '@/lib/utils'
 import { useEffect } from 'react'
 
@@ -14,6 +15,7 @@ export function AppLayout() {
   const { sidebarOpen, sidebarCollapsed, taskDetailOpen, setQuickAddOpen, eventEditorOpen, setEventEditorOpen } = useAppStore()
   const { getViewOptions } = useUIStore()
   const { data: integrations = [] } = useCalendarIntegrations()
+  usePushNotifications() // registers SW and syncs subscription on login
   const isCalendarConnected = integrations.length > 0
   const location = useLocation()
   const navigate = useNavigate()
