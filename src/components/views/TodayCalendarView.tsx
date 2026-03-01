@@ -1,8 +1,9 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 import { toast } from 'sonner'
-import { Calendar, CheckSquare, X } from 'lucide-react'
+import { Calendar, CheckSquare, X, AlertCircle } from 'lucide-react'
 import { useCompleteTask, useUpdateTask } from '@/hooks/useTasks'
 import { useProjects } from '@/hooks/useProjects'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
@@ -70,20 +71,24 @@ export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: Tod
 
   const todayDateStr = format(new Date(), 'yyyy-MM-dd')
 
-  // Split tasks: timed (has time AND due today) vs all-day/overdue
-  // Overdue tasks with a time are shown in the all-day section instead of
-  // being incorrectly positioned on today's timeline at a past-day's hour.
-  const { allDayTasks, timedTasks } = useMemo(() => {
+  // Split tasks into three buckets:
+  // - overdueTasks: due_date < today (regardless of has_time)
+  // - allDayTasks: due today but no specific time
+  // - timedTasks: due today AND has a specific time → positioned on timeline
+  const { overdueTasks, allDayTasks, timedTasks } = useMemo(() => {
+    const overdue: Task[] = []
     const allDay: Task[] = []
     const timed: Task[] = []
     tasks.forEach((t) => {
-      if (t.has_time && t.due_datetime && t.due_date === todayDateStr) {
+      if (t.due_date && t.due_date < todayDateStr) {
+        overdue.push(t)
+      } else if (t.has_time && t.due_datetime && t.due_date === todayDateStr) {
         timed.push(t)
       } else {
         allDay.push(t)
       }
     })
-    return { allDayTasks: allDay, timedTasks: timed }
+    return { overdueTasks: overdue, allDayTasks: allDay, timedTasks: timed }
   }, [tasks, todayDateStr])
 
   const allDayEvents = calendarEvents.filter((e) => e.isAllDay)
@@ -136,6 +141,30 @@ export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: Tod
   return (
     <>
       <div className="flex flex-col">
+        {/* Overdue section */}
+        {overdueTasks.length > 0 && (
+          <div className="mb-2">
+            <div className="flex">
+              <div
+                className="w-14 shrink-0 pr-2 pt-1 text-right text-xs font-medium"
+                style={{ color: '#EC1E2A' }}
+              >
+                Atrás
+              </div>
+              <div
+                className="flex-1 rounded-lg border-l-2 py-1 pl-2"
+                style={{ borderColor: '#EC1E2A44', backgroundColor: 'rgba(236,30,42,0.04)' }}
+              >
+                {overdueTasks.map((task) => (
+                  <TaskTooltip key={task.id} task={task}>
+                    <OverdueTaskCard task={task} />
+                  </TaskTooltip>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* All-day section */}
         {hasAllDaySection && (
           <div className="mb-2">
@@ -943,6 +972,56 @@ function AllDayEventChip({ event, onEdit }: { event: CalendarEvent; onEdit: () =
         </span>
       </div>
     </CalendarEventTooltip>
+  )
+}
+
+/* ── Overdue task card ──────────────────────────── */
+
+function OverdueTaskCard({ task }: { task: Task }) {
+  const completeTask = useCompleteTask()
+  const { setSelectedTaskId } = useAppStore()
+  const color = PRIORITY_COLORS[task.priority] ?? PRIORITY_COLORS[4]
+
+  const dateLabel = task.due_date
+    ? format(new Date(task.due_date + 'T12:00:00'), "d 'de' MMM", { locale: es })
+    : ''
+  const timeLabel =
+    task.has_time && task.due_datetime
+      ? format(new Date(task.due_datetime), 'HH:mm')
+      : null
+
+  return (
+    <div
+      className={cn(
+        'mb-1 flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-colors',
+        task.is_completed && 'opacity-50',
+      )}
+      style={{ backgroundColor: 'rgba(236,30,42,0.06)' }}
+      onClick={() => setSelectedTaskId(task.id)}
+    >
+      <TaskCheckbox
+        checked={task.is_completed}
+        priority={task.priority}
+        onChange={(completed) => completeTask.mutate({ id: task.id, completed })}
+      />
+      <span
+        className={cn('flex-1 truncate text-xs font-medium', task.is_completed && 'line-through')}
+        style={{ color: 'var(--text-primary)' }}
+      >
+        {stripLabelTokensFromText(stripHtmlTags(task.title))}
+      </span>
+      <div className="flex shrink-0 items-center gap-1">
+        {timeLabel && (
+          <span className="text-[10px]" style={{ color }}>
+            {timeLabel}
+          </span>
+        )}
+        <span className="flex items-center gap-0.5 text-[10px]" style={{ color: '#EC1E2A' }}>
+          <AlertCircle size={10} />
+          {dateLabel}
+        </span>
+      </div>
+    </div>
   )
 }
 
