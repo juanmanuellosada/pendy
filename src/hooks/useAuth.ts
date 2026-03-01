@@ -72,7 +72,7 @@ export function useAuth() {
   const signInWithGoogle = useCallback(async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/app` },
+      options: { redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}app` },
     })
     if (error) throw error
   }, [])
@@ -84,7 +84,7 @@ export function useAuth() {
 
   const resetPassword = useCallback(async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
+      redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}auth/reset-password`,
     })
     if (error) throw error
   }, [])

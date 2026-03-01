@@ -12,7 +12,7 @@ import {
 } from '@/services/calendarService'
 import type { CalendarIntegration, GoogleCalendarListEntry } from '@/lib/types'
 
-const REDIRECT_URI = `${window.location.origin}/app/settings`
+const REDIRECT_URI = `${window.location.origin}${import.meta.env.BASE_URL}app/settings`
 
 // ─── Query key factory ────────────────────────────────────────────────────────
 const calendarKeys = {

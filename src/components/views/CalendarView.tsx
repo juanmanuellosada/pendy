@@ -18,24 +18,28 @@ import {
   isSameDay,
 } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { ChevronLeft, ChevronRight, Plus, Calendar, CheckSquare, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Calendar, CheckSquare, X, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCalendarTasks, useUpdateTask, useCompleteTask } from '@/hooks/useTasks'
 import { useProjects } from '@/hooks/useProjects'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { useAppStore } from '@/stores/appStore'
 import { useCalendarEventMutations } from '@/hooks/useCalendarEvents'
+import { useHabits, useHabitCompletions, useToggleHabitCompletion, useHabitSchedules, useSetHabitDefaultTime, useUpsertHabitSchedule, useUpdateHabit } from '@/hooks/useHabits'
 import { TaskCheckbox } from '@/components/tasks/TaskCheckbox'
+import { HabitCheckbox } from '@/components/habits/HabitCheckbox'
+import { useHabitTooltip } from '@/components/habits/HabitTooltip'
 import { TaskEditor } from '@/components/tasks/TaskEditor'
 import { PRIORITY_COLORS } from '@/lib/constants'
 import { cn, stripHtmlTags, stripLabelTokensFromText } from '@/lib/utils'
-import type { Task, CalendarEvent } from '@/lib/types'
+import type { Task, CalendarEvent, Habit, HabitCompletion, HabitSchedule } from '@/lib/types'
 import { TaskTooltip } from '@/components/common/TaskTooltip'
 import { CalendarEventTooltip, getEventColor, getCalendarName } from '@/components/common/CalendarEventTooltip'
 import { CalendarEventEditor } from '@/components/common/CalendarEventEditor'
 import type { CalendarMode } from '@/stores/uiStore'
 import { useCalendarEventsByRange } from '@/hooks/useCalendarEvents'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { habitAppearsOnDate, getScheduledTimeForDate, timeStrToHour, hourToTimeStr, isCompletedOnDate } from '@/lib/habitUtils'
 
 const GOOGLE_COLOR = '#4285F4'
 
@@ -52,6 +56,9 @@ const MIN_DURATION = 15
 interface CalendarViewProps {
   calendarMode: CalendarMode
   onAddTask: (dateStr: string) => void
+  showFutureRecurrences?: boolean
+  showCompleted?: boolean
+  showHabits?: boolean
 }
 
 function pxToHours(px: number, hourHeight: number = HOUR_HEIGHT): number {
@@ -62,7 +69,7 @@ function snapMinutes(totalMinutes: number): number {
   return Math.round(totalMinutes / SNAP_MINUTES) * SNAP_MINUTES
 }
 
-export function CalendarView({ calendarMode, onAddTask }: CalendarViewProps) {
+export function CalendarView({ calendarMode, onAddTask, showFutureRecurrences = true, showCompleted = true, showHabits = true }: CalendarViewProps) {
   const isMobile = useIsMobile()
   // En mobile, semana y 4 días se colapsan a vista de día
   const effectiveMode: CalendarMode = isMobile && (calendarMode === 'week' || calendarMode === '4days') ? 'day' : calendarMode
@@ -76,6 +83,8 @@ export function CalendarView({ calendarMode, onAddTask }: CalendarViewProps) {
   const updateTask = useUpdateTask()
   const draggedTaskId = useRef<string | null>(null)
   const [dragOverDate, setDragOverDate] = useState<string | null>(null)
+
+  const { setSelectedHabit } = useAppStore()
 
   // Calendar event editor state (shared across all sub-components)
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null)
@@ -109,6 +118,15 @@ export function CalendarView({ calendarMode, onAddTask }: CalendarViewProps) {
   const rangeFrom = days.length > 0 ? days[0]! : null
   const rangeTo = days.length > 0 ? days[days.length - 1]! : null
   const { data: calendarEvents = [] } = useCalendarEventsByRange(rangeFrom, rangeTo)
+
+  // Habits data
+  const { data: habits = [] } = useHabits()
+  const { data: habitCompletions = [] } = useHabitCompletions(fromStr, toStr)
+  const { data: habitSchedules = [] } = useHabitSchedules(fromStr, toStr)
+  const toggleHabitCompletion = useToggleHabitCompletion()
+  const setHabitDefaultTime = useSetHabitDefaultTime()
+  const upsertHabitSchedule = useUpsertHabitSchedule()
+  const updateHabit = useUpdateHabit()
 
   const eventsForDay = (date: Date): CalendarEvent[] => {
     const dateStr = format(date, 'yyyy-MM-dd')
@@ -153,10 +171,12 @@ export function CalendarView({ calendarMode, onAddTask }: CalendarViewProps) {
   const isTimelineMode = effectiveMode === 'week' || effectiveMode === '4days' || effectiveMode === 'day'
   const isMonthView = effectiveMode === 'month'
 
+  const todayViewStr = format(new Date(), 'yyyy-MM-dd')
+
   /* ── Drag for month grid ── */
   const tasksForDay = (date: Date): Task[] => {
     const dateStr = format(date, 'yyyy-MM-dd')
-    return tasks.filter((t) => t.due_date === dateStr)
+    return tasks.filter((t) => t.due_date === dateStr && (showCompleted || !t.is_completed))
   }
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
@@ -211,10 +231,21 @@ export function CalendarView({ calendarMode, onAddTask }: CalendarViewProps) {
             days={days}
             tasks={tasks}
             calendarEvents={calendarEvents}
+            habits={habits}
+            habitCompletions={habitCompletions}
+            habitSchedules={habitSchedules}
+            showFutureRecurrences={showFutureRecurrences}
+            showCompleted={showCompleted}
+            showHabits={showHabits}
             onNavigate={navigate}
             onEditEvent={setEditingEvent}
             onCreateEvent={setCreatingEventInfo}
             onCreateTask={setCreatingTaskInfo}
+            onSetHabitDefaultTime={(habitId, time) => setHabitDefaultTime.mutate({ habitId, time })}
+            onUpsertHabitSchedule={(habitId, date, time) => upsertHabitSchedule.mutate({ habitId, date, time })}
+            onToggleHabitCompletion={(habitId, date) => toggleHabitCompletion.mutate({ habitId, date })}
+            onUpdateHabitDuration={(habitId, duration_minutes) => updateHabit.mutate({ id: habitId, updates: { duration_minutes } })}
+            onEditHabit={(habit, date) => setSelectedHabit(habit.id, format(date, 'yyyy-MM-dd'))}
           />
         )}
 
@@ -238,6 +269,13 @@ export function CalendarView({ calendarMode, onAddTask }: CalendarViewProps) {
                         dateStr={dateStr}
                         tasks={tasksForDay(day)}
                         calendarEvents={eventsForDay(day)}
+                        habits={(() => {
+                          if (!showHabits) return []
+                          const dateS = format(day, 'yyyy-MM-dd')
+                          if (!showFutureRecurrences && dateS > todayViewStr) return []
+                          const dayH = habits.filter((h) => habitAppearsOnDate(h, day))
+                          return showCompleted ? dayH : dayH.filter((h) => !isCompletedOnDate(habitCompletions, h.id, day))
+                        })()}
                         isTodayDate={isToday(day)}
                         inCurrentMonth={isSameMonth(day, currentDate)}
                         isOver={dragOverDate === dateStr}
@@ -248,6 +286,7 @@ export function CalendarView({ calendarMode, onAddTask }: CalendarViewProps) {
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
                         onEditEvent={setEditingEvent}
+                        onEditHabit={(habit, day) => setSelectedHabit(habit.id, format(day, 'yyyy-MM-dd'))}
                         onCreateEvent={(date, hour) => setCreatingEventInfo({ date, hour })}
                       />
                     )
@@ -286,6 +325,7 @@ export function CalendarView({ calendarMode, onAddTask }: CalendarViewProps) {
           onClose={() => setCreatingTaskInfo(null)}
         />
       )}
+
     </>
     </HourHeightCtx.Provider>
   )
@@ -319,18 +359,40 @@ function TimelineGrid({
   days,
   tasks,
   calendarEvents = [],
+  habits = [],
+  habitCompletions = [],
+  habitSchedules = [],
+  showFutureRecurrences = true,
+  showCompleted = true,
+  showHabits = true,
   onNavigate,
   onEditEvent,
   onCreateEvent,
   onCreateTask,
+  onSetHabitDefaultTime,
+  onUpsertHabitSchedule,
+  onToggleHabitCompletion,
+  onUpdateHabitDuration,
+  onEditHabit,
 }: {
   days: Date[]
   tasks: Task[]
   calendarEvents?: CalendarEvent[]
+  habits?: Habit[]
+  habitCompletions?: HabitCompletion[]
+  habitSchedules?: HabitSchedule[]
+  showFutureRecurrences?: boolean
+  showCompleted?: boolean
+  showHabits?: boolean
   onNavigate?: (dir: 1 | -1) => void
   onEditEvent: (event: CalendarEvent) => void
   onCreateEvent: (info: { date: Date; hour: number; durationMinutes?: number }) => void
   onCreateTask: (info: { date: string; time: string; durationMinutes: number }) => void
+  onSetHabitDefaultTime?: (habitId: string, time: string) => void
+  onUpsertHabitSchedule?: (habitId: string, date: string, time: string) => void
+  onToggleHabitCompletion?: (habitId: string, date: Date) => void
+  onUpdateHabitDuration?: (habitId: string, duration_minutes: number) => void
+  onEditHabit?: (habit: Habit, date: Date) => void
 }) {
   const HOUR_HEIGHT = useContext(HourHeightCtx)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -363,6 +425,11 @@ function TimelineGrid({
   const [calEvHighlightCol, setCalEvHighlightCol] = useState<number | null>(null)
   // Optimistic hour hints after drag (persists until server refetch)
   const [localCalEvHints, setLocalCalEvHints] = useState<Record<string, number>>({})
+
+  // Habit drag state (from all-day chip to timeline, cross-column)
+  const [habitDrag, setHabitDrag] = useState<{ habit: Habit; ghostHour: number | null; ghostCol: number | null } | null>(null)
+  const habitDragRef = useRef(habitDrag)
+  useEffect(() => { habitDragRef.current = habitDrag }, [habitDrag])
 
   // Drag-to-create state
   const [createDrag, setCreateDrag] = useState<{ col: number; date: Date; startHour: number; currentHour: number; startY: number } | null>(null)
@@ -414,19 +481,26 @@ function TimelineGrid({
   const todayIdx = days.findIndex((d) => isSameDay(d, now))
 
   const dayData = useMemo(() => {
+    const todayStr = format(new Date(), 'yyyy-MM-dd')
     return days.map((day) => {
       const dateStr = format(day, 'yyyy-MM-dd')
-      const dayTasks = tasks.filter((t) => t.due_date === dateStr)
-      const allDay = dayTasks.filter((t) => !t.has_time || !t.due_datetime)
-      const timed = dayTasks.filter((t) => t.has_time && t.due_datetime)
+      const baseTasks = tasks.filter((t) => t.due_date === dateStr && (showCompleted || !t.is_completed))
+      const allDay = baseTasks.filter((t) => !t.has_time || !t.due_datetime)
+      const timed = baseTasks.filter((t) => t.has_time && t.due_datetime)
       const dayEvents = calendarEvents.filter((ev) => format(ev.start, 'yyyy-MM-dd') === dateStr)
       const allDayEvents = dayEvents.filter((ev) => ev.isAllDay)
       const timedEvents = dayEvents.filter((ev) => !ev.isAllDay)
-      return { day, dateStr, allDay, timed, allDayEvents, timedEvents }
+      let dayHabits = (!showHabits || (!showFutureRecurrences && dateStr > todayStr))
+        ? []
+        : habits.filter((h) => habitAppearsOnDate(h, day))
+      if (!showCompleted) dayHabits = dayHabits.filter((h) => !isCompletedOnDate(habitCompletions, h.id, day))
+      const unscheduledHabits = dayHabits.filter((h) => getScheduledTimeForDate(h, habitSchedules, day) === null)
+      const scheduledHabits = dayHabits.filter((h) => getScheduledTimeForDate(h, habitSchedules, day) !== null)
+      return { day, dateStr, allDay, timed, allDayEvents, timedEvents, unscheduledHabits, scheduledHabits }
     })
-  }, [days, tasks, calendarEvents])
+  }, [days, tasks, calendarEvents, habits, habitCompletions, habitSchedules, showFutureRecurrences, showCompleted, showHabits])
 
-  const hasAnyAllDay = dayData.some((d) => d.allDay.length > 0 || d.allDayEvents.length > 0)
+  const hasAnyAllDay = dayData.some((d) => d.allDay.length > 0 || d.allDayEvents.length > 0 || d.unscheduledHabits.length > 0)
 
   const getColFromX = useCallback((clientX: number): number => {
     if (!gridRef.current) return -1
@@ -706,6 +780,51 @@ function TimelineGrid({
   // Cleanup edge timer on unmount
   useEffect(() => () => { if (edgeTimer.current) clearTimeout(edgeTimer.current) }, [])
 
+  /* ── Habit drag from all-day chip to timeline (multi-column) ── */
+  const startHabitDragInGrid = useCallback((habit: Habit, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setHabitDrag({ habit, ghostHour: null, ghostCol: null })
+
+    const onMove = (ev: MouseEvent) => {
+      if (!gridRef.current) return
+      const rect = gridRef.current.getBoundingClientRect()
+      const y = ev.clientY - rect.top
+      if (y < 0) {
+        setHabitDrag((p) => p ? { ...p, ghostHour: null, ghostCol: null } : null)
+        return
+      }
+      const rawHour = pxToHours(y, HOUR_HEIGHT)
+      const snappedMin = snapMinutes(Math.round(rawHour * 60))
+      const snapped = Math.max(START_HOUR, snappedMin / 60)
+      const col = getColFromX(ev.clientX)
+      setHabitDrag((p) => p ? { ...p, ghostHour: snapped, ghostCol: col >= 0 && col < days.length ? col : null } : null)
+    }
+
+    const onUp = (_ev: MouseEvent) => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      const state = habitDragRef.current
+      setHabitDrag(null)
+      if (!state?.ghostHour || state.ghostCol === null) return
+
+      const targetDay = days[state.ghostCol]
+      if (!targetDay) return
+
+      const time = hourToTimeStr(state.ghostHour)
+      const dateStr = format(targetDay, 'yyyy-MM-dd')
+
+      if (!state.habit.scheduled_time) {
+        onSetHabitDefaultTime?.(state.habit.id, time)
+      } else {
+        onUpsertHabitSchedule?.(state.habit.id, dateStr, time)
+      }
+    }
+
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }, [HOUR_HEIGHT, days, getColFromX, onSetHabitDefaultTime, onUpsertHabitSchedule])
+
   const isDragSameCol = !!(drag && didMove && currentDragCol >= 0 && currentDragCol === drag.originCol)
   const isCalEvSameCol = !!(calEvDrag && calEvDidMove && calEvCurrentCol >= 0 && calEvCurrentCol === calEvDrag.originCol)
 
@@ -740,6 +859,17 @@ function TimelineGrid({
                   <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: ev.calendarColor ?? GOOGLE_COLOR }} />
                   <span className="truncate" style={{ color: 'var(--text-primary)' }}>{ev.title}</span>
                 </div>
+              ))}
+              {dd.unscheduledHabits.map((habit) => (
+                <CalendarHabitChip
+                  key={habit.id}
+                  habit={habit}
+                  completions={habitCompletions}
+                  date={dd.day}
+                  onToggle={() => onToggleHabitCompletion?.(habit.id, dd.day)}
+                  onDragStart={(e) => startHabitDragInGrid(habit, e)}
+                  onEdit={() => onEditHabit?.(habit, dd.day)}
+                />
               ))}
             </div>
           ))}
@@ -821,6 +951,38 @@ function TimelineGrid({
                   onDragStart={handleCalEvDragStart}
                 />
               ))}
+              {dd.scheduledHabits.map((habit) => {
+                const scheduledTime = getScheduledTimeForDate(habit, habitSchedules, dd.day)!
+                return (
+                  <CalendarHabitBlock
+                    key={habit.id}
+                    habit={habit}
+                    scheduledTime={scheduledTime}
+                    date={dd.day}
+                    completions={habitCompletions}
+                    onReschedule={(time) => onUpsertHabitSchedule?.(habit.id, dd.dateStr, time)}
+                    onToggle={() => onToggleHabitCompletion?.(habit.id, dd.day)}
+                    onUpdateDuration={(mins) => onUpdateHabitDuration?.(habit.id, mins)}
+                    onEdit={() => onEditHabit?.(habit, dd.day)}
+                  />
+                )
+              })}
+              {/* Habit drag ghost preview in this column */}
+              {habitDrag?.ghostHour !== null && habitDrag?.ghostHour !== undefined && habitDrag.ghostCol === colIdx && (
+                <div
+                  className="pointer-events-none absolute left-0.5 right-0.5 z-20 rounded-md border-l-2"
+                  style={{
+                    top: (habitDrag.ghostHour - START_HOUR) * HOUR_HEIGHT,
+                    height: (habitDrag.habit.duration_minutes / 60) * HOUR_HEIGHT,
+                    backgroundColor: `${habitDrag.habit.color}25`,
+                    borderLeftColor: habitDrag.habit.color,
+                  }}
+                >
+                  <p className="truncate px-1.5 py-0.5 text-[11px] font-medium" style={{ color: habitDrag.habit.color }}>
+                    {habitDrag.habit.icon && `${habitDrag.habit.icon} `}{habitDrag.habit.name}
+                  </p>
+                </div>
+              )}
 
               {/* Preview de tarea al arrastrar a otro día */}
               {drag && didMove && highlightCol === colIdx && taskPreviewHour != null && (() => {
@@ -1349,6 +1511,240 @@ function TimelineTaskBlock({
   )
 }
 
+/* ── Calendar habit chip (all-day zone, draggable to timeline) ─── */
+
+function CalendarHabitChip({
+  habit,
+  completions,
+  date,
+  onToggle,
+  onDragStart,
+  onEdit,
+}: {
+  habit: Habit
+  completions: HabitCompletion[]
+  date: Date
+  onToggle: () => void
+  onDragStart: (e: React.MouseEvent) => void
+  onEdit?: () => void
+}) {
+  const completed = isCompletedOnDate(completions, habit.id, date)
+  const { tooltipHandlers, tooltipPortal } = useHabitTooltip({ habit, completions, date, scheduledTime: null })
+
+  return (
+    <>
+    <div
+      className="group flex items-center gap-1 rounded px-1 py-0.5 text-[11px] truncate select-none"
+      style={{
+        backgroundColor: `${habit.color}15`,
+        borderLeft: `2px solid ${habit.color}`,
+        opacity: completed ? 0.6 : 1,
+        cursor: 'grab',
+      }}
+      onMouseDown={onDragStart}
+      {...tooltipHandlers}
+      title="Arrastrá al horario para programar"
+    >
+      <HabitCheckbox completed={completed} color={habit.color} onChange={onToggle} size="sm" />
+      {habit.icon && <span className="shrink-0">{habit.icon}</span>}
+      <span className="truncate flex-1" style={{ color: 'var(--text-primary)', textDecoration: completed ? 'line-through' : 'none' }}>
+        {habit.name}
+      </span>
+      <span className="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ backgroundColor: `${habit.color}22`, color: habit.color }}>
+        Hábito
+      </span>
+      {onEdit && (
+        <button
+          className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity rounded p-0.5"
+          style={{ color: 'var(--text-muted)', cursor: 'pointer' }}
+          onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onEdit() }}
+          title="Editar hábito"
+        >
+          <Pencil size={10} />
+        </button>
+      )}
+    </div>
+    {tooltipPortal}
+    </>
+  )
+}
+
+/* ── Calendar habit block (scheduled, draggable in timeline) ───── */
+
+function CalendarHabitBlock({
+  habit,
+  scheduledTime,
+  date,
+  completions,
+  onReschedule,
+  onToggle,
+  onUpdateDuration,
+  onEdit,
+}: {
+  habit: Habit
+  scheduledTime: string
+  date: Date
+  completions: HabitCompletion[]
+  onReschedule: (time: string) => void
+  onToggle: () => void
+  onUpdateDuration: (mins: number) => void
+  onEdit?: () => void
+}) {
+  const HOUR_HEIGHT = useContext(HourHeightCtx)
+  const completed = isCompletedOnDate(completions, habit.id, date)
+
+  const serverHour = timeStrToHour(scheduledTime)
+  const [localHour, setLocalHour] = useState<number | null>(null)
+  const [localDuration, setLocalDuration] = useState<number | null>(null)
+  const [activeDragDy, setActiveDragDy] = useState(0)
+  const [resizeDelta, setResizeDelta] = useState(0)
+  const [interacting, setInteracting] = useState(false)
+  const didMove = useRef(false)
+
+  const { tooltipHandlers, tooltipPortal } = useHabitTooltip({
+    habit,
+    completions,
+    date,
+    scheduledTime,
+    disabled: interacting,
+  })
+
+  const baseHour = localHour ?? serverHour
+  const baseDuration = localDuration ?? habit.duration_minutes
+
+  useEffect(() => {
+    if (localHour !== null && Math.abs(serverHour - localHour) < 0.01) setLocalHour(null)
+  }, [scheduledTime, serverHour, localHour])
+
+  const baseTop = (baseHour - START_HOUR) * HOUR_HEIGHT + activeDragDy
+  const currentHeight = Math.max(
+    (baseDuration / 60) * HOUR_HEIGHT + resizeDelta,
+    (MIN_DURATION / 60) * HOUR_HEIGHT,
+  )
+
+  const displayHours = pxToHours(Math.max(0, baseTop), HOUR_HEIGHT)
+  const displayH = Math.floor(displayHours)
+  const displayM = Math.round((displayHours - displayH) * 60)
+  const durMin = Math.max(MIN_DURATION, Math.round((currentHeight / HOUR_HEIGHT) * 60))
+  const endHours = displayHours + durMin / 60
+  const startLabel = `${String(displayH).padStart(2, '0')}:${String(displayM).padStart(2, '0')}`
+  const endLabel = `${String(Math.floor(endHours) % 24).padStart(2, '0')}:${String(Math.round((endHours % 1) * 60) % 60).padStart(2, '0')}`
+  const showTime = currentHeight >= 38
+
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('[data-resize-handle]')) return
+    if ((e.target as HTMLElement).closest('button')) return
+    e.preventDefault()
+    e.stopPropagation()
+    didMove.current = false
+    setInteracting(true)
+    const startY = e.clientY
+
+    const onMove = (ev: MouseEvent) => {
+      const delta = ev.clientY - startY
+      if (Math.abs(delta) > 3) didMove.current = true
+      setActiveDragDy(delta)
+    }
+
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      setInteracting(false)
+
+      if (!didMove.current) {
+        onEdit?.()
+        return
+      }
+
+      setActiveDragDy((prev) => {
+        if (Math.abs(prev) < 4) return 0
+        const newHours = pxToHours((baseHour - START_HOUR) * HOUR_HEIGHT + prev, HOUR_HEIGHT)
+        const totalMin = snapMinutes(Math.round(newHours * 60))
+        const clampedMin = Math.max(0, Math.min(totalMin, 24 * 60 - baseDuration))
+        const snappedHour = clampedMin / 60
+        setLocalHour(snappedHour)
+        onReschedule(hourToTimeStr(snappedHour))
+        return 0
+      })
+    }
+
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }, [baseHour, baseDuration, HOUR_HEIGHT, onReschedule, onEdit])
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setInteracting(true)
+    const startY = e.clientY
+
+    const onMove = (ev: MouseEvent) => setResizeDelta(ev.clientY - startY)
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      setInteracting(false)
+      setResizeDelta((prev) => {
+        if (Math.abs(prev) < 4) return 0
+        const newPx = Math.max((MIN_DURATION / 60) * HOUR_HEIGHT, (baseDuration / 60) * HOUR_HEIGHT + prev)
+        const snapped = Math.max(MIN_DURATION, snapMinutes(Math.round((newPx / HOUR_HEIGHT) * 60)))
+        setLocalDuration(snapped)
+        onUpdateDuration(snapped)
+        return 0
+      })
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }, [baseDuration, HOUR_HEIGHT, onUpdateDuration])
+
+  return (
+    <>
+    <div
+      className={cn(
+        'group absolute left-0.5 right-0.5 z-10 select-none overflow-hidden rounded-md border-l-2 px-1.5 py-0.5',
+        completed && 'opacity-50',
+        interacting ? 'shadow-lg z-30 cursor-grabbing' : 'cursor-pointer opacity-90 hover:opacity-100',
+      )}
+      style={{
+        top: Math.max(0, baseTop),
+        height: currentHeight,
+        borderLeftColor: habit.color,
+        backgroundColor: `${habit.color}1A`,
+        transition: interacting ? 'none' : 'top 0.15s ease, height 0.15s ease',
+      }}
+      onMouseDown={handleDragStart}
+      {...tooltipHandlers}
+    >
+      <div className="flex items-center gap-1">
+        <HabitCheckbox completed={completed} color={habit.color} onChange={onToggle} size="sm" />
+        {habit.icon && <span className="shrink-0 text-[10px]">{habit.icon}</span>}
+        <p className={cn('truncate text-[11px] font-medium leading-tight flex-1 min-w-0', completed && 'line-through')} style={{ color: 'var(--text-primary)' }}>
+          {habit.name}
+        </p>
+        <span className="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ backgroundColor: `${habit.color}22`, color: habit.color }}>
+          Hábito
+        </span>
+      </div>
+      {showTime && (
+        <p className="text-[10px]" style={{ color: `${habit.color}BB` }}>
+          {startLabel}–{endLabel}
+        </p>
+      )}
+
+      {/* Resize handle */}
+      <div
+        data-resize-handle
+        className="absolute bottom-0 left-0 right-0 flex cursor-s-resize items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
+        style={{ height: 7 }}
+        onMouseDown={handleResizeStart}
+      >
+        <div className="h-0.5 w-6 rounded-full" style={{ backgroundColor: habit.color }} />
+      </div>
+    </div>
+    {tooltipPortal}
+    </>
+  )
+}
+
 /* ── All-day chip ──────────────────────────────────────── */
 
 function AllDayChip({ task, onMouseEnter, onMouseLeave }: { task: Task; onMouseEnter?: (e: React.MouseEvent) => void; onMouseLeave?: (e: React.MouseEvent) => void }) {
@@ -1388,6 +1784,7 @@ interface MonthDayCellProps {
   dateStr: string
   tasks: Task[]
   calendarEvents?: CalendarEvent[]
+  habits?: Habit[]
   isTodayDate: boolean
   inCurrentMonth: boolean
   isOver: boolean
@@ -1398,6 +1795,7 @@ interface MonthDayCellProps {
   onDragLeave: (e: React.DragEvent) => void
   onDrop: (e: React.DragEvent, dateStr: string) => void
   onEditEvent: (event: CalendarEvent) => void
+  onEditHabit?: (habit: Habit, date: Date) => void
   onCreateEvent: (date: Date, hour: number) => void
 }
 
@@ -1406,6 +1804,7 @@ function MonthDayCell({
   dateStr,
   tasks,
   calendarEvents = [],
+  habits = [],
   isTodayDate,
   inCurrentMonth,
   isOver,
@@ -1416,15 +1815,18 @@ function MonthDayCell({
   onDragLeave,
   onDrop,
   onEditEvent,
+  onEditHabit,
   onCreateEvent,
 }: MonthDayCellProps) {
   const [hovered, setHovered] = useState(false)
   const maxVisible = 3
-  const totalItems = tasks.length + calendarEvents.length
+  const totalItems = tasks.length + calendarEvents.length + habits.length
   const visibleTasks = tasks.slice(0, maxVisible)
   const remainingSlots = Math.max(0, maxVisible - visibleTasks.length)
   const visibleEvents = calendarEvents.slice(0, remainingSlots)
-  const overflow = totalItems - visibleTasks.length - visibleEvents.length
+  const remainingAfterEvents = Math.max(0, remainingSlots - visibleEvents.length)
+  const visibleHabits = habits.slice(0, remainingAfterEvents)
+  const overflow = totalItems - visibleTasks.length - visibleEvents.length - visibleHabits.length
   const visible = visibleTasks
 
   return (
@@ -1498,6 +1900,18 @@ function MonthDayCell({
           >
             <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: ev.calendarColor ?? GOOGLE_COLOR }} />
             <span className="truncate" style={{ color: 'var(--text-primary)' }}>{ev.title}</span>
+          </div>
+        ))}
+        {visibleHabits.map((habit) => (
+          <div
+            key={habit.id}
+            className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs truncate cursor-pointer hover:opacity-80 transition-opacity"
+            style={{ backgroundColor: `${habit.color}18`, borderLeft: `2px solid ${habit.color}` }}
+            title={habit.name}
+            onClick={() => onEditHabit?.(habit, day)}
+          >
+            {habit.icon && <span className="shrink-0">{habit.icon}</span>}
+            <span className="truncate" style={{ color: 'var(--text-primary)' }}>{habit.name}</span>
           </div>
         ))}
         {overflow > 0 && (

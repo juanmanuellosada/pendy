@@ -84,7 +84,6 @@ export function SectionEditor({ open, onClose, onSave, section, shortcutKey }: S
               backgroundColor: 'var(--bg-secondary)',
               borderColor: 'var(--border-primary)',
               color: 'var(--text-primary)',
-              ringColor: '#283B56',
             }}
           />
 

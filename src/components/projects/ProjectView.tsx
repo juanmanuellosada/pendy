@@ -127,7 +127,7 @@ export function ProjectView({ project }: ProjectViewProps) {
     setEditorOpen(true)
   }
 
-  const handleAddTask = (dateStr?: string) => {
+  const handleAddTask = (_dateStr?: string) => {
     setEditorOpen(true)
   }
 
@@ -318,7 +318,7 @@ export function ProjectView({ project }: ProjectViewProps) {
     )
   }
 
-  const canDrag = opts.sortBy === 'default' && opts.groupBy === 'none'
+  const canDrag = opts.sortBy === 'manual' && opts.groupBy === 'none'
 
   const renderContent = () => {
     // Panel / Board view
@@ -761,6 +761,7 @@ export function ProjectView({ project }: ProjectViewProps) {
         onClose={handleCloseEditor}
         task={editingTask}
         defaultProjectId={project.id}
+        defaultSectionId={defaultSectionId}
       />
 
       <ProjectEditor

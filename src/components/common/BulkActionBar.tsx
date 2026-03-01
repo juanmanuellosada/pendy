@@ -6,7 +6,7 @@ import {
 import {
   format, addDays, addMonths, subMonths,
   startOfMonth, endOfMonth, eachDayOfInterval,
-  isSameDay, isSameMonth, getDay,
+  isSameDay, isSameMonth,
   startOfWeek, endOfWeek,
 } from 'date-fns'
 import { es } from 'date-fns/locale'

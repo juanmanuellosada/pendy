@@ -1391,18 +1391,23 @@ export function CalendarEventEditor({
             <div className="flex-1">
               <CustomDatePicker value={dateValue} onChange={setDateValue} />
             </div>
-            <label
+            <button
+              type="button"
+              onClick={() => setIsAllDay(!isAllDay)}
               className="flex items-center gap-1.5 cursor-pointer select-none text-xs whitespace-nowrap"
-              style={{ color: 'var(--text-secondary)' }}
+              style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', padding: 0 }}
             >
-              <input
-                type="checkbox"
-                checked={isAllDay}
-                onChange={(e) => setIsAllDay(e.target.checked)}
-                className="rounded"
-              />
+              <span
+                className="flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-all"
+                style={{
+                  borderColor: isAllDay ? '#283B56' : 'var(--border-primary)',
+                  backgroundColor: isAllDay ? '#283B56' : 'transparent',
+                }}
+              >
+                {isAllDay && <Check size={10} className="text-white" strokeWidth={3} />}
+              </span>
               Todo el día
-            </label>
+            </button>
           </div>
 
           {/* Time pickers */}

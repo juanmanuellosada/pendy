@@ -10,6 +10,7 @@ export type CalendarMode = 'month' | 'week' | '4days' | 'day'
 export interface ViewOptions {
   viewStyle: ViewStyle
   showCompleted: boolean
+  showHabits: boolean
   groupBy: GroupBy
   sortBy: SortBy
   filterPriority: number | null
@@ -23,6 +24,7 @@ export interface ViewOptions {
 export const defaultViewOptions: ViewOptions = {
   viewStyle: 'list',
   showCompleted: false,
+  showHabits: true,
   groupBy: 'none',
   sortBy: 'manual',
   filterPriority: null,

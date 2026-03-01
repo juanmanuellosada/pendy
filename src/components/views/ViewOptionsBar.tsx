@@ -31,6 +31,8 @@ interface ViewOptionsBarProps {
   hideCalendarMode?: boolean
   /** Which calendar modes to show. Defaults to all. */
   availableCalendarModes?: CalendarMode[]
+  /** Show the habits toggle (only for views that display habits). */
+  showHabitsToggle?: boolean
 }
 
 const viewStyles: { style: ViewStyle; icon: typeof List; label: string }[] = [
@@ -90,6 +92,7 @@ export function ViewOptionsBar({
   showUpcomingDays,
   hideCalendarMode,
   availableCalendarModes,
+  showHabitsToggle,
 }: ViewOptionsBarProps) {
   const { getViewOptions, setViewOption } = useUIStore()
   const opts = getViewOptions(viewId)
@@ -116,6 +119,7 @@ export function ViewOptionsBar({
     let count = 0
     if (opts.viewStyle !== defaultViewOptions.viewStyle) count++
     if (opts.showCompleted !== defaultViewOptions.showCompleted) count++
+    if (showHabitsToggle && opts.showHabits !== defaultViewOptions.showHabits) count++
     if (opts.sortBy !== defaultViewOptions.sortBy) count++
     if (opts.groupBy !== defaultViewOptions.groupBy) count++
     if (opts.filterPriority !== null) count++
@@ -123,11 +127,12 @@ export function ViewOptionsBar({
     if (opts.filterDueDate !== 'all') count++
     if (showUpcomingDays && (opts.upcomingDays ?? 30) !== defaultViewOptions.upcomingDays) count++
     return count
-  }, [opts, showUpcomingDays])
+  }, [opts, showUpcomingDays, showHabitsToggle])
 
   const resetAll = () => {
     set('viewStyle', defaultViewOptions.viewStyle)
     set('showCompleted', defaultViewOptions.showCompleted)
+    set('showHabits', defaultViewOptions.showHabits)
     set('sortBy', defaultViewOptions.sortBy)
     set('groupBy', defaultViewOptions.groupBy)
     set('filterPriority', null)
@@ -149,7 +154,6 @@ export function ViewOptionsBar({
         style={{
           backgroundColor: activeCount > 0 ? '#283B5612' : 'transparent',
           color: activeCount > 0 ? 'var(--text-primary)' : 'var(--text-secondary)',
-          ringColor: open ? 'var(--border-primary)' : undefined,
         }}
         onMouseEnter={(e) => {
           if (!open) e.currentTarget.style.backgroundColor = 'var(--bg-hover)'
@@ -257,16 +261,29 @@ export function ViewOptionsBar({
               </div>
             )}
 
-            {/* Tareas completadas */}
-            <div className="flex items-center justify-between" title="Mostrar tareas que ya fueron completadas">
+            {/* Completados */}
+            <div className="flex items-center justify-between" title="Mostrar tareas y hábitos completados">
               <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
-                Tareas completadas
+                Completados
               </span>
               <ToggleSwitch
                 checked={opts.showCompleted}
                 onChange={(v) => set('showCompleted', v)}
               />
             </div>
+
+            {/* Hábitos */}
+            {showHabitsToggle && (
+              <div className="flex items-center justify-between" title="Mostrar hábitos del día">
+                <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
+                  Hábitos
+                </span>
+                <ToggleSwitch
+                  checked={opts.showHabits ?? true}
+                  onChange={(v) => set('showHabits', v)}
+                />
+              </div>
+            )}
 
             {/* Futuras recurrencias (solo en calendario) */}
             {opts.viewStyle === 'calendar' && (

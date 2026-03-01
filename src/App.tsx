@@ -24,13 +24,14 @@ const SettingsPage = lazy(() => import('@/pages/app/SettingsPage'))
 const TaskPage = lazy(() => import('@/pages/app/TaskPage'))
 const LabelsPage = lazy(() => import('@/pages/app/LabelsPage'))
 const LabelPage = lazy(() => import('@/pages/app/LabelPage'))
+const HabitsPage = lazy(() => import('@/pages/app/HabitsPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 function LoadingScreen() {
   return (
     <div className="flex h-screen items-center justify-center" style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className="flex flex-col items-center gap-4">
-        <img src="/pendy-logo.png" alt="Pendy" className="h-16 w-16 rounded-xl animate-pulse" />
+        <img src={`${import.meta.env.BASE_URL}pendy-logo.png`} alt="Pendy" className="h-16 w-16 rounded-xl animate-pulse" />
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Cargando...</p>
       </div>
     </div>
@@ -115,6 +116,7 @@ export default function App() {
             <Route path="settings" element={<SettingsPage />} />
             <Route path="labels" element={<LabelsPage />} />
             <Route path="label/:labelId" element={<LabelPage />} />
+            <Route path="habits" element={<HabitsPage />} />
           </Route>
 
           {/* 404 */}

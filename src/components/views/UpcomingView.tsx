@@ -4,9 +4,11 @@ import { Plus, CalendarDays, ListChecks } from 'lucide-react'
 import { useUpcomingTasks, useDeleteTask, useUpdateTask } from '@/hooks/useTasks'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { useUpcomingCalendarEvents } from '@/hooks/useCalendarEvents'
+import { useHabits, useHabitCompletions, useHabitSchedules, useToggleHabitCompletion } from '@/hooks/useHabits'
 import { TaskItem } from '@/components/tasks/TaskItem'
 import { TaskEditor } from '@/components/tasks/TaskEditor'
 import { CalendarEventItem } from '@/components/common/CalendarEventItem'
+import { HabitItem } from '@/components/habits/HabitItem'
 import { BulkActionBar } from '@/components/common/BulkActionBar'
 import { ViewOptionsBar } from './ViewOptionsBar'
 import { CalendarView } from './CalendarView'
@@ -14,6 +16,7 @@ import { DateBoardView } from './DateBoardView'
 import { useBulkSelection } from '@/hooks/useBulkSelection'
 import { useUIStore } from '@/stores/uiStore'
 import { applyViewFilters, applyViewSort } from '@/lib/viewUtils'
+import { habitAppearsOnDate } from '@/lib/habitUtils'
 import { format, addDays, isSameDay, startOfDay } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { parseLocalDate } from '@/lib/utils'
@@ -30,6 +33,12 @@ export function UpcomingView() {
   const { data: tasks = [], isLoading } = useUpcomingTasks(upcomingDays)
   const { data: labelsMap } = useAllTaskLabelsMap()
   const { data: calendarEvents = [] } = useUpcomingCalendarEvents(upcomingDays)
+  const { data: habits = [] } = useHabits()
+  const upcomingFrom = format(startOfDay(new Date()), 'yyyy-MM-dd')
+  const upcomingTo = format(addDays(new Date(), upcomingDays), 'yyyy-MM-dd')
+  const { data: habitCompletions = [] } = useHabitCompletions(upcomingFrom, upcomingTo)
+  const { data: habitSchedules = [] } = useHabitSchedules(upcomingFrom, upcomingTo)
+  const toggleHabitCompletion = useToggleHabitCompletion()
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [defaultDate, setDefaultDate] = useState<string | undefined>(undefined)
@@ -56,7 +65,7 @@ export function UpcomingView() {
   }, [tasks, opts, labelsMap])
 
   const groupedDays = useMemo(() => {
-    const groups: { date: Date; label: string; tasks: Task[]; events: CalendarEvent[] }[] = []
+    const groups: { date: Date; label: string; tasks: Task[]; events: CalendarEvent[]; habits: typeof habits }[] = []
     const today = startOfDay(new Date())
 
     for (let i = 0; i < upcomingDays; i++) {
@@ -65,19 +74,20 @@ export function UpcomingView() {
         (t) => t.due_date && isSameDay(parseLocalDate(t.due_date), date),
       )
       const dayEvents = calendarEvents.filter((e) => isSameDay(e.start, date))
+      const dayHabits = (opts.showHabits ?? true) ? habits.filter((h) => habitAppearsOnDate(h, date)) : []
 
-      if (dayTasks.length > 0 || dayEvents.length > 0) {
+      if (dayTasks.length > 0 || dayEvents.length > 0 || dayHabits.length > 0) {
         let label: string
         if (i === 0) label = 'Hoy'
         else if (i === 1) label = 'Mañana'
         else label = format(date, "EEEE d 'de' MMMM", { locale: es })
 
-        groups.push({ date, label, tasks: dayTasks, events: dayEvents })
+        groups.push({ date, label, tasks: dayTasks, events: dayEvents, habits: dayHabits })
       }
     }
 
     return groups
-  }, [visibleTasks, calendarEvents, upcomingDays])
+  }, [visibleTasks, calendarEvents, habits, upcomingDays])
 
   // Bulk selection
   const { isSelectMode, selectedIds, enter, exit, toggle, selectAll, clearAll, allSelected } =
@@ -137,6 +147,9 @@ export function UpcomingView() {
         <CalendarView
           calendarMode={opts.calendarMode}
           onAddTask={handleAddTask}
+          showFutureRecurrences={opts.showFutureRecurrences}
+          showCompleted={opts.showCompleted}
+          showHabits={opts.showHabits ?? true}
         />
       )
     }
@@ -177,7 +190,7 @@ export function UpcomingView() {
 
     return (
       <div className="space-y-6">
-        {groupedDays.map(({ date, label, tasks: dayTasks, events: dayEvents }) => (
+        {groupedDays.map(({ date, label, tasks: dayTasks, events: dayEvents, habits: dayHabits }) => (
           <div key={date.toISOString()}>
             <div className="mb-2 flex items-center justify-between group">
               <h2
@@ -193,6 +206,11 @@ export function UpcomingView() {
                 {dayEvents.length > 0 && (
                   <span className="ml-1 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>
                     · {dayEvents.length} {dayEvents.length === 1 ? 'evento' : 'eventos'}
+                  </span>
+                )}
+                {dayHabits.length > 0 && (
+                  <span className="ml-1 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>
+                    · {dayHabits.length} {dayHabits.length === 1 ? 'hábito' : 'hábitos'}
                   </span>
                 )}
               </h2>
@@ -223,6 +241,17 @@ export function UpcomingView() {
               ))}
               {dayEvents.map((event) => (
                 <CalendarEventItem key={event.id} event={event} />
+              ))}
+              {dayHabits.map((habit) => (
+                <HabitItem
+                  key={habit.id}
+                  habit={habit}
+                  completions={habitCompletions}
+                  schedules={habitSchedules}
+                  date={date}
+                  onToggle={(habitId, d) => toggleHabitCompletion.mutate({ habitId, date: d })}
+                  isPending={toggleHabitCompletion.isPending}
+                />
               ))}
             </div>
           </div>
@@ -260,6 +289,7 @@ export function UpcomingView() {
             viewId={VIEW_ID}
             showUpcomingDays
             availableCalendarModes={isMobile ? ['day', 'month'] : ['week', '4days', 'month']}
+            showHabitsToggle
           />
         </div>
       </div>

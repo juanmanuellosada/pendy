@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   Inbox,
   GripVertical,
+  Repeat,
 } from 'lucide-react'
 import { useState, useRef, useCallback } from 'react'
 import {
@@ -37,6 +38,7 @@ import { useUIStore } from '@/stores/uiStore'
 import { useAppStore } from '@/stores/appStore'
 import { useCalendarIntegrations } from '@/hooks/useCalendarIntegrations'
 import { useTodayTasks, useTaskCountsByProject } from '@/hooks/useTasks'
+import { useTodayHabits, useHabitCompletions } from '@/hooks/useHabits'
 import { useLabels } from '@/hooks/useLabels'
 import { cn } from '@/lib/utils'
 import type { Project } from '@/lib/types'
@@ -236,7 +238,7 @@ export function Sidebar() {
   const navigate = useNavigate()
   const { user, profile, signOut } = useAuth()
   const { data: projects = [] } = useProjects()
-  const { setProjectEditorOpen, setNewProjectParentId } = useUIStore()
+  const { setProjectEditorOpen, setNewProjectParentId, getViewOptions } = useUIStore()
   const { sidebarCollapsed, setSidebarOpen, setQuickAddOpen, setEventEditorOpen } = useAppStore()
   const { isDark, setTheme } = useTheme()
   const { data: integrations = [] } = useCalendarIntegrations()
@@ -246,7 +248,15 @@ export function Sidebar() {
 
   const { data: todayTasks = [] } = useTodayTasks()
   const { data: projectCounts = {} } = useTaskCountsByProject()
-  const todayCount = todayTasks.filter((t) => !t.is_completed).length
+  const { data: todayHabits = [] } = useTodayHabits()
+  const todayDateKey = new Date().toISOString().slice(0, 10)
+  const { data: habitCompletions = [] } = useHabitCompletions(todayDateKey, todayDateKey)
+  const todayViewOpts = getViewOptions('today')
+  const showHabitsInToday = todayViewOpts.showHabits ?? true
+  const pendingHabitsCount = showHabitsInToday
+    ? todayHabits.filter((h) => !habitCompletions.some((c) => c.habit_id === h.id && c.completed_date === todayDateKey)).length
+    : 0
+  const todayCount = todayTasks.filter((t) => !t.is_completed).length + pendingHabitsCount
 
   const { data: labels = [] } = useLabels()
   const favoriteLabels = labels.filter((l) => l.is_favorite)
@@ -352,6 +362,7 @@ export function Sidebar() {
     { icon: Inbox, label: 'Bandeja de entrada', path: '/app/inbox', shortcut: 'I' },
     { icon: CalendarDays, label: 'Hoy', path: '/app/today', shortcut: 'H' },
     { icon: Calendar, label: 'Próximo', path: '/app/upcoming', shortcut: 'P' },
+    { icon: Repeat, label: 'Hábitos', path: '/app/habits', shortcut: 'A' },
     { icon: CheckCircle2, label: 'Completado', path: '/app/completed', shortcut: 'C' },
   ]
 
@@ -370,7 +381,7 @@ export function Sidebar() {
   if (sidebarCollapsed) {
     return (
       <div className="flex h-full flex-col items-center py-4">
-        <img src="/pendy-logo.png" alt="Pendy" className="h-8 w-8 rounded-lg" />
+        <img src={`${import.meta.env.BASE_URL}pendy-logo.png`} alt="Pendy" className="h-8 w-8 rounded-lg" />
         <div className="mt-4 flex flex-col gap-1">
           <button
             onClick={() => setQuickAddOpen(true)}
@@ -428,7 +439,7 @@ export function Sidebar() {
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-4">
-        <img src="/pendy-logo.png" alt="Pendy" className="h-8 w-8 rounded-lg" />
+        <img src={`${import.meta.env.BASE_URL}pendy-logo.png`} alt="Pendy" className="h-8 w-8 rounded-lg" />
         <div className="flex-1 min-w-0">
           <p className="truncate text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
             {profile?.full_name || 'Usuario'}

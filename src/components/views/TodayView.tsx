@@ -1,11 +1,13 @@
-import { PartyPopper, CalendarDays, ListChecks } from 'lucide-react'
+import { PartyPopper, CalendarDays, ListChecks, Repeat } from 'lucide-react'
 import { useTodayTasks, useDeleteTask, useUpdateTask } from '@/hooks/useTasks'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { useTodayCalendarEvents } from '@/hooks/useCalendarEvents'
+import { useTodayHabits, useHabitCompletions, useHabitSchedules, useToggleHabitCompletion } from '@/hooks/useHabits'
 import { TaskEditor } from '@/components/tasks/TaskEditor'
 import { TaskItem } from '@/components/tasks/TaskItem'
 import { TaskGroup } from '@/components/tasks/TaskGroup'
 import { CalendarEventItem } from '@/components/common/CalendarEventItem'
+import { HabitItem } from '@/components/habits/HabitItem'
 import { BulkActionBar } from '@/components/common/BulkActionBar'
 import { TodayCalendarView } from './TodayCalendarView'
 import { ViewOptionsBar } from './ViewOptionsBar'
@@ -15,6 +17,7 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { isOverdue } from '@/lib/utils'
 import { useUIStore } from '@/stores/uiStore'
+import { useAppStore } from '@/stores/appStore'
 import { applyViewFilters, applyViewSort, groupTasks } from '@/lib/viewUtils'
 import type { Task } from '@/lib/types'
 
@@ -24,9 +27,15 @@ export function TodayView() {
   const { data: tasks = [], isLoading } = useTodayTasks()
   const { data: labelsMap } = useAllTaskLabelsMap()
   const { data: calendarEvents = [] } = useTodayCalendarEvents()
+  const { data: todayHabits = [] } = useTodayHabits()
+  const todayDateKey = format(new Date(), 'yyyy-MM-dd')
+  const { data: habitCompletions = [] } = useHabitCompletions(todayDateKey, todayDateKey)
+  const { data: habitSchedules = [] } = useHabitSchedules(todayDateKey, todayDateKey)
+  const toggleHabitCompletion = useToggleHabitCompletion()
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const { getViewOptions, showConfirmDialog } = useUIStore()
+  const { setSelectedHabit } = useAppStore()
   const opts = getViewOptions(VIEW_ID)
   const deleteTask = useDeleteTask()
   const updateTask = useUpdateTask()
@@ -138,12 +147,12 @@ export function TodayView() {
               Seleccionar
             </button>
           )}
-          <ViewOptionsBar viewId={VIEW_ID} availableStyles={['list', 'calendar']} hideDateFilter hideCalendarMode />
+          <ViewOptionsBar viewId={VIEW_ID} availableStyles={['list', 'calendar']} hideDateFilter hideCalendarMode showHabitsToggle />
         </div>
       </div>
 
       {opts.viewStyle === 'calendar' ? (
-        <TodayCalendarView tasks={visibleTasks} labelsMap={labelsMap} calendarEvents={calendarEvents} />
+        <TodayCalendarView tasks={visibleTasks} labelsMap={labelsMap} calendarEvents={calendarEvents} showCompleted={opts.showCompleted} showHabits={opts.showHabits ?? true} />
       ) : opts.groupBy !== 'none' ? (
         <div>
           {visibleTasks.length === 0 ? (
@@ -209,6 +218,37 @@ export function TodayView() {
               </div>
             )}
           </div>
+
+          {/* Hábitos de hoy */}
+          {(opts.showHabits ?? true) && todayHabits.length > 0 && (
+            <div className="mt-6">
+              <div className="mb-2 flex items-center gap-2">
+                <Repeat size={14} style={{ color: 'var(--text-muted)' }} />
+                <h2 className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                  Hábitos
+                  <span className="ml-2 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>
+                    {todayHabits.filter((h) =>
+                      habitCompletions.some((c) => c.habit_id === h.id && c.completed_date === todayDate)
+                    ).length}/{todayHabits.length}
+                  </span>
+                </h2>
+              </div>
+              <div className="overflow-hidden rounded-lg border" style={{ borderColor: 'var(--border-secondary)' }}>
+                {todayHabits.map((habit) => (
+                  <HabitItem
+                    key={habit.id}
+                    habit={habit}
+                    completions={habitCompletions}
+                    schedules={habitSchedules}
+                    date={new Date()}
+                    onToggle={(habitId, date) => toggleHabitCompletion.mutate({ habitId, date })}
+                    onEdit={() => setSelectedHabit(habit.id, todayDate)}
+                    isPending={toggleHabitCompletion.isPending}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Calendar events for today */}
           {calendarEvents.length > 0 && (

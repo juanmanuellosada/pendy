@@ -336,13 +336,17 @@ export async function fetchGoogleEvents(
 
   const data = await response.json()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let events = (data.items ?? []).map((item: any) =>
+  let events: CalendarEvent[] = (data.items ?? []).map((item: any) =>
     normalizeGoogleEvent(item, { calendarId, ...calendarMeta }),
   )
 
   // Enriquecer instancias recurrentes con texto de recurrencia del evento master
-  const uniqueMasterIds = [
-    ...new Set(events.filter((e) => e.recurringEventId).map((e) => e.recurringEventId!)),
+  const uniqueMasterIds: string[] = [
+    ...new Set(
+      events
+        .filter((e) => e.recurringEventId)
+        .map((e) => e.recurringEventId as string),
+    ),
   ]
 
   if (uniqueMasterIds.length > 0) {

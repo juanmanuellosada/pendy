@@ -3,21 +3,25 @@ import { createPortal } from 'react-dom'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { toast } from 'sonner'
-import { Calendar, CheckSquare, X, AlertCircle } from 'lucide-react'
+import { Calendar, CheckSquare, X, AlertCircle, Pencil } from 'lucide-react'
 import { useCompleteTask, useUpdateTask } from '@/hooks/useTasks'
 import { useProjects } from '@/hooks/useProjects'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { useAppStore } from '@/stores/appStore'
 import { useCalendarEventMutations } from '@/hooks/useCalendarEvents'
+import { useHabits, useHabitCompletions, useToggleHabitCompletion, useHabitSchedules, useSetHabitDefaultTime, useUpsertHabitSchedule } from '@/hooks/useHabits'
 import { TaskCheckbox } from '@/components/tasks/TaskCheckbox'
+import { HabitCheckbox } from '@/components/habits/HabitCheckbox'
+import { useHabitTooltip } from '@/components/habits/HabitTooltip'
 import { TaskEditor } from '@/components/tasks/TaskEditor'
 import { PRIORITY_COLORS } from '@/lib/constants'
 import { cn, stripHtmlTags, stripLabelTokensFromText } from '@/lib/utils'
 import { TaskTooltip } from '@/components/common/TaskTooltip'
 import { CalendarEventEditor } from '@/components/common/CalendarEventEditor'
-import type { Task, Label, CalendarEvent } from '@/lib/types'
+import type { Task, Label, CalendarEvent, Habit, HabitCompletion } from '@/lib/types'
 import { CalendarEventTooltip, getEventColor, getCalendarName } from '@/components/common/CalendarEventTooltip'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { habitAppearsOnDate, getScheduledTimeForDate, timeStrToHour, hourToTimeStr, isCompletedOnDate } from '@/lib/habitUtils'
 
 const HOUR_HEIGHT = 64 // px per hour (desktop)
 
@@ -33,6 +37,8 @@ interface TodayCalendarViewProps {
   tasks: Task[]
   labelsMap?: Map<string, Label[]>
   calendarEvents?: CalendarEvent[]
+  showCompleted?: boolean
+  showHabits?: boolean
 }
 
 /** Convert a pixel offset (relative to grid top) to fractional hours */
@@ -45,13 +51,15 @@ function snapMinutes(totalMinutes: number): number {
   return Math.round(totalMinutes / SNAP_MINUTES) * SNAP_MINUTES
 }
 
-export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: TodayCalendarViewProps) {
+export function TodayCalendarView({ tasks, calendarEvents = [], showCompleted = true, showHabits = true }: TodayCalendarViewProps) {
   const isMobile = useIsMobile()
   const hourHeight = isMobile ? 40 : HOUR_HEIGHT
   const containerRef = useRef<HTMLDivElement>(null)
   const gridRef = useRef<HTMLDivElement>(null)
   const nowLineRef = useRef<HTMLDivElement>(null)
   const [now, setNow] = useState(new Date())
+
+  const { setSelectedHabit } = useAppStore()
 
   // Editor state
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null)
@@ -61,6 +69,41 @@ export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: Tod
   // Drag-to-create state
   const [createDrag, setCreateDrag] = useState<{ startHour: number; currentHour: number; startY: number } | null>(null)
   const [typePicker, setTypePicker] = useState<{ startHour: number; durationMinutes: number; screenX: number; screenY: number } | null>(null)
+
+  // Habit data
+  const today = new Date()
+  const todayDateStr = format(today, 'yyyy-MM-dd')
+  const { data: allHabits = [] } = useHabits()
+  const { data: habitCompletions = [] } = useHabitCompletions(todayDateStr, todayDateStr)
+  const { data: habitSchedules = [] } = useHabitSchedules(todayDateStr, todayDateStr)
+  const toggleHabitCompletion = useToggleHabitCompletion()
+  const setHabitDefaultTime = useSetHabitDefaultTime()
+  const upsertHabitSchedule = useUpsertHabitSchedule()
+
+  const todayHabits = useMemo(
+    () => {
+      if (!showHabits) return []
+      return allHabits.filter((h) => {
+        if (!habitAppearsOnDate(h, today)) return false
+        if (!showCompleted && isCompletedOnDate(habitCompletions, h.id, today)) return false
+        return true
+      })
+    },
+    [allHabits, todayDateStr, showCompleted, showHabits, habitCompletions],
+  )
+  const unscheduledHabits = useMemo(
+    () => todayHabits.filter((h) => getScheduledTimeForDate(h, habitSchedules, today) === null),
+    [todayHabits, habitSchedules],
+  )
+  const scheduledHabits = useMemo(
+    () => todayHabits.filter((h) => getScheduledTimeForDate(h, habitSchedules, today) !== null),
+    [todayHabits, habitSchedules],
+  )
+
+  // Habit drag state (from all-day zone to timeline)
+  const [habitDrag, setHabitDrag] = useState<{ habit: Habit; ghostHour: number | null } | null>(null)
+  const habitDragRef = useRef(habitDrag)
+  useEffect(() => { habitDragRef.current = habitDrag }, [habitDrag])
 
   // Update current time every minute
   useEffect(() => {
@@ -75,7 +118,44 @@ export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: Tod
     }
   }, [])
 
-  const todayDateStr = format(new Date(), 'yyyy-MM-dd')
+  // Habit drag from all-day chip to timeline
+  const startHabitDrag = useCallback((habit: Habit, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setHabitDrag({ habit, ghostHour: null })
+
+    const onMove = (ev: MouseEvent) => {
+      if (!gridRef.current) return
+      const rect = gridRef.current.getBoundingClientRect()
+      const scrollTop = containerRef.current?.scrollTop ?? 0
+      const y = ev.clientY - rect.top + scrollTop
+      if (y < 0) {
+        setHabitDrag((p) => p ? { ...p, ghostHour: null } : null)
+        return
+      }
+      const rawHour = pxToHours(y, hourHeight)
+      const snappedMin = snapMinutes(Math.round(rawHour * 60))
+      const snapped = Math.max(START_HOUR, snappedMin / 60)
+      setHabitDrag((p) => p ? { ...p, ghostHour: snapped } : null)
+    }
+
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      const state = habitDragRef.current
+      if (!state?.ghostHour) { setHabitDrag(null); return }
+      const time = hourToTimeStr(state.ghostHour)
+      if (!state.habit.scheduled_time) {
+        setHabitDefaultTime.mutate({ habitId: state.habit.id, time })
+      } else {
+        upsertHabitSchedule.mutate({ habitId: state.habit.id, date: todayDateStr, time })
+      }
+      setHabitDrag(null)
+    }
+
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }, [hourHeight, todayDateStr, setHabitDefaultTime, upsertHabitSchedule])
 
   // Split tasks into three buckets:
   // - overdueTasks: due_date < today (regardless of has_time)
@@ -99,7 +179,7 @@ export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: Tod
 
   const allDayEvents = calendarEvents.filter((e) => e.isAllDay)
   const timedEvents = calendarEvents.filter((e) => !e.isAllDay)
-  const hasAllDaySection = allDayTasks.length > 0 || allDayEvents.length > 0
+  const hasAllDaySection = allDayTasks.length > 0 || allDayEvents.length > 0 || unscheduledHabits.length > 0
 
   // Current time position
   const nowHour = now.getHours() + now.getMinutes() / 60
@@ -198,6 +278,18 @@ export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: Tod
                     onEdit={() => setEditingEvent(event)}
                   />
                 ))}
+                {/* Habit chips for unscheduled habits */}
+                {unscheduledHabits.map((habit) => (
+                  <HabitChip
+                    key={habit.id}
+                    habit={habit}
+                    completions={habitCompletions}
+                    date={today}
+                    onToggle={() => toggleHabitCompletion.mutate({ habitId: habit.id, date: today })}
+                    onDragStart={(e) => startHabitDrag(habit, e)}
+                    onEdit={() => setSelectedHabit(habit.id, todayDateStr)}
+                  />
+                ))}
               </div>
             </div>
           </div>
@@ -280,7 +372,7 @@ export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: Tod
             {/* Timed tasks */}
             {timedTasks.map((task) => (
               <TaskTooltip key={task.id} task={task}>
-                <TimedTaskBlock task={task} gridRef={gridRef} />
+                <TimedTaskBlock task={task} />
               </TaskTooltip>
             ))}
 
@@ -292,6 +384,42 @@ export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: Tod
                 onEdit={() => setEditingEvent(event)}
               />
             ))}
+
+            {/* Scheduled habit blocks */}
+            {scheduledHabits.map((habit) => {
+              const scheduledTime = getScheduledTimeForDate(habit, habitSchedules, today)!
+              return (
+                <TimedHabitBlock
+                  key={habit.id}
+                  habit={habit}
+                  scheduledTime={scheduledTime}
+                  date={today}
+                  completions={habitCompletions}
+                  hourHeight={hourHeight}
+                  onReschedule={(time) => upsertHabitSchedule.mutate({ habitId: habit.id, date: todayDateStr, time })}
+                  onToggle={() => toggleHabitCompletion.mutate({ habitId: habit.id, date: today })}
+                  onEdit={() => setSelectedHabit(habit.id, todayDateStr)}
+                />
+              )
+            })}
+
+            {/* Ghost preview while dragging a habit chip */}
+            {habitDrag?.ghostHour !== null && habitDrag?.ghostHour !== undefined && (
+              <div
+                className="pointer-events-none absolute left-1 right-1 z-20 rounded-md border-l-2"
+                style={{
+                  top: (habitDrag.ghostHour - START_HOUR) * hourHeight,
+                  height: (habitDrag.habit.duration_minutes / 60) * hourHeight,
+                  backgroundColor: `${habitDrag.habit.color}25`,
+                  borderLeftColor: habitDrag.habit.color,
+                  opacity: 0.8,
+                }}
+              >
+                <p className="truncate px-2 py-0.5 text-xs font-medium" style={{ color: habitDrag.habit.color }}>
+                  {habitDrag.habit.icon && `${habitDrag.habit.icon} `}{habitDrag.habit.name}
+                </p>
+              </div>
+            )}
           </div>
           </div>
         </div>
@@ -459,12 +587,10 @@ function CreationTypePicker({
 
 function TimedTaskBlock({
   task,
-  gridRef,
   onMouseEnter,
   onMouseLeave,
 }: {
   task: Task
-  gridRef: React.RefObject<HTMLDivElement | null>
   onMouseEnter?: (e: React.MouseEvent) => void
   onMouseLeave?: (e: React.MouseEvent) => void
 }) {
@@ -1039,6 +1165,267 @@ function OverdueTaskCard({ task }: { task: Task }) {
         </span>
       </div>
     </div>
+  )
+}
+
+/* ── Habit chip (unscheduled habit in all-day zone) ─────────── */
+
+function HabitChip({
+  habit,
+  completions,
+  date,
+  onToggle,
+  onDragStart,
+  onEdit,
+}: {
+  habit: Habit
+  completions: HabitCompletion[]
+  date: Date
+  onToggle: () => void
+  onDragStart: (e: React.MouseEvent) => void
+  onEdit?: () => void
+}) {
+  const completed = isCompletedOnDate(completions, habit.id, date)
+  const { tooltipHandlers, tooltipPortal } = useHabitTooltip({ habit, completions, date, scheduledTime: null })
+
+  return (
+    <>
+    <div
+      className="group mb-1 flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium select-none"
+      style={{
+        backgroundColor: `${habit.color}15`,
+        borderLeft: `2px solid ${habit.color}`,
+        opacity: completed ? 0.6 : 1,
+        cursor: 'grab',
+      }}
+      onMouseDown={onDragStart}
+      {...tooltipHandlers}
+      title="Arrastrá al horario para programar"
+    >
+      <HabitCheckbox
+        completed={completed}
+        color={habit.color}
+        onChange={onToggle}
+        size="sm"
+      />
+      {habit.icon && <span className="shrink-0">{habit.icon}</span>}
+      <span className="truncate" style={{ color: 'var(--text-primary)', textDecoration: completed ? 'line-through' : 'none' }}>
+        {habit.name}
+      </span>
+      <span className="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ backgroundColor: `${habit.color}22`, color: habit.color }}>
+        Hábito
+      </span>
+      <span className="ml-auto shrink-0 text-[10px]" style={{ color: `${habit.color}BB` }}>
+        {habit.duration_minutes} min
+      </span>
+      {onEdit && (
+        <button
+          className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity rounded p-0.5"
+          style={{ color: 'var(--text-muted)', cursor: 'pointer' }}
+          onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onEdit() }}
+          title="Editar hábito"
+        >
+          <Pencil size={11} />
+        </button>
+      )}
+    </div>
+    {tooltipPortal}
+    </>
+  )
+}
+
+/* ── Timed habit block (scheduled habit on timeline) ────────── */
+
+function TimedHabitBlock({
+  habit,
+  scheduledTime,
+  date,
+  completions,
+  hourHeight,
+  onReschedule,
+  onToggle,
+  onEdit,
+}: {
+  habit: Habit
+  scheduledTime: string
+  date: Date
+  completions: HabitCompletion[]
+  hourHeight: number
+  onReschedule: (time: string) => void
+  onToggle: () => void
+  onEdit?: () => void
+}) {
+  const completed = isCompletedOnDate(completions, habit.id, date)
+
+  const serverHour = timeStrToHour(scheduledTime)
+  const [localHour, setLocalHour] = useState<number | null>(null)
+  const [localDuration, setLocalDuration] = useState<number | null>(null)
+  const [dragOffset, setDragOffset] = useState(0)
+  const [resizeDelta, setResizeDelta] = useState(0)
+  const [interacting, setInteracting] = useState(false)
+  const didMove = useRef(false)
+
+  const { tooltipHandlers, tooltipPortal } = useHabitTooltip({
+    habit,
+    completions,
+    date,
+    scheduledTime,
+    disabled: interacting,
+  })
+
+  const baseHour = localHour ?? serverHour
+  const baseDuration = localDuration ?? habit.duration_minutes
+
+  // Clear local hour when server data matches
+  useEffect(() => {
+    if (localHour !== null && Math.abs(serverHour - localHour) < 0.01) setLocalHour(null)
+  }, [scheduledTime, serverHour, localHour])
+
+  const currentTop = (baseHour - START_HOUR) * hourHeight + dragOffset
+  const currentHeight = Math.max(
+    (baseDuration / 60) * hourHeight + resizeDelta,
+    (MIN_DURATION / 60) * hourHeight,
+  )
+
+  const displayHours = pxToHours(currentTop, hourHeight)
+  const displayH = Math.floor(displayHours)
+  const displayM = Math.round((displayHours - displayH) * 60)
+  const durMin = Math.max(MIN_DURATION, Math.round((currentHeight / hourHeight) * 60))
+  const timeStart = `${String(displayH).padStart(2, '0')}:${String(displayM).padStart(2, '0')}`
+  const endHours = displayHours + durMin / 60
+  const timeEnd = `${String(Math.floor(endHours) % 24).padStart(2, '0')}:${String(Math.round((endHours % 1) * 60) % 60).padStart(2, '0')}`
+  const showTimeSeparate = currentHeight >= 42
+
+  // Drag to move
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('[data-resize-handle]')) return
+    if ((e.target as HTMLElement).closest('button')) return
+    e.preventDefault()
+    e.stopPropagation()
+    didMove.current = false
+    setInteracting(true)
+    const startY = e.clientY
+
+    const onMove = (ev: MouseEvent) => {
+      const delta = ev.clientY - startY
+      if (Math.abs(delta) > 3) didMove.current = true
+      setDragOffset(delta)
+    }
+
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      setInteracting(false)
+
+      if (!didMove.current) {
+        onEdit?.()
+        return
+      }
+
+      setDragOffset((prev) => {
+        if (Math.abs(prev) < 4) return 0
+        const newHours = pxToHours((baseHour - START_HOUR) * hourHeight + prev, hourHeight)
+        const totalMin = snapMinutes(Math.round(newHours * 60))
+        const clampedMin = Math.max(0, Math.min(totalMin, 24 * 60 - baseDuration))
+        const snappedHour = clampedMin / 60
+        setLocalHour(snappedHour)
+        onReschedule(hourToTimeStr(snappedHour))
+        return 0
+      })
+    }
+
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }, [baseHour, baseDuration, hourHeight, onReschedule, onEdit])
+
+  // Resize to change duration (global update via parent)
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setInteracting(true)
+    const startY = e.clientY
+
+    const onMove = (ev: MouseEvent) => setResizeDelta(ev.clientY - startY)
+
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      setInteracting(false)
+      setResizeDelta((prev) => {
+        if (Math.abs(prev) < 4) return 0
+        const newPx = Math.max((MIN_DURATION / 60) * hourHeight, (baseDuration / 60) * hourHeight + prev)
+        const snapped = Math.max(MIN_DURATION, snapMinutes(Math.round((newPx / hourHeight) * 60)))
+        setLocalDuration(snapped)
+        // Duration is global — caller should update habit.duration_minutes via useUpdateHabit
+        // Here we just keep local state; parent handles persistence via onReschedule pattern
+        return 0
+      })
+    }
+
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }, [baseDuration, hourHeight])
+
+  return (
+    <>
+    <div
+      className={cn(
+        'group absolute left-1 right-2 z-10 select-none overflow-hidden rounded-md border-l-3 px-2 py-1',
+        completed && 'opacity-50',
+        interacting ? 'shadow-lg z-30' : 'cursor-pointer',
+      )}
+      style={{
+        top: currentTop,
+        height: currentHeight,
+        borderLeftColor: habit.color,
+        backgroundColor: `${habit.color}18`,
+        transition: interacting ? 'none' : 'top 0.15s ease, height 0.15s ease',
+      }}
+      onMouseDown={handleDragStart}
+      {...tooltipHandlers}
+    >
+      <div className="flex items-start gap-1.5">
+        <div className="mt-0.5 shrink-0">
+          <HabitCheckbox completed={completed} color={habit.color} onChange={onToggle} size="sm" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1">
+            {habit.icon && <span className="shrink-0 text-xs">{habit.icon}</span>}
+            <p
+              className={cn('truncate text-xs font-medium flex-1 min-w-0', completed && 'line-through')}
+              style={{ color: 'var(--text-primary)' }}
+            >
+              {habit.name}
+            </p>
+            <span className="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ backgroundColor: `${habit.color}22`, color: habit.color }}>
+              Hábito
+            </span>
+            {!showTimeSeparate && (
+              <span className="shrink-0 text-[10px] whitespace-nowrap" style={{ color: `${habit.color}BB` }}>
+                {timeStart}
+              </span>
+            )}
+          </div>
+          {showTimeSeparate && (
+            <p className="text-[10px]" style={{ color: `${habit.color}BB` }}>
+              {timeStart}–{timeEnd}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Resize handle */}
+      <div
+        data-resize-handle
+        className="absolute bottom-0 left-0 right-0 flex cursor-s-resize items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
+        style={{ height: 8 }}
+        onMouseDown={handleResizeStart}
+      >
+        <div className="h-1 w-8 rounded-full" style={{ backgroundColor: habit.color }} />
+      </div>
+    </div>
+    {tooltipPortal}
+    </>
   )
 }
 

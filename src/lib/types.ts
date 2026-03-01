@@ -200,6 +200,41 @@ export interface ActivityLog {
   created_at: string
 }
 
+export interface Habit {
+  id: string
+  user_id: string
+  name: string
+  color: string
+  icon: string | null
+  duration_minutes: number    // duración en minutos, default 30
+  scheduled_time: string | null  // hora global por defecto 'HH:mm:ss', null = sin hora
+  recurrence_type: 'daily' | 'times_per_week' | 'specific_days'
+  times_per_week: number | null
+  specific_days: number[]     // 0=Dom, 1=Lun ... 6=Sab
+  is_active: boolean
+  is_archived: boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface HabitSchedule {
+  id: string
+  user_id: string
+  habit_id: string
+  scheduled_date: string  // 'yyyy-MM-dd'
+  scheduled_time: string  // 'HH:mm:ss'
+  created_at: string
+}
+
+export interface HabitCompletion {
+  id: string
+  user_id: string
+  habit_id: string
+  completed_date: string  // 'yyyy-MM-dd'
+  created_at: string
+}
+
 export interface CalendarIntegration {
   id: string
   user_id: string

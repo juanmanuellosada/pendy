@@ -10,7 +10,7 @@ import { BulkActionBar } from '@/components/common/BulkActionBar'
 
 export default function LabelsPage() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  useAuth()
   const { data: labels = [] } = useLabels()
   const createLabel = useCreateLabel()
   const updateLabel = useUpdateLabel()

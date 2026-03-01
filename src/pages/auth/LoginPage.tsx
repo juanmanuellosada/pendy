@@ -93,7 +93,7 @@ export default function LoginPage() {
           Volver
         </Link>
         <div className="flex items-center gap-2.5">
-          <img src="/pendy-logo.png" alt="Pendy" className="w-7 h-7 rounded-lg" />
+          <img src={`${import.meta.env.BASE_URL}pendy-logo.png`} alt="Pendy" className="w-7 h-7 rounded-lg" />
           <span
             className="text-white font-bold text-base tracking-tight"
             style={{ fontFamily: '"Bricolage Grotesque", system-ui' }}

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Plus, MoreHorizontal, Pencil, Trash2, ChevronDown } from 'lucide-react'
-import { useProjectSections, useDeleteSection, useUpdateSection } from '@/hooks/useSections'
+import { Plus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { useProjectSections, useDeleteSection } from '@/hooks/useSections'
 import { useUpdateTask } from '@/hooks/useTasks'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { useUIStore } from '@/stores/uiStore'
@@ -20,7 +20,6 @@ export function BoardView({ projectId, tasks, onAddTask, onEditSection }: BoardV
   const { data: labelsMap } = useAllTaskLabelsMap()
   const updateTask = useUpdateTask()
   const deleteSection = useDeleteSection()
-  const updateSection = useUpdateSection()
   const { showConfirmDialog } = useUIStore()
 
   const columns = useMemo(() => {

@@ -4,7 +4,7 @@ import { Home } from 'lucide-react'
 export default function NotFoundPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-      <img src="/pendy-logo.png" alt="Pendy" className="h-20 w-20 rounded-xl" />
+      <img src={`${import.meta.env.BASE_URL}pendy-logo.png`} alt="Pendy" className="h-20 w-20 rounded-xl" />
       <h1 className="mt-6 text-6xl font-bold" style={{ color: '#283B56' }}>404</h1>
       <p className="mt-2 text-lg" style={{ color: 'var(--text-secondary)' }}>
         Página no encontrada

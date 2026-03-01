@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { MobileNav } from './MobileNav'
 import { TaskDetail } from '@/components/tasks/TaskDetail'
+import { HabitDetail } from '@/components/habits/HabitDetail'
 import { CalendarEventEditor } from '@/components/common/CalendarEventEditor'
 import { useAppStore } from '@/stores/appStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -13,7 +14,7 @@ import { cn } from '@/lib/utils'
 import { useEffect } from 'react'
 
 export function AppLayout() {
-  const { sidebarOpen, sidebarCollapsed, taskDetailOpen, setQuickAddOpen, eventEditorOpen, setEventEditorOpen, selectedTaskId } = useAppStore()
+  const { sidebarOpen, sidebarCollapsed, taskDetailOpen, habitDetailOpen, setQuickAddOpen, eventEditorOpen, setEventEditorOpen, selectedTaskId } = useAppStore()
   const { getViewOptions } = useUIStore()
   const { data: integrations = [] } = useCalendarIntegrations()
   usePushNotifications() // registers SW and syncs subscription on login
@@ -74,6 +75,11 @@ export function AppLayout() {
       if (!e.ctrlKey && !e.metaKey && key === 'c') {
         e.preventDefault()
         navigate('/app/completed')
+        return
+      }
+      if (!e.ctrlKey && !e.metaKey && key === 'a') {
+        e.preventDefault()
+        navigate('/app/habits')
       }
     }
 
@@ -144,6 +150,9 @@ export function AppLayout() {
 
       {/* Task detail right panel (hidden on fullscreen task page and on mobile) */}
       {taskDetailOpen && !isTaskPage && !isMobile && <TaskDetail />}
+
+      {/* Habit detail right panel */}
+      {habitDetailOpen && !isMobile && <HabitDetail />}
 
       {/* Global calendar event editor */}
       {eventEditorOpen && (

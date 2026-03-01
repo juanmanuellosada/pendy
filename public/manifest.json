@@ -2,8 +2,8 @@
   "name": "Pendy - Gestor de Tareas",
   "short_name": "Pendy",
   "description": "Gestor de tareas personal con recordatorios, proyectos y etiquetas.",
-  "start_url": "/app/today",
-  "scope": "/",
+  "start_url": "/pendy/app/today",
+  "scope": "/pendy/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#1A1F2B",
@@ -12,13 +12,13 @@
   "categories": ["productivity", "utilities"],
   "icons": [
     {
-      "src": "/pendy-logo.png",
+      "src": "/pendy/pendy-logo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/pendy-logo.png",
+      "src": "/pendy/pendy-logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
@@ -30,15 +30,15 @@
       "name": "Hoy",
       "short_name": "Hoy",
       "description": "Ver tareas de hoy",
-      "url": "/app/today",
-      "icons": [{ "src": "/pendy-logo.png", "sizes": "96x96" }]
+      "url": "/pendy/app/today",
+      "icons": [{ "src": "/pendy/pendy-logo.png", "sizes": "96x96" }]
     },
     {
       "name": "Bandeja de entrada",
       "short_name": "Inbox",
       "description": "Ver bandeja de entrada",
-      "url": "/app/inbox",
-      "icons": [{ "src": "/pendy-logo.png", "sizes": "96x96" }]
+      "url": "/pendy/app/inbox",
+      "icons": [{ "src": "/pendy/pendy-logo.png", "sizes": "96x96" }]
     }
   ]
 }

@@ -236,6 +236,7 @@ export function InboxView() {
         onClose={handleCloseEditor}
         task={editingTask}
         defaultProjectId={inboxProject?.id}
+        defaultSectionId={defaultSectionId}
       />
 
       <SectionEditor

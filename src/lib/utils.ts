@@ -64,7 +64,7 @@ export function stripHtmlTags(html: string): string {
 
 export function stripLabelTokensFromText(text: string): string {
   if (!text) return ''
-  const withoutTokens = text.replace(/(^|[\s\u00A0])#([^\s#]+)/g, (match, lead) => {
+  const withoutTokens = text.replace(/(^|[\s\u00A0])#([^\s#]+)/g, (_match, lead) => {
     return lead ? lead : ''
   })
   return withoutTokens.replace(/\s{2,}/g, ' ')

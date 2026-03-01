@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   CheckCircle2, Zap, Calendar, Tag,
-  ArrowRight, Repeat, Bell, Heart
+  ArrowRight, Repeat, Bell, Heart, Flame
 } from 'lucide-react'
 
 const features = [
@@ -22,7 +22,14 @@ const features = [
     icon: Calendar,
     title: 'Vista de calendario',
     description:
-      'Integración con Google Calendar. Ve tus tareas y eventos en una sola vista semanal.',
+      'Integración con Google Calendar y Outlook. Ve tus tareas, hábitos y eventos en una sola vista.',
+  },
+  {
+    icon: Flame,
+    title: 'Hábitos y rutinas',
+    description:
+      'Construye rutinas con seguimiento de rachas, heatmap de actividad y vista en el calendario. Diarios, semanales o en días específicos.',
+    highlight: true,
   },
   {
     icon: Tag,
@@ -90,7 +97,7 @@ export default function LandingPage() {
         {/* Nav */}
         <nav className="relative z-10 flex items-center justify-between px-8 py-6">
           <div className="flex items-center gap-3">
-            <img src="/pendy-logo.png" alt="Pendy" className="w-8 h-8 rounded-lg" />
+            <img src={`${import.meta.env.BASE_URL}pendy-logo.png`} alt="Pendy" className="w-8 h-8 rounded-lg" />
             <span
               className="text-white font-bold text-xl tracking-tight"
               style={{ fontFamily: '"Bricolage Grotesque", system-ui, sans-serif' }}
@@ -165,7 +172,7 @@ export default function LandingPage() {
               }`}
               style={{ fontFamily: '"DM Sans", system-ui, sans-serif' }}
             >
-              Gestión de tareas pensada para la claridad. Proyectos, fechas, etiquetas y calendario — todo integrado.
+              Gestión de tareas y hábitos pensada para la claridad. Proyectos, calendario, rutinas y recordatorios — todo integrado.
             </p>
 
             {/* CTAs */}
@@ -229,7 +236,7 @@ export default function LandingPage() {
               className="text-base text-gray-500 dark:text-gray-400"
               style={{ fontFamily: '"DM Sans", system-ui' }}
             >
-              Proyectos, tareas, calendario y recordatorios — integrados y siempre al día.
+              Proyectos, tareas, hábitos, calendario y recordatorios — integrados y siempre al día.
             </p>
           </div>
 
@@ -418,22 +425,26 @@ export default function LandingPage() {
             {features.map((feature, index) => {
               const Icon = feature.icon
               const isInView = scrollY > 400
+              const isHighlight = (feature as { highlight?: boolean }).highlight
               return (
                 <div
                   key={index}
-                  className={`group p-8 border dark:border-gray-800 border-gray-100 hover:border-gray-200 dark:hover:border-gray-700 transition-all duration-500 hover:shadow-lg hover:-translate-y-1 ${
-                    isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-                  }`}
+                  className={`group p-8 border transition-all duration-500 hover:shadow-lg hover:-translate-y-1 ${
+                    isHighlight
+                      ? 'dark:border-orange-900/40 border-orange-100 hover:border-orange-200 dark:hover:border-orange-800/50'
+                      : 'dark:border-gray-800 border-gray-100 hover:border-gray-200 dark:hover:border-gray-700'
+                  } ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                   style={{
                     borderRadius: '16px',
                     transitionDelay: isInView ? `${index * 60}ms` : '0ms',
+                    backgroundColor: isHighlight ? 'rgba(249,115,22,0.03)' : undefined,
                   }}
                 >
                   <div
                     className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 transition-all duration-300 group-hover:scale-110"
-                    style={{ backgroundColor: 'rgba(40,59,86,0.07)' }}
+                    style={{ backgroundColor: isHighlight ? 'rgba(249,115,22,0.1)' : 'rgba(40,59,86,0.07)' }}
                   >
-                    <Icon className="w-5 h-5" style={{ color: '#283B56' }} />
+                    <Icon className="w-5 h-5" style={{ color: isHighlight ? '#F59E0B' : '#283B56' }} />
                   </div>
                   <h3
                     className="text-base font-bold text-gray-900 dark:text-white mb-2"
@@ -511,7 +522,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-center gap-3">
           <div className="flex items-center gap-2">
             <img
-              src="/pendy-logo.png"
+              src={`${import.meta.env.BASE_URL}pendy-logo.png`}
               alt="Pendy"
               className="w-6 h-6 rounded-md"
             />

@@ -17,7 +17,7 @@ export const pushService = {
   async registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
     if (!this.isSupported()) return null
     try {
-      return await navigator.serviceWorker.register('/sw.js')
+      return await navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`)
     } catch {
       return null
     }
@@ -32,7 +32,7 @@ export const pushService = {
     const registration = await navigator.serviceWorker.ready
     return registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY).buffer as ArrayBuffer,
     })
   },
 
