@@ -43,7 +43,7 @@ import { habitAppearsOnDate, getScheduledTimeForDate, timeStrToHour, hourToTimeS
 
 const GOOGLE_COLOR = '#4285F4'
 
-const HOUR_HEIGHT = 56
+const HOUR_HEIGHT = 64
 
 /** Context que provee el HOUR_HEIGHT efectivo a los sub-componentes del calendario */
 const HourHeightCtx = createContext(HOUR_HEIGHT)
@@ -110,7 +110,7 @@ export function CalendarView({ calendarMode, onAddTask, showFutureRecurrences = 
   const isMobile = useIsMobile()
   // En mobile, semana y 4 días se colapsan a vista de día
   const effectiveMode: CalendarMode = isMobile && (calendarMode === 'week' || calendarMode === '4days') ? 'day' : calendarMode
-  const hourHeight = isMobile ? 40 : HOUR_HEIGHT
+  const hourHeight = isMobile ? 48 : HOUR_HEIGHT
 
   const [currentDate, setCurrentDate] = useState(() => {
     const d = new Date()

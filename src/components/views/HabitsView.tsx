@@ -395,7 +395,7 @@ function HabitRow({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
         <button
           onClick={() => onEdit(habit)}
           className="rounded-lg p-1.5 transition-colors"
