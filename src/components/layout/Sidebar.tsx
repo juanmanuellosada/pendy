@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import {
   CalendarDays,
   Calendar,
+  CalendarPlus,
   Plus,
   ChevronDown,
   ChevronRight,
@@ -19,6 +20,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useTheme } from '@/hooks/useTheme'
 import { useUIStore } from '@/stores/uiStore'
 import { useAppStore } from '@/stores/appStore'
+import { useCalendarIntegrations } from '@/hooks/useCalendarIntegrations'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 
@@ -28,8 +30,10 @@ export function Sidebar() {
   const { user, profile, signOut } = useAuth()
   const { data: projects = [] } = useProjects()
   const { setProjectEditorOpen } = useUIStore()
-  const { sidebarCollapsed, setSidebarOpen, setQuickAddOpen } = useAppStore()
+  const { sidebarCollapsed, setSidebarOpen, setQuickAddOpen, setEventEditorOpen } = useAppStore()
   const { isDark, setTheme } = useTheme()
+  const { data: integrations = [] } = useCalendarIntegrations()
+  const isCalendarConnected = integrations.length > 0
   const [projectsExpanded, setProjectsExpanded] = useState(true)
 
   const regularProjects = projects.filter((p) => !p.is_inbox && !p.is_archived)
@@ -61,9 +65,23 @@ export function Sidebar() {
             onClick={() => setQuickAddOpen(true)}
             className="rounded-lg p-2.5 transition-colors"
             style={{ backgroundColor: '#EC1E2A', color: '#FFFFFF' }}
-            title="Añadir tarea"
+            title="Añadir tarea (Q)"
           >
             <Plus size={20} />
+          </button>
+          <button
+            onClick={() => isCalendarConnected && setEventEditorOpen(true)}
+            disabled={!isCalendarConnected}
+            className="rounded-lg p-2.5 transition-colors"
+            style={{
+              backgroundColor: '#283B56',
+              color: '#FFFFFF',
+              opacity: isCalendarConnected ? 1 : 0.4,
+              cursor: isCalendarConnected ? 'pointer' : 'not-allowed',
+            }}
+            title={isCalendarConnected ? 'Añadir evento (E)' : 'Conecta un calendario para añadir eventos'}
+          >
+            <CalendarPlus size={20} />
           </button>
           <button
             onClick={() => handleNav('/app/search')}
@@ -122,6 +140,29 @@ export function Sidebar() {
             style={{ backgroundColor: 'rgba(255,255,255,0.18)', color: '#FFFFFF' }}
           >
             Q
+          </span>
+        </button>
+
+        {/* Añadir evento */}
+        <button
+          onClick={() => isCalendarConnected && setEventEditorOpen(true)}
+          disabled={!isCalendarConnected}
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-all"
+          style={{
+            backgroundColor: '#283B56',
+            color: '#FFFFFF',
+            opacity: isCalendarConnected ? 1 : 0.4,
+            cursor: isCalendarConnected ? 'pointer' : 'not-allowed',
+          }}
+          title={isCalendarConnected ? undefined : 'Conecta un calendario en Configuración para añadir eventos'}
+        >
+          <CalendarPlus size={18} />
+          <span className="flex-1 text-left">Añadir evento</span>
+          <span
+            className="rounded px-1.5 py-0.5 font-mono text-[10px]"
+            style={{ backgroundColor: 'rgba(255,255,255,0.18)', color: '#FFFFFF' }}
+          >
+            E
           </span>
         </button>
 

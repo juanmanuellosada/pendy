@@ -199,3 +199,49 @@ export interface ActivityLog {
   changes: Record<string, { old: unknown; new: unknown }> | null
   created_at: string
 }
+
+export interface CalendarIntegration {
+  id: string
+  user_id: string
+  provider: 'google' | 'outlook'
+  access_token: string
+  refresh_token: string | null
+  token_expiry: string
+  email: string | null
+  is_active: boolean
+  selected_calendar_ids: string[]
+  created_at: string
+  updated_at: string
+}
+
+export interface GoogleCalendarListEntry {
+  id: string
+  summary: string
+  backgroundColor?: string
+  primary?: boolean
+  accessRole?: 'owner' | 'writer' | 'reader' | 'freeBusyReader'
+}
+
+export interface CalendarEventReminder {
+  method: 'popup' | 'email'
+  minutes: number
+}
+
+export interface CalendarEvent {
+  id: string
+  provider: 'google'
+  title: string
+  start: Date
+  end: Date
+  isAllDay: boolean
+  location?: string
+  description?: string
+  htmlLink?: string
+  calendarId?: string
+  calendarName?: string
+  calendarColor?: string
+  recurringEventId?: string   // presente en instancias de eventos recurrentes
+  recurrenceText?: string     // descripción legible de la regla de recurrencia
+  recurrence?: string[]       // líneas RRULE
+  reminders?: CalendarEventReminder[]
+}

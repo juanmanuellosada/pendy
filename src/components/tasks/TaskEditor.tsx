@@ -25,11 +25,13 @@ interface TaskEditorProps {
   task?: Task | null
   defaultProjectId?: string
   defaultDate?: string | null
+  defaultTime?: string | null
+  defaultDurationMinutes?: number | null
   defaultSectionId?: string | null
   inline?: boolean
 }
 
-export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate, defaultSectionId, inline }: TaskEditorProps) {
+export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate, defaultTime, defaultDurationMinutes, defaultSectionId, inline }: TaskEditorProps) {
   const { user } = useAuth()
   const { data: projects = [] } = useProjects()
   const { data: inboxProject } = useInboxProject()
@@ -116,9 +118,9 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
       setDescription('')
       setPriority(4)
       setDueDate(defaultDate ?? null)
-      setDueTime(null)
-      setHasTime(false)
-      setDurationMinutes(null)
+      setDueTime(defaultTime ?? null)
+      setHasTime(!!defaultTime)
+      setDurationMinutes(defaultDurationMinutes ?? null)
       setIsRecurring(false)
       setRecurrenceRule(null)
       setRecurrenceFrom('due_date')
@@ -130,7 +132,7 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
     setHashQuery(null)
     setAtQuery(null)
     nlpAppliedRef.current = { date: false, time: false, duration: false, recurrence: false }
-  }, [task, open, defaultProjectId, defaultDate, inboxProject, existingLabels.length])
+  }, [task, open, defaultProjectId, defaultDate, defaultTime, defaultDurationMinutes, inboxProject, existingLabels.length])
 
   // â”€â”€ Helper: remove a #labelname token from HTML via DOM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const removeLabelToken = useCallback((html: string, labelName: string) => {

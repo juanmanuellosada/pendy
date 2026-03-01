@@ -3,14 +3,18 @@ import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { MobileNav } from './MobileNav'
 import { TaskDetail } from '@/components/tasks/TaskDetail'
+import { CalendarEventEditor } from '@/components/common/CalendarEventEditor'
 import { useAppStore } from '@/stores/appStore'
 import { useUIStore } from '@/stores/uiStore'
+import { useCalendarIntegrations } from '@/hooks/useCalendarIntegrations'
 import { cn } from '@/lib/utils'
 import { useEffect } from 'react'
 
 export function AppLayout() {
-  const { sidebarOpen, sidebarCollapsed, taskDetailOpen, setQuickAddOpen } = useAppStore()
+  const { sidebarOpen, sidebarCollapsed, taskDetailOpen, setQuickAddOpen, eventEditorOpen, setEventEditorOpen } = useAppStore()
   const { getViewOptions } = useUIStore()
+  const { data: integrations = [] } = useCalendarIntegrations()
+  const isCalendarConnected = integrations.length > 0
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -35,6 +39,15 @@ export function AppLayout() {
       if (!e.ctrlKey && !e.metaKey && key === 'q') {
         e.preventDefault()
         setQuickAddOpen(true)
+        return
+      }
+
+      // E → Añadir evento (solo si hay calendario conectado)
+      if (!e.ctrlKey && !e.metaKey && key === 'e') {
+        if (isCalendarConnected) {
+          e.preventDefault()
+          setEventEditorOpen(true)
+        }
         return
       }
 
@@ -63,7 +76,7 @@ export function AppLayout() {
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [navigate, setQuickAddOpen])
+  }, [navigate, setQuickAddOpen, setEventEditorOpen, isCalendarConnected])
 
   // Detectar si estamos en la vista de tarea a pantalla completa
   const isTaskPage = location.pathname.startsWith('/app/task/')
@@ -120,6 +133,11 @@ export function AppLayout() {
 
       {/* Task detail right panel (hidden on fullscreen task page) */}
       {taskDetailOpen && !isTaskPage && <TaskDetail />}
+
+      {/* Global calendar event editor */}
+      {eventEditorOpen && (
+        <CalendarEventEditor onClose={() => setEventEditorOpen(false)} />
+      )}
 
       {/* Mobile bottom nav */}
       <MobileNav />

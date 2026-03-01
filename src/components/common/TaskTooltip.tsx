@@ -14,6 +14,7 @@ interface TaskTooltipProps {
   children: React.ReactElement<{
     onMouseEnter?: (e: React.MouseEvent) => void
     onMouseLeave?: (e: React.MouseEvent) => void
+    onMouseDown?: (e: React.MouseEvent) => void
   }>
   disabled?: boolean
 }

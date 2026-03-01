@@ -22,6 +22,7 @@ interface AppState {
   selectedTaskId: string | null
   taskDetailOpen: boolean
   quickAddOpen: boolean
+  eventEditorOpen: boolean
   searchOpen: boolean
   detailPanelWidth: number
 
@@ -31,6 +32,7 @@ interface AppState {
   setSelectedTaskId: (id: string | null) => void
   setTaskDetailOpen: (open: boolean) => void
   setQuickAddOpen: (open: boolean) => void
+  setEventEditorOpen: (open: boolean) => void
   setSearchOpen: (open: boolean) => void
   setDetailPanelWidth: (width: number) => void
 }
@@ -41,6 +43,7 @@ export const useAppStore = create<AppState>((set) => ({
   selectedTaskId: null,
   taskDetailOpen: false,
   quickAddOpen: false,
+  eventEditorOpen: false,
   searchOpen: false,
   detailPanelWidth: loadDetailWidth(),
 
@@ -50,6 +53,7 @@ export const useAppStore = create<AppState>((set) => ({
   setSelectedTaskId: (id) => set({ selectedTaskId: id, taskDetailOpen: id !== null }),
   setTaskDetailOpen: (open) => set({ taskDetailOpen: open, selectedTaskId: open ? undefined : null }),
   setQuickAddOpen: (open) => set({ quickAddOpen: open }),
+  setEventEditorOpen: (open) => set({ eventEditorOpen: open }),
   setSearchOpen: (open) => set({ searchOpen: open }),
   setDetailPanelWidth: (width) => {
     const clamped = Math.max(MIN_DETAIL_WIDTH, Math.min(MAX_DETAIL_WIDTH, width))

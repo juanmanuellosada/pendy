@@ -1,4 +1,4 @@
-import { Plus, Inbox } from 'lucide-react'
+import { Inbox } from 'lucide-react'
 import { useInboxTasks } from '@/hooks/useTasks'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { useCreateSection } from '@/hooks/useSections'
@@ -162,17 +162,7 @@ export function InboxView() {
         <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
           Entrada
         </h1>
-        <div className="flex items-center gap-2">
-          <ViewOptionsBar viewId={VIEW_ID} />
-          <button
-            onClick={() => setEditorOpen(true)}
-            className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-white transition-colors hover:opacity-90"
-            style={{ backgroundColor: '#EC1E2A' }}
-          >
-            <Plus size={16} />
-            Agregar tarea
-          </button>
-        </div>
+        <ViewOptionsBar viewId={VIEW_ID} />
       </div>
 
       {renderContent()}

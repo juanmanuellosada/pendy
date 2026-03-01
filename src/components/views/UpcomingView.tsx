@@ -2,8 +2,10 @@ import { useState, useMemo } from 'react'
 import { Plus, CalendarDays } from 'lucide-react'
 import { useUpcomingTasks } from '@/hooks/useTasks'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
+import { useUpcomingCalendarEvents } from '@/hooks/useCalendarEvents'
 import { TaskItem } from '@/components/tasks/TaskItem'
 import { TaskEditor } from '@/components/tasks/TaskEditor'
+import { CalendarEventItem } from '@/components/common/CalendarEventItem'
 import { ViewOptionsBar } from './ViewOptionsBar'
 import { CalendarView } from './CalendarView'
 import { DateBoardView } from './DateBoardView'
@@ -12,7 +14,7 @@ import { applyViewFilters, applyViewSort } from '@/lib/viewUtils'
 import { format, addDays, isSameDay, startOfDay } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { parseLocalDate } from '@/lib/utils'
-import type { Task } from '@/lib/types'
+import type { Task, CalendarEvent } from '@/lib/types'
 
 const VIEW_ID = 'upcoming'
 
@@ -23,6 +25,7 @@ export function UpcomingView() {
 
   const { data: tasks = [], isLoading } = useUpcomingTasks(upcomingDays)
   const { data: labelsMap } = useAllTaskLabelsMap()
+  const { data: calendarEvents = [] } = useUpcomingCalendarEvents(upcomingDays)
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [defaultDate, setDefaultDate] = useState<string | undefined>(undefined)
@@ -46,8 +49,8 @@ export function UpcomingView() {
     return list
   }, [tasks, opts, labelsMap])
 
-  const groupedTasks = useMemo(() => {
-    const groups: { date: Date; label: string; tasks: Task[] }[] = []
+  const groupedDays = useMemo(() => {
+    const groups: { date: Date; label: string; tasks: Task[]; events: CalendarEvent[] }[] = []
     const today = startOfDay(new Date())
 
     for (let i = 0; i < upcomingDays; i++) {
@@ -55,19 +58,20 @@ export function UpcomingView() {
       const dayTasks = visibleTasks.filter(
         (t) => t.due_date && isSameDay(parseLocalDate(t.due_date), date),
       )
+      const dayEvents = calendarEvents.filter((e) => isSameDay(e.start, date))
 
-      if (dayTasks.length > 0) {
+      if (dayTasks.length > 0 || dayEvents.length > 0) {
         let label: string
         if (i === 0) label = 'Hoy'
         else if (i === 1) label = 'Mañana'
         else label = format(date, "EEEE d 'de' MMMM", { locale: es })
 
-        groups.push({ date, label, tasks: dayTasks })
+        groups.push({ date, label, tasks: dayTasks, events: dayEvents })
       }
     }
 
     return groups
-  }, [visibleTasks, upcomingDays])
+  }, [visibleTasks, calendarEvents, upcomingDays])
 
   if (isLoading) {
     return (
@@ -102,7 +106,7 @@ export function UpcomingView() {
     }
 
     // List view (default)
-    if (groupedTasks.length === 0) {
+    if (groupedDays.length === 0) {
       return (
         <div className="py-12 text-center">
           <CalendarDays size={48} style={{ color: 'var(--text-muted)', margin: '0 auto' }} />
@@ -126,7 +130,7 @@ export function UpcomingView() {
 
     return (
       <div className="space-y-6">
-        {groupedTasks.map(({ date, label, tasks: dayTasks }) => (
+        {groupedDays.map(({ date, label, tasks: dayTasks, events: dayEvents }) => (
           <div key={date.toISOString()}>
             <div className="mb-2 flex items-center justify-between group">
               <h2
@@ -134,9 +138,16 @@ export function UpcomingView() {
                 style={{ color: 'var(--text-primary)' }}
               >
                 {label}
-                <span className="ml-2 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>
-                  {dayTasks.length} {dayTasks.length === 1 ? 'tarea' : 'tareas'}
-                </span>
+                {dayTasks.length > 0 && (
+                  <span className="ml-2 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>
+                    {dayTasks.length} {dayTasks.length === 1 ? 'tarea' : 'tareas'}
+                  </span>
+                )}
+                {dayEvents.length > 0 && (
+                  <span className="ml-1 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>
+                    · {dayEvents.length} {dayEvents.length === 1 ? 'evento' : 'eventos'}
+                  </span>
+                )}
               </h2>
               <button
                 onClick={() => handleAddTask(format(date, 'yyyy-MM-dd'))}
@@ -149,9 +160,12 @@ export function UpcomingView() {
                 <Plus size={13} />
               </button>
             </div>
-            <div className="divide-y rounded-lg border" style={{ borderColor: 'var(--border-secondary)' }}>
+            <div className="divide-y rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border-secondary)' }}>
               {dayTasks.map((task) => (
                 <TaskItem key={task.id} task={task} labels={labelsMap?.get(task.id)} showProject />
+              ))}
+              {dayEvents.map((event) => (
+                <CalendarEventItem key={event.id} event={event} />
               ))}
             </div>
           </div>
@@ -172,17 +186,7 @@ export function UpcomingView() {
             Próximos {upcomingDays} días
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <ViewOptionsBar viewId={VIEW_ID} showUpcomingDays availableCalendarModes={['week', '4days', 'month']} />
-          <button
-            onClick={() => handleAddTask()}
-            className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-white transition-colors hover:opacity-90"
-            style={{ backgroundColor: '#EC1E2A' }}
-          >
-            <Plus size={16} />
-            Agregar tarea
-          </button>
-        </div>
+        <ViewOptionsBar viewId={VIEW_ID} showUpcomingDays availableCalendarModes={['week', '4days', 'month']} />
       </div>
 
       {renderContent()}

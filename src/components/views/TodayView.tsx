@@ -1,9 +1,11 @@
-import { Plus, PartyPopper } from 'lucide-react'
+import { PartyPopper, CalendarDays } from 'lucide-react'
 import { useTodayTasks } from '@/hooks/useTasks'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
+import { useTodayCalendarEvents } from '@/hooks/useCalendarEvents'
 import { TaskEditor } from '@/components/tasks/TaskEditor'
 import { TaskItem } from '@/components/tasks/TaskItem'
 import { TaskGroup } from '@/components/tasks/TaskGroup'
+import { CalendarEventItem } from '@/components/common/CalendarEventItem'
 import { TodayCalendarView } from './TodayCalendarView'
 import { ViewOptionsBar } from './ViewOptionsBar'
 import { useState, useMemo } from 'react'
@@ -19,6 +21,7 @@ const VIEW_ID = 'today'
 export function TodayView() {
   const { data: tasks = [], isLoading } = useTodayTasks()
   const { data: labelsMap } = useAllTaskLabelsMap()
+  const { data: calendarEvents = [] } = useTodayCalendarEvents()
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const { getViewOptions } = useUIStore()
@@ -75,22 +78,12 @@ export function TodayView() {
             {todayStr}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <ViewOptionsBar viewId={VIEW_ID} availableStyles={['list', 'calendar']} hideDateFilter hideCalendarMode />
-          <button
-            onClick={() => setEditorOpen(true)}
-            className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-white transition-colors hover:opacity-90"
-            style={{ backgroundColor: '#EC1E2A' }}
-          >
-            <Plus size={16} />
-            Agregar tarea
-          </button>
-        </div>
+        <ViewOptionsBar viewId={VIEW_ID} availableStyles={['list', 'calendar']} hideDateFilter hideCalendarMode />
       </div>
 
       {opts.viewStyle === 'calendar' ? (
         /* Day timeline calendar */
-        <TodayCalendarView tasks={visibleTasks} labelsMap={labelsMap} />
+        <TodayCalendarView tasks={visibleTasks} labelsMap={labelsMap} calendarEvents={calendarEvents} />
       ) : opts.groupBy !== 'none' ? (
         /* Grouped view */
         <div>
@@ -141,6 +134,26 @@ export function TodayView() {
               </div>
             )}
           </div>
+
+          {/* Calendar events for today */}
+          {calendarEvents.length > 0 && (
+            <div className="mt-6">
+              <div className="mb-2 flex items-center gap-2">
+                <CalendarDays size={14} style={{ color: 'var(--text-muted)' }} />
+                <h2 className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                  Eventos de hoy
+                  <span className="ml-2 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>
+                    {calendarEvents.length} {calendarEvents.length === 1 ? 'evento' : 'eventos'}
+                  </span>
+                </h2>
+              </div>
+              <div className="divide-y rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border-secondary)' }}>
+                {calendarEvents.map((event) => (
+                  <CalendarEventItem key={event.id} event={event} />
+                ))}
+              </div>
+            </div>
+          )}
 
           {opts.showCompleted && completedTasks.length > 0 && (
             <div className="mt-6">

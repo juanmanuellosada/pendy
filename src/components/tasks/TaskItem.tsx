@@ -2,6 +2,7 @@ import { memo, useState } from 'react'
 import { Calendar, Flag, MoreHorizontal, Trash2, Clock } from 'lucide-react'
 import { TaskCheckbox } from './TaskCheckbox'
 import { TaskContextMenu } from './TaskContextMenu'
+import { TaskTooltip } from '@/components/common/TaskTooltip'
 import { cn, stripHtmlTags, stripLabelTokensFromHtml } from '@/lib/utils'
 import { formatRelativeDate, isOverdue } from '@/lib/utils'
 import { PRIORITY_COLORS } from '@/lib/constants'
@@ -58,6 +59,7 @@ export const TaskItem = memo(function TaskItem({
 
   return (
     <>
+    <TaskTooltip task={task} disabled={showMenu || !!contextMenu}>
     <div
       className={cn(
         'group flex items-start gap-3 rounded-lg transition-colors cursor-pointer animate-fade-in',
@@ -172,6 +174,7 @@ export const TaskItem = memo(function TaskItem({
         </div>
       </div>
     </div>
+    </TaskTooltip>
 
     {contextMenu && (
       <TaskContextMenu

@@ -1,20 +1,49 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useTheme } from '@/hooks/useTheme'
 import { useLabels, useCreateLabel, useDeleteLabel, useUpdateLabel, LABEL_COLORS } from '@/hooks/useLabels'
+import { useExchangeCalendarCode } from '@/hooks/useCalendarIntegrations'
 import { ColorPicker } from '@/components/common/ColorPicker'
+import { CalendarIntegrations } from '@/components/settings/CalendarIntegrations'
 import { useUIStore } from '@/stores/uiStore'
 import { Moon, Sun, Monitor, Trash2, Plus, Pencil, Check } from 'lucide-react'
 import type { ThemeMode } from '@/styles/themes'
 
 export default function SettingsPage() {
-  const { profile } = useAuth()
+  const { profile, session } = useAuth()
   const { mode, setTheme } = useTheme()
   const { data: labels = [] } = useLabels()
   const createLabel = useCreateLabel()
   const updateLabel = useUpdateLabel()
   const deleteLabel = useDeleteLabel()
   const { showConfirmDialog } = useUIStore()
+  const navigate = useNavigate()
+  const exchangeCode = useExchangeCalendarCode()
+
+  // Capturamos el code al montar y lo guardamos en estado
+  const [pendingCode, setPendingCode] = useState<string | null>(() => {
+    const code = new URLSearchParams(window.location.search).get('code')
+    const state = new URLSearchParams(window.location.search).get('state')
+    return code && state === 'google' ? code : null
+  })
+
+  // Limpiamos la URL inmediatamente si hay un code
+  useEffect(() => {
+    if (pendingCode) {
+      navigate('/app/settings', { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Esperamos a que la sesión esté lista antes de hacer el exchange
+  useEffect(() => {
+    if (pendingCode && session) {
+      exchangeCode.mutate({ code: pendingCode })
+      setPendingCode(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingCode, session])
 
   const [newLabelName, setNewLabelName] = useState('')
   const [newLabelColor, setNewLabelColor] = useState(LABEL_COLORS[3]!)
@@ -110,6 +139,12 @@ export default function SettingsPage() {
             ))}
           </div>
         </section>
+
+        {/* Calendar integrations section */}
+        <CalendarIntegrations
+          isConnecting={exchangeCode.isPending}
+          connectError={exchangeCode.isError ? (exchangeCode.error instanceof Error ? exchangeCode.error.message : 'Error al conectar el calendario') : null}
+        />
 
         {/* Labels section */}
         <section

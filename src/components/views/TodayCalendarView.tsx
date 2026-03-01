@@ -1,14 +1,21 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { format } from 'date-fns'
+import { toast } from 'sonner'
+import { Calendar, CheckSquare, X } from 'lucide-react'
 import { useCompleteTask, useUpdateTask } from '@/hooks/useTasks'
 import { useProjects } from '@/hooks/useProjects'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { useAppStore } from '@/stores/appStore'
+import { useCalendarEventMutations } from '@/hooks/useCalendarEvents'
 import { TaskCheckbox } from '@/components/tasks/TaskCheckbox'
+import { TaskEditor } from '@/components/tasks/TaskEditor'
 import { PRIORITY_COLORS } from '@/lib/constants'
 import { cn, stripHtmlTags, stripLabelTokensFromText } from '@/lib/utils'
 import { TaskTooltip } from '@/components/common/TaskTooltip'
-import type { Task, Label } from '@/lib/types'
+import { CalendarEventEditor } from '@/components/common/CalendarEventEditor'
+import type { Task, Label, CalendarEvent } from '@/lib/types'
+import { CalendarEventTooltip, getEventColor, getCalendarName } from '@/components/common/CalendarEventTooltip'
 
 const HOUR_HEIGHT = 64 // px per hour
 const START_HOUR = 0
@@ -20,6 +27,7 @@ const MIN_DURATION = 15 // minimum 15 minutes
 interface TodayCalendarViewProps {
   tasks: Task[]
   labelsMap?: Map<string, Label[]>
+  calendarEvents?: CalendarEvent[]
 }
 
 /** Convert a pixel offset (relative to grid top) to fractional hours */
@@ -32,11 +40,20 @@ function snapMinutes(totalMinutes: number): number {
   return Math.round(totalMinutes / SNAP_MINUTES) * SNAP_MINUTES
 }
 
-export function TodayCalendarView({ tasks, labelsMap }: TodayCalendarViewProps) {
+export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: TodayCalendarViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const gridRef = useRef<HTMLDivElement>(null)
   const nowLineRef = useRef<HTMLDivElement>(null)
   const [now, setNow] = useState(new Date())
+
+  // Editor state
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null)
+  const [creatingEventInfo, setCreatingEventInfo] = useState<{ date: Date; hour: number; durationMinutes?: number } | null>(null)
+  const [creatingTaskInfo, setCreatingTaskInfo] = useState<{ date: string; time: string; durationMinutes: number } | null>(null)
+
+  // Drag-to-create state
+  const [createDrag, setCreateDrag] = useState<{ startHour: number; currentHour: number; startY: number } | null>(null)
+  const [typePicker, setTypePicker] = useState<{ startHour: number; durationMinutes: number; screenX: number; screenY: number } | null>(null)
 
   // Update current time every minute
   useEffect(() => {
@@ -65,98 +82,332 @@ export function TodayCalendarView({ tasks, labelsMap }: TodayCalendarViewProps) 
     return { allDayTasks: allDay, timedTasks: timed }
   }, [tasks])
 
+  const allDayEvents = calendarEvents.filter((e) => e.isAllDay)
+  const timedEvents = calendarEvents.filter((e) => !e.isAllDay)
+  const hasAllDaySection = allDayTasks.length > 0 || allDayEvents.length > 0
+
   // Current time position
   const nowHour = now.getHours() + now.getMinutes() / 60
   const nowTop = (nowHour - START_HOUR) * HOUR_HEIGHT
   const nowLabel = format(now, 'HH:mm')
 
+  // Drag-to-create: mousedown starts the gesture
+  const handleBackdropMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!gridRef.current) return
+    e.preventDefault()
+    const rect = gridRef.current.getBoundingClientRect()
+    const relY = e.clientY - rect.top
+    const hour = Math.max(0, Math.min(pxToHours(relY), 23.75))
+    setCreateDrag({ startHour: hour, currentHour: hour, startY: e.clientY })
+  }, [])
+
+  // Drag-to-create: mousemove + mouseup on window
+  useEffect(() => {
+    if (!createDrag) return
+    const onMove = (e: MouseEvent) => {
+      if (!gridRef.current) return
+      const rect = gridRef.current.getBoundingClientRect()
+      const relY = e.clientY - rect.top
+      const rawHour = Math.max(createDrag.startHour, Math.min(pxToHours(relY), 24))
+      const snapped = Math.max(createDrag.startHour, snapMinutes(Math.round(rawHour * 60)) / 60)
+      setCreateDrag((prev) => prev ? { ...prev, currentHour: snapped } : null)
+    }
+    const onUp = (e: MouseEvent) => {
+      if (!createDrag) return
+      const dy = Math.abs(e.clientY - createDrag.startY)
+      const startMin = snapMinutes(Math.round(createDrag.startHour * 60))
+      const rawEndMin = Math.round(createDrag.currentHour * 60)
+      const duration = dy > 8 ? Math.max(MIN_DURATION, snapMinutes(rawEndMin - startMin)) : 60
+      setCreateDrag(null)
+      setTypePicker({ startHour: startMin / 60, durationMinutes: duration, screenX: e.clientX, screenY: e.clientY })
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+    return () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+    }
+  }, [createDrag])
+
   return (
-    <div className="flex flex-col">
-      {/* All-day section */}
-      {allDayTasks.length > 0 && (
-        <div className="mb-2">
-          <div className="flex">
-            <div
-              className="w-14 shrink-0 pr-2 pt-1 text-right text-xs"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              Todo el día
-            </div>
-            <div
-              className="flex-1 border-l py-1 pl-2"
-              style={{ borderColor: 'var(--border-secondary)' }}
-            >
-              {allDayTasks.map((task) => (
-                <TaskTooltip key={task.id} task={task}>
-                  <TimelineTaskCard task={task} />
-                </TaskTooltip>
-              ))}
+    <>
+      <div className="flex flex-col">
+        {/* All-day section */}
+        {hasAllDaySection && (
+          <div className="mb-2">
+            <div className="flex">
+              <div
+                className="w-14 shrink-0 pr-2 pt-1 text-right text-xs"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                Todo el día
+              </div>
+              <div
+                className="flex-1 border-l py-1 pl-2"
+                style={{ borderColor: 'var(--border-secondary)' }}
+              >
+                {allDayTasks.map((task) => (
+                  <TaskTooltip key={task.id} task={task}>
+                    <TimelineTaskCard task={task} />
+                  </TaskTooltip>
+                ))}
+                {allDayEvents.map((event) => (
+                  <AllDayEventChip
+                    key={event.id}
+                    event={event}
+                    onEdit={() => setEditingEvent(event)}
+                  />
+                ))}
+              </div>
             </div>
           </div>
+        )}
+
+        {/* Timeline */}
+        <div
+          ref={containerRef}
+          className="relative overflow-y-auto"
+          style={{ maxHeight: 'calc(100vh - 200px)' }}
+        >
+          <div className="flex">
+          {/* Hour labels */}
+          <div className="w-14 shrink-0">
+            {Array.from({ length: TOTAL_HOURS }, (_, i) => {
+              const hour = START_HOUR + i
+              return (
+                <div
+                  key={hour}
+                  className="relative pr-2 text-right text-xs"
+                  style={{ height: HOUR_HEIGHT, color: 'var(--text-muted)' }}
+                >
+                  <span className="relative -top-2">
+                    {`${hour.toString().padStart(2, '0')}:00`}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Grid + events */}
+          <div
+            ref={gridRef}
+            className="relative flex-1 cursor-crosshair"
+          >
+            {/* Backdrop for drag-to-create (behind task/event blocks) */}
+            <div className="absolute inset-0 z-0 cursor-crosshair" onMouseDown={handleBackdropMouseDown} />
+
+            {/* Creation ghost preview during drag */}
+            {createDrag && (
+              <div
+                className="pointer-events-none absolute left-1 right-1 z-20 rounded-md"
+                style={{
+                  top: (createDrag.startHour - START_HOUR) * HOUR_HEIGHT,
+                  height: Math.max(MIN_DURATION / 60, createDrag.currentHour - createDrag.startHour) * HOUR_HEIGHT,
+                  backgroundColor: 'rgba(40,59,86,0.25)',
+                  border: '2px dashed #283B56',
+                }}
+              />
+            )}
+
+            {/* Hour lines (pointer-events-none — purely visual) */}
+            {Array.from({ length: TOTAL_HOURS }, (_, i) => (
+              <div
+                key={i}
+                className="pointer-events-none border-t"
+                style={{ height: HOUR_HEIGHT, borderColor: 'var(--border-secondary)' }}
+              />
+            ))}
+
+            {/* Now indicator */}
+            <div
+              ref={nowLineRef}
+              className="pointer-events-none absolute left-0 right-0 z-20 flex items-center"
+              style={{ top: nowTop }}
+            >
+              <div
+                className="h-2.5 w-2.5 -ml-[5px] rounded-full"
+                style={{ backgroundColor: '#EC1E2A' }}
+              />
+              <div className="flex-1 border-t-2" style={{ borderColor: '#EC1E2A' }} />
+              <span
+                className="ml-1 text-[10px] font-semibold"
+                style={{ color: '#EC1E2A' }}
+              >
+                {nowLabel}
+              </span>
+            </div>
+
+            {/* Timed tasks */}
+            {timedTasks.map((task) => (
+              <TaskTooltip key={task.id} task={task}>
+                <TimedTaskBlock task={task} gridRef={gridRef} />
+              </TaskTooltip>
+            ))}
+
+            {/* Timed calendar events (draggable) */}
+            {timedEvents.map((event) => (
+              <TimedEventBlock
+                key={event.id}
+                event={event}
+                onEdit={() => setEditingEvent(event)}
+              />
+            ))}
+          </div>
+          </div>
         </div>
+      </div>
+
+      {/* Calendar event editor */}
+      {editingEvent && (
+        <CalendarEventEditor
+          event={editingEvent}
+          onClose={() => setEditingEvent(null)}
+        />
+      )}
+      {creatingEventInfo && (
+        <CalendarEventEditor
+          defaultDate={creatingEventInfo.date}
+          defaultHour={creatingEventInfo.hour}
+          defaultDurationMinutes={creatingEventInfo.durationMinutes}
+          onClose={() => setCreatingEventInfo(null)}
+        />
       )}
 
-      {/* Timeline */}
-      <div
-        ref={containerRef}
-        className="relative flex overflow-y-auto"
-        style={{ maxHeight: 'calc(100vh - 200px)' }}
-      >
-        {/* Hour labels */}
-        <div className="w-14 shrink-0">
-          {Array.from({ length: TOTAL_HOURS }, (_, i) => {
-            const hour = START_HOUR + i
-            return (
-              <div
-                key={hour}
-                className="relative pr-2 text-right text-xs"
-                style={{ height: HOUR_HEIGHT, color: 'var(--text-muted)' }}
-              >
-                <span className="relative -top-2">
-                  {`${hour.toString().padStart(2, '0')}:00`}
-                </span>
-              </div>
-            )
-          })}
-        </div>
+      {/* Task editor from calendar */}
+      {creatingTaskInfo && (
+        <TaskEditor
+          open
+          defaultDate={creatingTaskInfo.date}
+          defaultTime={creatingTaskInfo.time}
+          defaultDurationMinutes={creatingTaskInfo.durationMinutes}
+          onClose={() => setCreatingTaskInfo(null)}
+        />
+      )}
 
-        {/* Grid + events */}
-        <div ref={gridRef} className="relative flex-1">
-          {/* Hour lines */}
-          {Array.from({ length: TOTAL_HOURS }, (_, i) => (
-            <div
-              key={i}
-              className="border-t"
-              style={{ height: HOUR_HEIGHT, borderColor: 'var(--border-secondary)' }}
-            />
-          ))}
+      {/* Type picker popup after drag */}
+      {typePicker && createPortal(
+        <CreationTypePicker
+          startHour={typePicker.startHour}
+          durationMinutes={typePicker.durationMinutes}
+          screenX={typePicker.screenX}
+          screenY={typePicker.screenY}
+          onEvent={() => {
+            setCreatingEventInfo({ date: new Date(), hour: typePicker.startHour, durationMinutes: typePicker.durationMinutes })
+            setTypePicker(null)
+          }}
+          onTask={() => {
+            const h = Math.floor(typePicker.startHour)
+            const m = Math.round((typePicker.startHour - h) * 60)
+            const dateStr = format(new Date(), 'yyyy-MM-dd')
+            setCreatingTaskInfo({ date: dateStr, time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`, durationMinutes: typePicker.durationMinutes })
+            setTypePicker(null)
+          }}
+          onClose={() => setTypePicker(null)}
+        />,
+        document.body,
+      )}
+    </>
+  )
+}
 
-          {/* Now indicator */}
-          <div
-            ref={nowLineRef}
-            className="pointer-events-none absolute left-0 right-0 z-20 flex items-center"
-            style={{ top: nowTop }}
-          >
-            <div
-              className="h-2.5 w-2.5 -ml-[5px] rounded-full"
-              style={{ backgroundColor: '#EC1E2A' }}
-            />
-            <div className="flex-1 border-t-2" style={{ borderColor: '#EC1E2A' }} />
-            <span
-              className="ml-1 text-[10px] font-semibold"
-              style={{ color: '#EC1E2A' }}
-            >
-              {nowLabel}
-            </span>
-          </div>
+// ── Creation type picker popup ─────────────────────────────────────────────────
 
-          {/* Timed tasks */}
-          {timedTasks.map((task) => (
-            <TaskTooltip key={task.id} task={task}>
-              <TimedTaskBlock task={task} gridRef={gridRef} />
-            </TaskTooltip>
-          ))}
-        </div>
+function fmtHour(fractionalHour: number): string {
+  const h = Math.floor(fractionalHour) % 24
+  const m = Math.round((fractionalHour - Math.floor(fractionalHour)) * 60)
+  return `${String(h).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
+}
+
+function CreationTypePicker({
+  startHour,
+  durationMinutes,
+  screenX,
+  screenY,
+  onEvent,
+  onTask,
+  onClose,
+}: {
+  startHour: number
+  durationMinutes: number
+  screenX: number
+  screenY: number
+  onEvent: () => void
+  onTask: () => void
+  onClose: () => void
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const handle = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) onClose()
+    }
+    document.addEventListener('mousedown', handle, true)
+    return () => document.removeEventListener('mousedown', handle, true)
+  }, [onClose])
+
+  const endHour = startHour + durationMinutes / 60
+  const timeLabel = `${fmtHour(startHour)} – ${fmtHour(endHour)}`
+
+  const W = 176
+  const H = 118
+  const left = Math.min(Math.max(screenX + 8, 8), window.innerWidth - W - 8)
+  const top = Math.min(Math.max(screenY + 8, 8), window.innerHeight - H - 8)
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        position: 'fixed',
+        top,
+        left,
+        zIndex: 9999,
+        backgroundColor: 'var(--bg-primary)',
+        border: '1px solid var(--border-primary)',
+        borderRadius: 12,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+        padding: '8px',
+        width: W,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, paddingLeft: 4 }}>
+        <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>{timeLabel}</span>
+        <button
+          onClick={onClose}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, borderRadius: 4, lineHeight: 1, color: 'var(--text-muted)' }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+        >
+          <X size={12} />
+        </button>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <button
+          onClick={onEvent}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '6px 8px', borderRadius: 8, border: 'none',
+            backgroundColor: 'transparent', cursor: 'pointer',
+            color: 'var(--text-primary)', fontSize: 13, fontWeight: 500, width: '100%', textAlign: 'left',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+        >
+          <Calendar size={14} style={{ color: '#3B82F6' }} />
+          Nuevo evento
+        </button>
+        <button
+          onClick={onTask}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '6px 8px', borderRadius: 8, border: 'none',
+            backgroundColor: 'transparent', cursor: 'pointer',
+            color: 'var(--text-primary)', fontSize: 13, fontWeight: 500, width: '100%', textAlign: 'left',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+        >
+          <CheckSquare size={14} style={{ color: '#22C55E' }} />
+          Nueva tarea
+        </button>
       </div>
     </div>
   )
@@ -253,6 +504,7 @@ function TimedTaskBlock({
       if ((e.target as HTMLElement).closest('button')) return
 
       e.preventDefault()
+      e.stopPropagation()
       didMove.current = false
       setInteracting(true)
       const startYVal = e.clientY
@@ -432,6 +684,261 @@ function TimedTaskBlock({
         />
       </div>
     </div>
+  )
+}
+
+/* ── Timed calendar event block (draggable + resizable + clickable) ─────── */
+
+function TimedEventBlock({
+  event,
+  onEdit,
+}: {
+  event: CalendarEvent
+  onEdit: () => void
+}) {
+  const { updateEvent } = useCalendarEventMutations()
+  const color = getEventColor(event)
+  const calendarName = getCalendarName(event)
+
+  const serverStartHour = event.start.getHours() + event.start.getMinutes() / 60
+  const serverDuration =
+    Math.max((event.end.getTime() - event.start.getTime()) / 60_000, MIN_DURATION)
+
+  // Local optimistic overrides
+  const [localStartHour, setLocalStartHour] = useState<number | null>(null)
+  const [localDuration, setLocalDuration] = useState<number | null>(null)
+  const [dragOffset, setDragOffset] = useState(0)
+  const [resizeDelta, setResizeDelta] = useState(0)
+  const [interacting, setInteracting] = useState(false)
+  const didMove = useRef(false)
+
+  const baseHour = localStartHour ?? serverStartHour
+  const baseDuration = localDuration ?? serverDuration
+
+  // Clear local overrides when server data matches
+  useEffect(() => {
+    if (localStartHour !== null) {
+      const diff = Math.abs(serverStartHour - localStartHour)
+      if (diff < 0.26) setLocalStartHour(null) // within ~15 min
+    }
+  }, [event.start, serverStartHour, localStartHour])
+
+  useEffect(() => {
+    if (localDuration !== null) {
+      const diff = Math.abs(serverDuration - localDuration)
+      if (diff < 16) setLocalDuration(null)
+    }
+  }, [event.end, serverDuration, localDuration])
+
+  const top = (baseHour - START_HOUR) * HOUR_HEIGHT + dragOffset
+  const height = Math.max(
+    (baseDuration / 60) * HOUR_HEIGHT + resizeDelta,
+    (MIN_DURATION / 60) * HOUR_HEIGHT,
+  )
+
+  // Display strings
+  const displayHours = pxToHours(Math.max(0, top))
+  const displayH = Math.floor(displayHours)
+  const displayM = Math.round((displayHours - displayH) * 60)
+  const durMin = Math.max(MIN_DURATION, Math.round((height / HOUR_HEIGHT) * 60))
+  const endHours = displayHours + durMin / 60
+  const endH = Math.floor(endHours)
+  const endM = Math.round((endHours % 1) * 60) % 60
+  const startStr = `${String(displayH).padStart(2, '0')}:${String(displayM).padStart(2, '0')}`
+  const endStr = `${String(Math.min(endH, 23)).padStart(2, '0')}:${String(endM).padStart(2, '0')}`
+
+  const showTime = height >= 42
+  const showCalendarName = height >= 58
+
+  /* ── Drag to move ── */
+  const handleDragStart = useCallback(
+    (e: React.MouseEvent) => {
+      if ((e.target as HTMLElement).closest('[data-resize-handle]')) return
+      e.preventDefault()
+      e.stopPropagation()
+      didMove.current = false
+      setInteracting(true)
+      const startY = e.clientY
+      let latestDelta = 0
+
+      const onMove = (ev: MouseEvent) => {
+        latestDelta = ev.clientY - startY
+        if (Math.abs(latestDelta) > 3) didMove.current = true
+        setDragOffset(latestDelta)
+      }
+
+      const onUp = async () => {
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+        setInteracting(false)
+        setDragOffset(0)
+
+        if (!didMove.current || Math.abs(latestDelta) < 4) {
+          onEdit()
+          return
+        }
+
+        const newHours = pxToHours((baseHour - START_HOUR) * HOUR_HEIGHT + latestDelta)
+        const totalMin = snapMinutes(Math.round(newHours * 60))
+        const clampedMin = Math.max(0, Math.min(totalMin, 24 * 60 - baseDuration))
+        const newH = Math.floor(clampedMin / 60)
+        const newM = clampedMin % 60
+        const snappedHour = newH + newM / 60
+
+        setLocalStartHour(snappedHour)
+
+        const newStart = new Date(event.start)
+        newStart.setHours(newH, newM, 0, 0)
+        const newEnd = new Date(newStart.getTime() + baseDuration * 60_000)
+
+        if (event.calendarId) {
+          try {
+            await updateEvent.mutateAsync({
+              eventId: event.id,
+              calendarId: event.calendarId,
+              start: newStart,
+              end: newEnd,
+            })
+          } catch (err) {
+            setLocalStartHour(null)
+            const msg = err instanceof Error && err.message === 'PERMISSION_DENIED'
+              ? 'Sin permiso para editar este evento. Reconecta Google Calendar con permisos de escritura.'
+              : 'No se pudo mover el evento. Intenta de nuevo.'
+            toast.error(msg)
+          }
+        }
+      }
+
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
+    },
+    [baseHour, baseDuration, event, onEdit, updateEvent],
+  )
+
+  /* ── Resize to change duration ── */
+  const handleResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setInteracting(true)
+      const startY = e.clientY
+      let latestDelta = 0
+
+      const onMove = (ev: MouseEvent) => {
+        latestDelta = ev.clientY - startY
+        setResizeDelta(latestDelta)
+      }
+
+      const onUp = async () => {
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+        setInteracting(false)
+        setResizeDelta(0)
+
+        if (Math.abs(latestDelta) < 4) return
+
+        const newPx = Math.max((MIN_DURATION / 60) * HOUR_HEIGHT, (baseDuration / 60) * HOUR_HEIGHT + latestDelta)
+        const snapped = Math.max(MIN_DURATION, snapMinutes(Math.round((newPx / HOUR_HEIGHT) * 60)))
+        setLocalDuration(snapped)
+
+        const newEnd = new Date(event.start.getTime() + snapped * 60_000)
+        if (event.calendarId) {
+          try {
+            await updateEvent.mutateAsync({
+              eventId: event.id,
+              calendarId: event.calendarId,
+              start: event.start,
+              end: newEnd,
+            })
+          } catch (err) {
+            setLocalDuration(null)
+            const msg = err instanceof Error && err.message === 'PERMISSION_DENIED'
+              ? 'Sin permiso para editar este evento. Reconecta Google Calendar con permisos de escritura.'
+              : 'No se pudo cambiar la duración del evento. Intenta de nuevo.'
+            toast.error(msg)
+          }
+        }
+      }
+
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
+    },
+    [baseDuration, event, updateEvent],
+  )
+
+  const blockStyle: React.CSSProperties = {
+    top: Math.max(0, top),
+    height,
+    borderLeftColor: color,
+    backgroundColor: `${color}22`,
+    transition: interacting ? 'none' : 'top 0.15s ease, height 0.15s ease',
+  }
+
+  return (
+    <CalendarEventTooltip event={event} disabled={interacting}>
+      <div
+        className={cn(
+          'group absolute left-1 right-2 z-10 select-none overflow-hidden rounded-md border-l-3 px-2 py-1 opacity-90 hover:opacity-100',
+          interacting ? 'shadow-lg z-30 cursor-grabbing' : 'cursor-pointer',
+        )}
+        style={blockStyle}
+        onMouseDown={handleDragStart}
+      >
+        {/* Event badge indicator */}
+        <div className="flex items-center gap-1 mb-px">
+          <span
+            className="inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full"
+            style={{ backgroundColor: color }}
+          />
+          <p className="truncate text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
+            {event.title}
+          </p>
+        </div>
+        {showTime && (
+          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+            {startStr}–{endStr}
+          </p>
+        )}
+        {showCalendarName && (
+          <p className="truncate text-[10px]" style={{ color: `${color}CC` }}>
+            {calendarName}
+          </p>
+        )}
+
+        {/* Resize handle */}
+        <div
+          data-resize-handle
+          className="absolute bottom-0 left-0 right-0 flex cursor-s-resize items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
+          style={{ height: 8 }}
+          onMouseDown={handleResizeStart}
+        >
+          <div className="h-1 w-8 rounded-full" style={{ backgroundColor: color }} />
+        </div>
+      </div>
+    </CalendarEventTooltip>
+  )
+}
+
+/* ── All-day calendar event chip ────────────────── */
+
+function AllDayEventChip({ event, onEdit }: { event: CalendarEvent; onEdit: () => void }) {
+  const color = getEventColor(event)
+  const calendarName = getCalendarName(event)
+
+  return (
+    <CalendarEventTooltip event={event}>
+      <div
+        className="mb-1 flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity"
+        style={{ backgroundColor: `${color}22`, borderLeft: `2px solid ${color}` }}
+        onClick={onEdit}
+      >
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+        <span className="truncate" style={{ color: 'var(--text-primary)' }}>{event.title}</span>
+        <span className="ml-auto shrink-0 text-[10px] font-normal" style={{ color: `${color}BB` }}>
+          {calendarName}
+        </span>
+      </div>
+    </CalendarEventTooltip>
   )
 }
 
