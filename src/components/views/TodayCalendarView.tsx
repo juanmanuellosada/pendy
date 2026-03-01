@@ -62,11 +62,11 @@ function computeOverlapLayout(
 
 /** CSS left/right para un bloque en su sub-columna de overlap */
 function overlapPos(col: number, totalCols: number): React.CSSProperties {
-  if (totalCols <= 1) return {}
-  const pct = 100 / totalCols
+  const n = Math.max(1, totalCols)
+  const pct = 100 / n
   return {
     left: `calc(${(col * pct).toFixed(1)}% + 2px)`,
-    right: `calc(${((totalCols - col - 1) * pct).toFixed(1)}% + 2px)`,
+    right: `calc(${((n - col - 1) * pct).toFixed(1)}% + 2px)`,
   }
 }
 
@@ -1458,7 +1458,7 @@ function TimedHabitBlock({
     <>
     <div
       className={cn(
-        'group absolute left-1 right-2 z-10 select-none overflow-hidden rounded-md border-l-3 px-2 py-1',
+        'group absolute z-10 select-none overflow-hidden rounded-md border-l-3 px-2 py-1',
         completed && 'opacity-50',
         interacting ? 'shadow-lg z-30' : 'cursor-pointer',
       )}
