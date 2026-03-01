@@ -10,6 +10,7 @@ import {
   GripVertical,
   ChevronDown,
   ChevronRight,
+  ListChecks,
 } from 'lucide-react'
 import {
   DndContext,
@@ -28,7 +29,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useProjectTasks, useReorderTasks, useUpdateTask } from '@/hooks/useTasks'
+import { useProjectTasks, useReorderTasks, useUpdateTask, useDeleteTask } from '@/hooks/useTasks'
 import { useArchiveProject, useDeleteProject, useToggleProjectFavorite } from '@/hooks/useProjects'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import {
@@ -47,6 +48,8 @@ import { ViewOptionsBar } from '@/components/views/ViewOptionsBar'
 import { BoardView } from '@/components/views/BoardView'
 import { CalendarView } from '@/components/views/CalendarView'
 import { useUIStore } from '@/stores/uiStore'
+import { useBulkSelection } from '@/hooks/useBulkSelection'
+import { BulkActionBar } from '@/components/common/BulkActionBar'
 import { applyViewFilters, applyViewSort, groupTasks } from '@/lib/viewUtils'
 import { useNavigate } from 'react-router-dom'
 import type { Project, Task, Section, Label } from '@/lib/types'
@@ -68,6 +71,7 @@ export function ProjectView({ project }: ProjectViewProps) {
   const updateTask = useUpdateTask()
   const reorderTasks = useReorderTasks()
   const reorderSections = useReorderSections()
+  const deleteTask = useDeleteTask()
   const navigate = useNavigate()
 
   const VIEW_ID = `project-${project.id}`
@@ -198,6 +202,47 @@ export function ProjectView({ project }: ProjectViewProps) {
     return map
   }, [visibleTasks, sections])
 
+  // Bulk selection (after visibleTasks is computed)
+  const { isSelectMode, selectedIds, enter, exit, toggle, selectAll, clearAll, allSelected } =
+    useBulkSelection(visibleTasks)
+
+  const handleBulkDelete = () => {
+    showConfirmDialog({
+      title: `¿Eliminar ${selectedIds.size} ${selectedIds.size === 1 ? 'tarea' : 'tareas'}?`,
+      message: 'Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      onConfirm: async () => {
+        await Promise.all(Array.from(selectedIds).map((id) => deleteTask.mutateAsync(id)))
+        exit()
+      },
+    })
+  }
+
+  const handleBulkMoveProject = async (projectId: string, sectionId: string | null) => {
+    await Promise.all(
+      Array.from(selectedIds).map((id) =>
+        updateTask.mutateAsync({ id, updates: { project_id: projectId, section_id: sectionId } }),
+      ),
+    )
+    exit()
+  }
+
+  const handleBulkPriority = async (priority: 1 | 2 | 3 | 4) => {
+    await Promise.all(
+      Array.from(selectedIds).map((id) => updateTask.mutateAsync({ id, updates: { priority } })),
+    )
+    exit()
+  }
+
+  const handleBulkDueDate = async (date: string | null) => {
+    await Promise.all(
+      Array.from(selectedIds).map((id) =>
+        updateTask.mutateAsync({ id, updates: { due_date: date } }),
+      ),
+    )
+    exit()
+  }
+
   // DnD
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -321,6 +366,9 @@ export function ProjectView({ project }: ProjectViewProps) {
               color={group.color}
               tasks={group.tasks}
               labelsMap={labelsMap}
+              isSelectMode={isSelectMode}
+              selectedIds={selectedIds}
+              onToggleSelect={toggle}
             />
           ))}
         </div>
@@ -363,6 +411,9 @@ export function ProjectView({ project }: ProjectViewProps) {
                       key={task.id}
                       task={task}
                       labels={labelsMap?.get(task.id)}
+                      isSelectMode={isSelectMode}
+                      isSelected={selectedIds.has(task.id)}
+                      onToggleSelect={() => toggle(task.id)}
                     />
                   ))}
                 </div>
@@ -373,7 +424,14 @@ export function ProjectView({ project }: ProjectViewProps) {
                 style={{ borderColor: 'var(--border-secondary)' }}
               >
                 {unsectionedTasks.map((task) => (
-                  <TaskItem key={task.id} task={task} labels={labelsMap?.get(task.id)} />
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    labels={labelsMap?.get(task.id)}
+                    isSelectMode={isSelectMode}
+                    isSelected={selectedIds.has(task.id)}
+                    onToggleSelect={() => toggle(task.id)}
+                  />
                 ))}
               </div>
             )}
@@ -406,6 +464,9 @@ export function ProjectView({ project }: ProjectViewProps) {
                     updates: { collapsed },
                   })
                 }
+                isSelectMode={isSelectMode}
+                selectedIds={selectedIds}
+                onToggleSelect={toggle}
               />
             ))}
           </SortableContext>
@@ -432,6 +493,9 @@ export function ProjectView({ project }: ProjectViewProps) {
                   updates: { collapsed },
                 })
               }
+              isSelectMode={isSelectMode}
+              selectedIds={selectedIds}
+              onToggleSelect={toggle}
             />
           ))
         )}
@@ -496,6 +560,18 @@ export function ProjectView({ project }: ProjectViewProps) {
         </div>
 
         <div className="flex items-center gap-2">
+          {opts.viewStyle !== 'panel' && opts.viewStyle !== 'calendar' && !isSelectMode && visibleTasks.length > 0 && (
+            <button
+              onClick={enter}
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
+              style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
+            >
+              <ListChecks size={14} />
+              Seleccionar
+            </button>
+          )}
           <ViewOptionsBar viewId={VIEW_ID} />
 
           {!project.is_inbox && (
@@ -702,6 +778,21 @@ export function ProjectView({ project }: ProjectViewProps) {
         onSave={handleSaveSection}
         section={editingSection}
       />
+
+      {selectedIds.size > 0 && (
+        <BulkActionBar
+          selectedCount={selectedIds.size}
+          totalCount={visibleTasks.length}
+          allSelected={allSelected}
+          onSelectAll={selectAll}
+          onClearAll={clearAll}
+          onExit={exit}
+          onDelete={handleBulkDelete}
+          onMoveToProject={handleBulkMoveProject}
+          onChangePriority={handleBulkPriority}
+          onChangeDueDate={handleBulkDueDate}
+        />
+      )}
     </div>
   )
 }
@@ -774,7 +865,19 @@ function InlineSectionAdder({
 
 /* ── Sortable Task Item ──────────────────────────────── */
 
-function SortableTaskItem({ task, labels }: { task: Task; labels?: Label[] }) {
+function SortableTaskItem({
+  task,
+  labels,
+  isSelectMode,
+  isSelected,
+  onToggleSelect,
+}: {
+  task: Task
+  labels?: Label[]
+  isSelectMode?: boolean
+  isSelected?: boolean
+  onToggleSelect?: () => void
+}) {
   const {
     attributes,
     listeners,
@@ -798,17 +901,25 @@ function SortableTaskItem({ task, labels }: { task: Task; labels?: Label[] }) {
       }}
       className="group/sortable relative"
     >
-      <div
-        ref={setActivatorNodeRef}
-        {...attributes}
-        {...listeners}
-        className="absolute left-0 top-0 bottom-0 z-10 flex w-6 cursor-grab items-center justify-center opacity-0 transition-opacity group-hover/sortable:opacity-100 active:cursor-grabbing"
-        style={{ color: 'var(--text-muted)' }}
-      >
-        <GripVertical size={14} />
-      </div>
-      <div className="pl-5">
-        <TaskItem task={task} labels={labels} />
+      {!isSelectMode && (
+        <div
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...listeners}
+          className="absolute left-0 top-0 bottom-0 z-10 flex w-6 cursor-grab items-center justify-center opacity-0 transition-opacity group-hover/sortable:opacity-100 active:cursor-grabbing"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          <GripVertical size={14} />
+        </div>
+      )}
+      <div className={isSelectMode ? undefined : 'pl-5'}>
+        <TaskItem
+          task={task}
+          labels={labels}
+          isSelectMode={isSelectMode}
+          isSelected={isSelected}
+          onToggleSelect={onToggleSelect}
+        />
       </div>
     </div>
   )
@@ -828,6 +939,9 @@ function SortableSectionBlock({
   onEdit,
   onDelete,
   onToggleCollapse,
+  isSelectMode,
+  selectedIds,
+  onToggleSelect,
 }: {
   section: Section
   tasks: Task[]
@@ -840,6 +954,9 @@ function SortableSectionBlock({
   onEdit: () => void
   onDelete: () => void
   onToggleCollapse: (collapsed: boolean) => void
+  isSelectMode?: boolean
+  selectedIds?: Set<string>
+  onToggleSelect?: (id: string) => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -979,6 +1096,9 @@ function SortableSectionBlock({
                       key={task.id}
                       task={task}
                       labels={labelsMap?.get(task.id)}
+                      isSelectMode={isSelectMode}
+                      isSelected={selectedIds?.has(task.id)}
+                      onToggleSelect={onToggleSelect ? () => onToggleSelect(task.id) : undefined}
                     />
                   ))}
                 </div>
@@ -989,7 +1109,14 @@ function SortableSectionBlock({
                 style={{ borderColor: 'var(--border-secondary)' }}
               >
                 {tasks.map((task) => (
-                  <TaskItem key={task.id} task={task} labels={labelsMap?.get(task.id)} />
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    labels={labelsMap?.get(task.id)}
+                    isSelectMode={isSelectMode}
+                    isSelected={selectedIds?.has(task.id)}
+                    onToggleSelect={onToggleSelect ? () => onToggleSelect(task.id) : undefined}
+                  />
                 ))}
               </div>
             )
@@ -1039,6 +1166,9 @@ function StaticSectionBlock({
   onEdit,
   onDelete,
   onToggleCollapse,
+  isSelectMode,
+  selectedIds,
+  onToggleSelect,
 }: {
   section: Section
   tasks: Task[]
@@ -1050,6 +1180,9 @@ function StaticSectionBlock({
   onEdit: () => void
   onDelete: () => void
   onToggleCollapse: (collapsed: boolean) => void
+  isSelectMode?: boolean
+  selectedIds?: Set<string>
+  onToggleSelect?: (id: string) => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -1148,7 +1281,14 @@ function StaticSectionBlock({
               style={{ borderColor: 'var(--border-secondary)' }}
             >
               {tasks.map((task) => (
-                <TaskItem key={task.id} task={task} labels={labelsMap?.get(task.id)} />
+                <TaskItem
+                  key={task.id}
+                  task={task}
+                  labels={labelsMap?.get(task.id)}
+                  isSelectMode={isSelectMode}
+                  isSelected={selectedIds?.has(task.id)}
+                  onToggleSelect={onToggleSelect ? () => onToggleSelect(task.id) : undefined}
+                />
               ))}
             </div>
           ) : null}

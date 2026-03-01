@@ -620,17 +620,25 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
                 <span style={{ color: 'var(--text-muted)' }}>Agregar etiqueta</span>
               ) : (
                 taskLabels.map((label) => (
-                  <button
+                  <span
                     key={label.id}
+                    role="button"
+                    tabIndex={0}
                     onClick={(e) => {
                       e.stopPropagation()
                       navigate(`/app/label/${label.id}`)
                     }}
-                    className="rounded-full px-2 py-0.5 text-xs font-medium transition-opacity hover:opacity-75"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.stopPropagation()
+                        navigate(`/app/label/${label.id}`)
+                      }
+                    }}
+                    className="cursor-pointer rounded-full px-2 py-0.5 text-xs font-medium transition-opacity hover:opacity-75"
                     style={{ backgroundColor: label.color + '22', color: label.color }}
                   >
                     {label.name}
-                  </button>
+                  </span>
                 ))
               )}
             </div>

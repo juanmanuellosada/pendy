@@ -257,9 +257,18 @@ export function useRefreshCalendarToken() {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 
       const doRefresh = async () => {
-        const { data: { session: freshSession } } = await supabase.auth.getSession()
-        const authToken = freshSession?.access_token
-        if (!authToken) throw new Error('Sesión no disponible. Vuelve a iniciar sesión.')
+        // Siempre forzamos un refreshSession() antes de llamar a la Edge Function
+        // (verify_jwt: true). Así evitamos clock-skew y tokens cacheados expirados.
+        // El overhead es mínimo (sólo ocurre ~cada hora cuando caduca el token de Google).
+        const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession()
+        let authToken = refreshed?.session?.access_token
+
+        if (refreshError || !authToken) {
+          // Fallback: intentar con la sesión existente si refreshSession falla
+          const { data: { session: fallback } } = await supabase.auth.getSession()
+          authToken = fallback?.access_token
+          if (!authToken) throw new Error('Sesión no disponible. Vuelve a iniciar sesión.')
+        }
 
         const response = await fetch(`${supabaseUrl}/functions/v1/calendar-oauth?action=refresh`, {
           method: 'POST',

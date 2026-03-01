@@ -9,9 +9,22 @@ interface TaskGroupProps {
   tasks: Task[]
   labelsMap?: Map<string, Label[]>
   defaultOpen?: boolean
+  // Bulk selection
+  isSelectMode?: boolean
+  selectedIds?: Set<string>
+  onToggleSelect?: (id: string) => void
 }
 
-export function TaskGroup({ label, color, tasks, labelsMap, defaultOpen = true }: TaskGroupProps) {
+export function TaskGroup({
+  label,
+  color,
+  tasks,
+  labelsMap,
+  defaultOpen = true,
+  isSelectMode,
+  selectedIds,
+  onToggleSelect,
+}: TaskGroupProps) {
   const [open, setOpen] = useState(defaultOpen)
 
   return (
@@ -44,7 +57,14 @@ export function TaskGroup({ label, color, tasks, labelsMap, defaultOpen = true }
           style={{ borderColor: 'var(--border-secondary)' }}
         >
           {tasks.map((task) => (
-            <TaskItem key={task.id} task={task} labels={labelsMap?.get(task.id)} />
+            <TaskItem
+              key={task.id}
+              task={task}
+              labels={labelsMap?.get(task.id)}
+              isSelectMode={isSelectMode}
+              isSelected={selectedIds?.has(task.id)}
+              onToggleSelect={onToggleSelect ? () => onToggleSelect(task.id) : undefined}
+            />
           ))}
         </div>
       )}

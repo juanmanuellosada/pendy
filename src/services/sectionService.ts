@@ -13,6 +13,16 @@ export const sectionService = {
     return data ?? []
   },
 
+  async getAllSections(): Promise<Section[]> {
+    const { data, error } = await supabase
+      .from('sections')
+      .select('*')
+      .order('sort_order', { ascending: true })
+
+    if (error) throw error
+    return data ?? []
+  },
+
   async createSection(section: {
     user_id: string
     project_id: string

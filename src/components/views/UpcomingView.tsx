@@ -1,14 +1,16 @@
 import { useState, useMemo } from 'react'
-import { Plus, CalendarDays } from 'lucide-react'
-import { useUpcomingTasks } from '@/hooks/useTasks'
+import { Plus, CalendarDays, ListChecks } from 'lucide-react'
+import { useUpcomingTasks, useDeleteTask, useUpdateTask } from '@/hooks/useTasks'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { useUpcomingCalendarEvents } from '@/hooks/useCalendarEvents'
 import { TaskItem } from '@/components/tasks/TaskItem'
 import { TaskEditor } from '@/components/tasks/TaskEditor'
 import { CalendarEventItem } from '@/components/common/CalendarEventItem'
+import { BulkActionBar } from '@/components/common/BulkActionBar'
 import { ViewOptionsBar } from './ViewOptionsBar'
 import { CalendarView } from './CalendarView'
 import { DateBoardView } from './DateBoardView'
+import { useBulkSelection } from '@/hooks/useBulkSelection'
 import { useUIStore } from '@/stores/uiStore'
 import { applyViewFilters, applyViewSort } from '@/lib/viewUtils'
 import { format, addDays, isSameDay, startOfDay } from 'date-fns'
@@ -19,7 +21,7 @@ import type { Task, CalendarEvent } from '@/lib/types'
 const VIEW_ID = 'upcoming'
 
 export function UpcomingView() {
-  const { getViewOptions } = useUIStore()
+  const { getViewOptions, showConfirmDialog } = useUIStore()
   const opts = getViewOptions(VIEW_ID)
   const upcomingDays = opts.upcomingDays ?? 30
 
@@ -29,6 +31,8 @@ export function UpcomingView() {
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [defaultDate, setDefaultDate] = useState<string | undefined>(undefined)
+  const deleteTask = useDeleteTask()
+  const updateTask = useUpdateTask()
 
   const handleCloseEditor = () => {
     setEditorOpen(false)
@@ -72,6 +76,47 @@ export function UpcomingView() {
 
     return groups
   }, [visibleTasks, calendarEvents, upcomingDays])
+
+  // Bulk selection
+  const { isSelectMode, selectedIds, enter, exit, toggle, selectAll, clearAll, allSelected } =
+    useBulkSelection(visibleTasks)
+
+  const handleBulkDelete = () => {
+    showConfirmDialog({
+      title: `¿Eliminar ${selectedIds.size} ${selectedIds.size === 1 ? 'tarea' : 'tareas'}?`,
+      message: 'Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      onConfirm: async () => {
+        await Promise.all(Array.from(selectedIds).map((id) => deleteTask.mutateAsync(id)))
+        exit()
+      },
+    })
+  }
+
+  const handleBulkMoveProject = async (projectId: string, sectionId: string | null) => {
+    await Promise.all(
+      Array.from(selectedIds).map((id) =>
+        updateTask.mutateAsync({ id, updates: { project_id: projectId, section_id: sectionId } }),
+      ),
+    )
+    exit()
+  }
+
+  const handleBulkPriority = async (priority: 1 | 2 | 3 | 4) => {
+    await Promise.all(
+      Array.from(selectedIds).map((id) => updateTask.mutateAsync({ id, updates: { priority } })),
+    )
+    exit()
+  }
+
+  const handleBulkDueDate = async (date: string | null) => {
+    await Promise.all(
+      Array.from(selectedIds).map((id) =>
+        updateTask.mutateAsync({ id, updates: { due_date: date } }),
+      ),
+    )
+    exit()
+  }
 
   if (isLoading) {
     return (
@@ -149,20 +194,30 @@ export function UpcomingView() {
                   </span>
                 )}
               </h2>
-              <button
-                onClick={() => handleAddTask(format(date, 'yyyy-MM-dd'))}
-                className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-all opacity-0 group-hover:opacity-100"
-                style={{ color: 'var(--text-muted)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                title={`Agregar tarea para ${label}`}
-              >
-                <Plus size={13} />
-              </button>
+              {!isSelectMode && (
+                <button
+                  onClick={() => handleAddTask(format(date, 'yyyy-MM-dd'))}
+                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-all opacity-0 group-hover:opacity-100"
+                  style={{ color: 'var(--text-muted)' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  title={`Agregar tarea para ${label}`}
+                >
+                  <Plus size={13} />
+                </button>
+              )}
             </div>
             <div className="divide-y rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border-secondary)' }}>
               {dayTasks.map((task) => (
-                <TaskItem key={task.id} task={task} labels={labelsMap?.get(task.id)} showProject />
+                <TaskItem
+                  key={task.id}
+                  task={task}
+                  labels={labelsMap?.get(task.id)}
+                  showProject
+                  isSelectMode={isSelectMode}
+                  isSelected={selectedIds.has(task.id)}
+                  onToggleSelect={() => toggle(task.id)}
+                />
               ))}
               {dayEvents.map((event) => (
                 <CalendarEventItem key={event.id} event={event} />
@@ -186,7 +241,21 @@ export function UpcomingView() {
             Próximos {upcomingDays} días
           </p>
         </div>
-        <ViewOptionsBar viewId={VIEW_ID} showUpcomingDays availableCalendarModes={['week', '4days', 'month']} />
+        <div className="flex items-center gap-2">
+          {opts.viewStyle === 'list' && !isSelectMode && visibleTasks.length > 0 && (
+            <button
+              onClick={enter}
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
+              style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
+            >
+              <ListChecks size={14} />
+              Seleccionar
+            </button>
+          )}
+          <ViewOptionsBar viewId={VIEW_ID} showUpcomingDays availableCalendarModes={['week', '4days', 'month']} />
+        </div>
       </div>
 
       {renderContent()}
@@ -197,6 +266,21 @@ export function UpcomingView() {
         task={editingTask}
         defaultDate={defaultDate}
       />
+
+      {selectedIds.size > 0 && (
+        <BulkActionBar
+          selectedCount={selectedIds.size}
+          totalCount={visibleTasks.length}
+          allSelected={allSelected}
+          onSelectAll={selectAll}
+          onClearAll={clearAll}
+          onExit={exit}
+          onDelete={handleBulkDelete}
+          onMoveToProject={handleBulkMoveProject}
+          onChangePriority={handleBulkPriority}
+          onChangeDueDate={handleBulkDueDate}
+        />
+      )}
     </div>
   )
 }

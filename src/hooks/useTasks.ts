@@ -170,6 +170,25 @@ export function useCompletedTasks() {
   })
 }
 
+export function useTasksByLabel(labelId: string) {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: [...taskKeys.all, 'label', labelId, user?.id ?? ''],
+    queryFn: () => taskService.getTasksByLabel(user!.id, labelId),
+    enabled: !!user && !!labelId,
+  })
+}
+
+export function useTaskCountsByProject() {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: [...taskKeys.all, 'counts', user?.id ?? ''],
+    queryFn: () => taskService.getTaskCountsByProject(user!.id),
+    enabled: !!user,
+    staleTime: 30_000,
+  })
+}
+
 export function useSearchTasks(query: string) {
   const { user } = useAuth()
   return useQuery({

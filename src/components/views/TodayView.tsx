@@ -1,13 +1,15 @@
-import { PartyPopper, CalendarDays } from 'lucide-react'
-import { useTodayTasks } from '@/hooks/useTasks'
+import { PartyPopper, CalendarDays, ListChecks } from 'lucide-react'
+import { useTodayTasks, useDeleteTask, useUpdateTask } from '@/hooks/useTasks'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { useTodayCalendarEvents } from '@/hooks/useCalendarEvents'
 import { TaskEditor } from '@/components/tasks/TaskEditor'
 import { TaskItem } from '@/components/tasks/TaskItem'
 import { TaskGroup } from '@/components/tasks/TaskGroup'
 import { CalendarEventItem } from '@/components/common/CalendarEventItem'
+import { BulkActionBar } from '@/components/common/BulkActionBar'
 import { TodayCalendarView } from './TodayCalendarView'
 import { ViewOptionsBar } from './ViewOptionsBar'
+import { useBulkSelection } from '@/hooks/useBulkSelection'
 import { useState, useMemo } from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -24,8 +26,10 @@ export function TodayView() {
   const { data: calendarEvents = [] } = useTodayCalendarEvents()
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
-  const { getViewOptions } = useUIStore()
+  const { getViewOptions, showConfirmDialog } = useUIStore()
   const opts = getViewOptions(VIEW_ID)
+  const deleteTask = useDeleteTask()
+  const updateTask = useUpdateTask()
 
   const today = new Date()
   const todayStr = format(today, "EEEE d 'de' MMMM", { locale: es })
@@ -57,6 +61,47 @@ export function TodayView() {
   )
   const completedTasks = visibleTasks.filter((t) => t.is_completed)
 
+  // Bulk selection
+  const { isSelectMode, selectedIds, enter, exit, toggle, selectAll, clearAll, allSelected } =
+    useBulkSelection(visibleTasks)
+
+  const handleBulkDelete = () => {
+    showConfirmDialog({
+      title: `¿Eliminar ${selectedIds.size} ${selectedIds.size === 1 ? 'tarea' : 'tareas'}?`,
+      message: 'Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      onConfirm: async () => {
+        await Promise.all(Array.from(selectedIds).map((id) => deleteTask.mutateAsync(id)))
+        exit()
+      },
+    })
+  }
+
+  const handleBulkMoveProject = async (projectId: string, sectionId: string | null) => {
+    await Promise.all(
+      Array.from(selectedIds).map((id) =>
+        updateTask.mutateAsync({ id, updates: { project_id: projectId, section_id: sectionId } }),
+      ),
+    )
+    exit()
+  }
+
+  const handleBulkPriority = async (priority: 1 | 2 | 3 | 4) => {
+    await Promise.all(
+      Array.from(selectedIds).map((id) => updateTask.mutateAsync({ id, updates: { priority } })),
+    )
+    exit()
+  }
+
+  const handleBulkDueDate = async (date: string | null) => {
+    await Promise.all(
+      Array.from(selectedIds).map((id) =>
+        updateTask.mutateAsync({ id, updates: { due_date: date } }),
+      ),
+    )
+    exit()
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -66,6 +111,8 @@ export function TodayView() {
       </div>
     )
   }
+
+  const selectionProps = { isSelectMode, selectedIds, onToggleSelect: toggle }
 
   return (
     <div>
@@ -78,14 +125,26 @@ export function TodayView() {
             {todayStr}
           </p>
         </div>
-        <ViewOptionsBar viewId={VIEW_ID} availableStyles={['list', 'calendar']} hideDateFilter hideCalendarMode />
+        <div className="flex items-center gap-2">
+          {opts.viewStyle !== 'calendar' && !isSelectMode && visibleTasks.length > 0 && (
+            <button
+              onClick={enter}
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
+              style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
+            >
+              <ListChecks size={14} />
+              Seleccionar
+            </button>
+          )}
+          <ViewOptionsBar viewId={VIEW_ID} availableStyles={['list', 'calendar']} hideDateFilter hideCalendarMode />
+        </div>
       </div>
 
       {opts.viewStyle === 'calendar' ? (
-        /* Day timeline calendar */
         <TodayCalendarView tasks={visibleTasks} labelsMap={labelsMap} calendarEvents={calendarEvents} />
       ) : opts.groupBy !== 'none' ? (
-        /* Grouped view */
         <div>
           {visibleTasks.length === 0 ? (
             <div className="py-12 text-center">
@@ -105,12 +164,14 @@ export function TodayView() {
                 color={group.color}
                 tasks={group.tasks}
                 labelsMap={labelsMap}
+                isSelectMode={selectionProps.isSelectMode}
+                selectedIds={selectionProps.selectedIds}
+                onToggleSelect={selectionProps.onToggleSelect}
               />
             ))
           )}
         </div>
       ) : (
-        /* Default view: overdue + today + completed */
         <>
           {overdueTasks.length > 0 && (
             <div className="mb-6">
@@ -119,7 +180,14 @@ export function TodayView() {
               </h2>
               <div className="divide-y" style={{ borderColor: 'var(--border-secondary)' }}>
                 {overdueTasks.map((task) => (
-                  <TaskItem key={task.id} task={task} labels={labelsMap?.get(task.id)} />
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    labels={labelsMap?.get(task.id)}
+                    isSelectMode={isSelectMode}
+                    isSelected={selectedIds.has(task.id)}
+                    onToggleSelect={() => toggle(task.id)}
+                  />
                 ))}
               </div>
             </div>
@@ -129,7 +197,14 @@ export function TodayView() {
             {todayTasks.length > 0 && (
               <div className="divide-y" style={{ borderColor: 'var(--border-secondary)' }}>
                 {todayTasks.map((task) => (
-                  <TaskItem key={task.id} task={task} labels={labelsMap?.get(task.id)} />
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    labels={labelsMap?.get(task.id)}
+                    isSelectMode={isSelectMode}
+                    isSelected={selectedIds.has(task.id)}
+                    onToggleSelect={() => toggle(task.id)}
+                  />
                 ))}
               </div>
             )}
@@ -162,7 +237,14 @@ export function TodayView() {
               </p>
               <div className="divide-y" style={{ borderColor: 'var(--border-secondary)' }}>
                 {completedTasks.map((task) => (
-                  <TaskItem key={task.id} task={task} labels={labelsMap?.get(task.id)} />
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    labels={labelsMap?.get(task.id)}
+                    isSelectMode={isSelectMode}
+                    isSelected={selectedIds.has(task.id)}
+                    onToggleSelect={() => toggle(task.id)}
+                  />
                 ))}
               </div>
             </div>
@@ -188,6 +270,21 @@ export function TodayView() {
         task={editingTask}
         defaultDate={todayDate}
       />
+
+      {selectedIds.size > 0 && (
+        <BulkActionBar
+          selectedCount={selectedIds.size}
+          totalCount={visibleTasks.length}
+          allSelected={allSelected}
+          onSelectAll={selectAll}
+          onClearAll={clearAll}
+          onExit={exit}
+          onDelete={handleBulkDelete}
+          onMoveToProject={handleBulkMoveProject}
+          onChangePriority={handleBulkPriority}
+          onChangeDueDate={handleBulkDueDate}
+        />
+      )}
     </div>
   )
 }

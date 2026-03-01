@@ -227,6 +227,45 @@ export const taskService = {
     return data ?? []
   },
 
+  async getTasksByLabel(userId: string, labelId: string): Promise<Task[]> {
+    const { data: rows, error: rowsError } = await supabase
+      .from('task_labels')
+      .select('task_id')
+      .eq('label_id', labelId)
+
+    if (rowsError) throw rowsError
+    const taskIds = (rows ?? []).map((r) => r.task_id as string)
+    if (taskIds.length === 0) return []
+
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .in('id', taskIds)
+      .eq('user_id', userId)
+      .is('parent_id', null)
+      .order('due_date', { ascending: true, nullsFirst: false })
+      .order('sort_order', { ascending: true })
+
+    if (error) throw error
+    return data ?? []
+  },
+
+  async getTaskCountsByProject(userId: string): Promise<Record<string, number>> {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('project_id')
+      .eq('user_id', userId)
+      .eq('is_completed', false)
+      .is('parent_id', null)
+
+    if (error) throw error
+    const counts: Record<string, number> = {}
+    for (const row of data ?? []) {
+      counts[row.project_id] = (counts[row.project_id] ?? 0) + 1
+    }
+    return counts
+  },
+
   async reorderTasks(updates: { id: string; sort_order: number }[]): Promise<void> {
     const results = await Promise.all(
       updates.map(({ id, sort_order }) =>

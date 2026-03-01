@@ -4,7 +4,6 @@ import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import { TextStyle } from '@tiptap/extension-text-style'
 import { Color } from '@tiptap/extension-color'
-import LinkExtension from '@tiptap/extension-link'
 import { Extension } from '@tiptap/core'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
@@ -210,14 +209,13 @@ export function TitleEditor({
         code: false,
         horizontalRule: false,
         hardBreak: false,
+        underline: false,
+        // Link ya viene en StarterKit v3 — configurarlo aquí evita el duplicado
+        link: { openOnClick: false, HTMLAttributes: { class: 'tiptap-link' } },
       }),
       Placeholder.configure({ placeholder }),
       TextStyle,
       Color,
-      LinkExtension.configure({
-        openOnClick: false,
-        HTMLAttributes: { class: 'tiptap-link' },
-      }),
       SingleLine,
       NLPHighlight,
       BreakMarksOnSpace,

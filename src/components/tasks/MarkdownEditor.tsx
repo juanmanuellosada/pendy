@@ -4,9 +4,7 @@ import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
-import Link from '@tiptap/extension-link'
 import Highlight from '@tiptap/extension-highlight'
-import Underline from '@tiptap/extension-underline'
 import { Markdown } from 'tiptap-markdown'
 import {
   Bold,
@@ -112,16 +110,13 @@ export function MarkdownEditor({
         italic: {},
         strike: {},
         hardBreak: {},
+        // Link y Underline vienen en StarterKit v3 — configurarlos aquí evita duplicados
+        link: { openOnClick: false, HTMLAttributes: { class: 'tiptap-link' } },
       }),
       Placeholder.configure({ placeholder }),
       TaskList,
       TaskItem.configure({ nested: true }),
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: { class: 'tiptap-link' },
-      }),
       Highlight,
-      Underline,
       Markdown.configure({
         html: true,
         transformPastedText: true,

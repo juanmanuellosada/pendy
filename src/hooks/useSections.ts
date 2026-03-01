@@ -6,6 +6,7 @@ import type { Section } from '@/lib/types'
 
 export const sectionKeys = {
   all: ['sections'] as const,
+  allSections: ['sections', 'all'] as const,
   project: (projectId: string) => [...sectionKeys.all, 'project', projectId] as const,
 }
 
@@ -14,6 +15,24 @@ export function useProjectSections(projectId: string | undefined) {
     queryKey: sectionKeys.project(projectId ?? ''),
     queryFn: () => sectionService.getSectionsByProject(projectId!),
     enabled: !!projectId,
+  })
+}
+
+/** Devuelve un Map<projectId, Section[]> con todas las secciones del usuario. */
+export function useAllSections() {
+  return useQuery({
+    queryKey: sectionKeys.allSections,
+    queryFn: async () => {
+      const sections = await sectionService.getAllSections()
+      const map = new Map<string, Section[]>()
+      for (const s of sections) {
+        const arr = map.get(s.project_id) ?? []
+        arr.push(s)
+        map.set(s.project_id, arr)
+      }
+      return map
+    },
+    staleTime: 1000 * 60,
   })
 }
 

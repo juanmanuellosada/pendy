@@ -190,9 +190,10 @@ Deno.serve(async (req: Request) => {
     )
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error"
+    const status = message.includes("Invalid or expired JWT") || message.includes("Missing or invalid") ? 401 : 500
     return new Response(
       JSON.stringify({ error: message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     )
   }
 })

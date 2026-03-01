@@ -1,16 +1,18 @@
-import { Inbox } from 'lucide-react'
-import { useInboxTasks } from '@/hooks/useTasks'
+import { Inbox, ListChecks } from 'lucide-react'
+import { useInboxTasks, useDeleteTask, useUpdateTask } from '@/hooks/useTasks'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { useCreateSection } from '@/hooks/useSections'
 import { TaskEditor } from '@/components/tasks/TaskEditor'
 import { TaskItem } from '@/components/tasks/TaskItem'
 import { TaskGroup } from '@/components/tasks/TaskGroup'
+import { BulkActionBar } from '@/components/common/BulkActionBar'
 import { ViewOptionsBar } from './ViewOptionsBar'
 import { BoardView } from './BoardView'
 import { CalendarView } from './CalendarView'
 import { SectionEditor } from '@/components/projects/SectionEditor'
 import { useInboxProject } from '@/hooks/useProjects'
 import { useUIStore } from '@/stores/uiStore'
+import { useBulkSelection } from '@/hooks/useBulkSelection'
 import { applyViewFilters, applyViewSort, groupTasks } from '@/lib/viewUtils'
 import { useState, useMemo, useEffect } from 'react'
 import type { Task, Section } from '@/lib/types'
@@ -27,8 +29,10 @@ export function InboxView() {
   const [sectionEditorOpen, setSectionEditorOpen] = useState(false)
   const [editingSection, setEditingSection] = useState<Section | null>(null)
   const [defaultSectionId, setDefaultSectionId] = useState<string | null>(null)
-  const { getViewOptions } = useUIStore()
+  const { getViewOptions, showConfirmDialog } = useUIStore()
   const opts = getViewOptions(VIEW_ID)
+  const deleteTask = useDeleteTask()
+  const updateTask = useUpdateTask()
 
   const handleCloseEditor = () => {
     setEditorOpen(false)
@@ -38,15 +42,10 @@ export function InboxView() {
 
   const handleAddTaskFromBoard = (sectionId?: string | null) => {
     if (sectionId === undefined) {
-      // "Add section" button clicked
       setSectionEditorOpen(true)
       return
     }
     setDefaultSectionId(sectionId)
-    setEditorOpen(true)
-  }
-
-  const handleAddTask = (dateStr?: string) => {
     setEditorOpen(true)
   }
 
@@ -83,6 +82,47 @@ export function InboxView() {
     [visibleTasks, opts.groupBy, labelsMap],
   )
 
+  // Bulk selection
+  const { isSelectMode, selectedIds, enter, exit, toggle, selectAll, clearAll, allSelected } =
+    useBulkSelection(visibleTasks)
+
+  const handleBulkDelete = () => {
+    showConfirmDialog({
+      title: `¿Eliminar ${selectedIds.size} ${selectedIds.size === 1 ? 'tarea' : 'tareas'}?`,
+      message: 'Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      onConfirm: async () => {
+        await Promise.all(Array.from(selectedIds).map((id) => deleteTask.mutateAsync(id)))
+        exit()
+      },
+    })
+  }
+
+  const handleBulkMoveProject = async (projectId: string, sectionId: string | null) => {
+    await Promise.all(
+      Array.from(selectedIds).map((id) =>
+        updateTask.mutateAsync({ id, updates: { project_id: projectId, section_id: sectionId } }),
+      ),
+    )
+    exit()
+  }
+
+  const handleBulkPriority = async (priority: 1 | 2 | 3 | 4) => {
+    await Promise.all(
+      Array.from(selectedIds).map((id) => updateTask.mutateAsync({ id, updates: { priority } })),
+    )
+    exit()
+  }
+
+  const handleBulkDueDate = async (date: string | null) => {
+    await Promise.all(
+      Array.from(selectedIds).map((id) =>
+        updateTask.mutateAsync({ id, updates: { due_date: date } }),
+      ),
+    )
+    exit()
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -114,7 +154,7 @@ export function InboxView() {
       return (
         <CalendarView
           calendarMode={opts.calendarMode}
-          onAddTask={handleAddTask}
+          onAddTask={() => setEditorOpen(true)}
         />
       )
     }
@@ -141,6 +181,9 @@ export function InboxView() {
               color={group.color}
               tasks={group.tasks}
               labelsMap={labelsMap}
+              isSelectMode={isSelectMode}
+              selectedIds={selectedIds}
+              onToggleSelect={toggle}
             />
           ))}
         </div>
@@ -150,7 +193,14 @@ export function InboxView() {
     return (
       <div className="divide-y" style={{ borderColor: 'var(--border-secondary)' }}>
         {visibleTasks.map((task) => (
-          <TaskItem key={task.id} task={task} labels={labelsMap?.get(task.id)} />
+          <TaskItem
+            key={task.id}
+            task={task}
+            labels={labelsMap?.get(task.id)}
+            isSelectMode={isSelectMode}
+            isSelected={selectedIds.has(task.id)}
+            onToggleSelect={() => toggle(task.id)}
+          />
         ))}
       </div>
     )
@@ -162,7 +212,21 @@ export function InboxView() {
         <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
           Entrada
         </h1>
-        <ViewOptionsBar viewId={VIEW_ID} />
+        <div className="flex items-center gap-2">
+          {opts.viewStyle !== 'panel' && opts.viewStyle !== 'calendar' && !isSelectMode && visibleTasks.length > 0 && (
+            <button
+              onClick={enter}
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
+              style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
+            >
+              <ListChecks size={14} />
+              Seleccionar
+            </button>
+          )}
+          <ViewOptionsBar viewId={VIEW_ID} />
+        </div>
       </div>
 
       {renderContent()}
@@ -183,6 +247,21 @@ export function InboxView() {
         onSave={handleSaveSection}
         section={editingSection}
       />
+
+      {selectedIds.size > 0 && (
+        <BulkActionBar
+          selectedCount={selectedIds.size}
+          totalCount={visibleTasks.length}
+          allSelected={allSelected}
+          onSelectAll={selectAll}
+          onClearAll={clearAll}
+          onExit={exit}
+          onDelete={handleBulkDelete}
+          onMoveToProject={handleBulkMoveProject}
+          onChangePriority={handleBulkPriority}
+          onChangeDueDate={handleBulkDueDate}
+        />
+      )}
     </div>
   )
 }
