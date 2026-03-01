@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { X, Minus, Plus } from 'lucide-react'
 import { useCreateHabit, useUpdateHabit } from '@/hooks/useHabits'
 import { useAuth } from '@/hooks/useAuth'
+import { stripHtmlTags } from '@/lib/utils'
+import { TitleEditor } from '@/components/tasks/TitleEditor'
 import type { Habit } from '@/lib/types'
 
 const PRESET_COLORS = [
@@ -76,7 +78,7 @@ export function HabitEditor({ open, onClose, habit }: HabitEditorProps) {
     )
 
   const handleSubmit = async () => {
-    if (!form.name.trim()) {
+    if (!stripHtmlTags(form.name).trim()) {
       setError('El nombre es requerido')
       return
     }
@@ -166,18 +168,20 @@ export function HabitEditor({ open, onClose, habit }: HabitEditorProps) {
                 }}
               />
             </div>
-            <div className="flex-1">
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => set('name', e.target.value)}
+            <div
+              className="flex-1 rounded-lg border px-3 py-2"
+              style={{
+                borderColor: error && !stripHtmlTags(form.name).trim() ? '#EC1E2A' : 'var(--border-primary)',
+                backgroundColor: 'var(--bg-secondary)',
+              }}
+            >
+              <TitleEditor
+                content={form.name}
+                onChange={(html) => set('name', html)}
+                onSubmit={handleSubmit}
                 placeholder="Nombre del hábito"
-                className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
-                style={{
-                  borderColor: error && !form.name ? '#EC1E2A' : 'var(--border-primary)',
-                  backgroundColor: 'var(--bg-secondary)',
-                  color: 'var(--text-primary)',
-                }}
+                autoFocus
+                textClassName="text-sm font-medium leading-normal"
               />
             </div>
           </div>

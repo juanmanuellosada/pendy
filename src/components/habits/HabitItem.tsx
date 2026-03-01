@@ -9,6 +9,7 @@ import {
   getRecurrenceLabel,
   getScheduledTimeForDate,
 } from '@/lib/habitUtils'
+import { stripLabelTokensFromHtml } from '@/lib/utils'
 import type { Habit, HabitCompletion, HabitSchedule } from '@/lib/types'
 
 interface HabitItemProps {
@@ -71,15 +72,16 @@ export function HabitItem({ habit, completions, schedules = [], date, onToggle, 
         <div className="flex items-center gap-2">
           {habit.icon && <span className="text-base leading-none">{habit.icon}</span>}
           <span
-            className="truncate text-sm font-medium"
+            className="truncate text-sm font-medium min-w-0"
             style={{
               color: 'var(--text-primary)',
               textDecoration: completed ? 'line-through' : 'none',
               opacity: completed ? 0.6 : 1,
             }}
-          >
-            {habit.name}
-          </span>
+            dangerouslySetInnerHTML={{
+              __html: stripLabelTokensFromHtml(habit.name).replace(/^<p>(.*)<\/p>$/, '$1'),
+            }}
+          />
           <span
             className="flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
             style={{ backgroundColor: `${habit.color}22`, color: habit.color }}

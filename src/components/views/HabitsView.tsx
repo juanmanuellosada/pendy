@@ -6,6 +6,7 @@ import { HabitEditor } from '@/components/habits/HabitEditor'
 import { HabitCheckbox } from '@/components/habits/HabitCheckbox'
 import { calculateStreak, getWeeklyProgress, getRecurrenceLabel, isCompletedOnDate, habitAppearsOnDate, getHabitDatesInRange } from '@/lib/habitUtils'
 import { useUIStore } from '@/stores/uiStore'
+import { stripHtmlTags, stripLabelTokensFromHtml } from '@/lib/utils'
 import type { Habit, HabitCompletion } from '@/lib/types'
 
 export function HabitsView() {
@@ -40,7 +41,7 @@ export function HabitsView() {
 
   const handleDelete = (habit: Habit) => {
     showConfirmDialog({
-      title: `¿Eliminar "${habit.name}"?`,
+      title: `¿Eliminar "${stripHtmlTags(habit.name)}"?`,
       message: 'Se eliminarán también todas las marcaciones de este hábito. Esta acción no se puede deshacer.',
       confirmLabel: 'Eliminar',
       onConfirm: async () => {
@@ -330,9 +331,13 @@ function HabitRow({
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center gap-1.5">
           {habit.icon && <span className="text-sm leading-none">{habit.icon}</span>}
-          <span className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-            {habit.name}
-          </span>
+          <span
+            className="text-sm font-medium truncate min-w-0"
+            style={{ color: 'var(--text-primary)' }}
+            dangerouslySetInnerHTML={{
+              __html: stripLabelTokensFromHtml(habit.name).replace(/^<p>(.*)<\/p>$/, '$1'),
+            }}
+          />
         </div>
         <span className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
           {recLabel}

@@ -53,6 +53,43 @@ const TOTAL_HOURS = END_HOUR - START_HOUR
 const SNAP_MINUTES = 15
 const MIN_DURATION = 15
 
+/** Calcula posiciones de columna para bloques que se superponen en el tiempo */
+function computeOverlapLayout(
+  items: { id: string; startH: number; endH: number }[]
+): Map<string, { col: number; totalCols: number }> {
+  const result = new Map<string, { col: number; totalCols: number }>()
+  if (items.length === 0) return result
+  const sorted = [...items].sort((a, b) => a.startH - b.startH || a.endH - b.endH)
+  const colEnds: number[] = []
+  const colOf: Record<string, number> = {}
+  for (const item of sorted) {
+    let col = colEnds.findIndex((end) => end <= item.startH)
+    if (col === -1) col = colEnds.length
+    colEnds[col] = item.endH
+    colOf[item.id] = col
+  }
+  for (const item of sorted) {
+    let maxCol = colOf[item.id]!
+    for (const other of sorted) {
+      if (other.id !== item.id && other.startH < item.endH && other.endH > item.startH) {
+        maxCol = Math.max(maxCol, colOf[other.id]!)
+      }
+    }
+    result.set(item.id, { col: colOf[item.id]!, totalCols: maxCol + 1 })
+  }
+  return result
+}
+
+/** CSS left/right para un bloque en su sub-columna de overlap */
+function overlapPos(col: number, totalCols: number): React.CSSProperties {
+  if (totalCols <= 1) return {}
+  const pct = 100 / totalCols
+  return {
+    left: `calc(${(col * pct).toFixed(1)}% + 1px)`,
+    right: `calc(${((totalCols - col - 1) * pct).toFixed(1)}% + 1px)`,
+  }
+}
+
 interface CalendarViewProps {
   calendarMode: CalendarMode
   onAddTask: (dateStr: string) => void
@@ -496,7 +533,29 @@ function TimelineGrid({
       if (!showCompleted) dayHabits = dayHabits.filter((h) => !isCompletedOnDate(habitCompletions, h.id, day))
       const unscheduledHabits = dayHabits.filter((h) => getScheduledTimeForDate(h, habitSchedules, day) === null)
       const scheduledHabits = dayHabits.filter((h) => getScheduledTimeForDate(h, habitSchedules, day) !== null)
-      return { day, dateStr, allDay, timed, allDayEvents, timedEvents, unscheduledHabits, scheduledHabits }
+
+      // Layout de overlap para bloques con hora en este día
+      const layoutItems: { id: string; startH: number; endH: number }[] = []
+      for (const task of timed) {
+        const dt = new Date(task.due_datetime!)
+        const startH = dt.getHours() + dt.getMinutes() / 60
+        const dur = task.duration_minutes ?? 60
+        layoutItems.push({ id: task.id, startH, endH: startH + dur / 60 })
+      }
+      for (const ev of timedEvents) {
+        const startH = ev.start.getHours() + ev.start.getMinutes() / 60
+        const endH = ev.end.getHours() + ev.end.getMinutes() / 60
+        layoutItems.push({ id: ev.id, startH, endH: Math.max(startH + MIN_DURATION / 60, endH) })
+      }
+      for (const h of scheduledHabits) {
+        const time = getScheduledTimeForDate(h, habitSchedules, day)
+        if (!time) continue
+        const startH = timeStrToHour(time)
+        layoutItems.push({ id: h.id, startH, endH: startH + h.duration_minutes / 60 })
+      }
+      const colLayout = computeOverlapLayout(layoutItems)
+
+      return { day, dateStr, allDay, timed, allDayEvents, timedEvents, unscheduledHabits, scheduledHabits, colLayout }
     })
   }, [days, tasks, calendarEvents, habits, habitCompletions, habitSchedules, showFutureRecurrences, showCompleted, showHabits])
 
@@ -846,18 +905,18 @@ function TimelineGrid({
         <div className="grid border-b" style={{ gridTemplateColumns: `56px repeat(${days.length}, 1fr)`, borderColor: 'var(--border-secondary)' }}>
           <div className="flex items-start justify-end pr-2 pt-1 text-[10px]" style={{ color: 'var(--text-muted)' }}>Todo el día</div>
           {dayData.map((dd, i) => (
-            <div key={i} className="min-h-[32px] border-l p-1 flex flex-col gap-0.5" style={{ borderColor: 'var(--border-secondary)' }}>
+            <div key={i} className="min-h-[32px] border-l p-1 flex flex-col gap-0.5 overflow-hidden min-w-0" style={{ borderColor: 'var(--border-secondary)' }}>
               {dd.allDay.map((t) => <TaskTooltip key={t.id} task={t}><AllDayChip task={t} /></TaskTooltip>)}
               {dd.allDayEvents.map((ev) => (
                 <div
                   key={ev.id}
-                  className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs truncate cursor-pointer hover:opacity-80 transition-opacity"
+                  className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs overflow-hidden min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
                   style={{ backgroundColor: (ev.calendarColor ?? GOOGLE_COLOR) + '20' }}
                   title={ev.title}
                   onClick={() => onEditEvent(ev)}
                 >
                   <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: ev.calendarColor ?? GOOGLE_COLOR }} />
-                  <span className="truncate" style={{ color: 'var(--text-primary)' }}>{ev.title}</span>
+                  <span className="truncate min-w-0 flex-1" style={{ color: 'var(--text-primary)' }}>{ev.title}</span>
                 </div>
               ))}
               {dd.unscheduledHabits.map((habit) => (
@@ -930,29 +989,40 @@ function TimelineGrid({
                 <div key={i} className="pointer-events-none border-t" style={{ height: HOUR_HEIGHT, borderColor: 'var(--border-secondary)' }} />
               ))}
 
-              {dd.timed.map((task) => (
-                <TaskTooltip key={task.id} task={task} disabled={!!drag}>
-                  <TimelineTaskBlock
-                    task={task}
-                    isDragging={!!(drag?.taskId === task.id && didMove && !isDragSameCol)}
-                    activeDragDy={drag?.taskId === task.id && isDragSameCol ? ghostOffset.dy : 0}
-                    localHourHint={localHourHints[task.id]}
-                    onDragStart={handleTaskDragStart}
+              {dd.timed.map((task) => {
+                const layout = dd.colLayout.get(task.id)
+                return (
+                  <TaskTooltip key={task.id} task={task} disabled={!!drag}>
+                    <TimelineTaskBlock
+                      task={task}
+                      isDragging={!!(drag?.taskId === task.id && didMove && !isDragSameCol)}
+                      activeDragDy={drag?.taskId === task.id && isDragSameCol ? ghostOffset.dy : 0}
+                      localHourHint={localHourHints[task.id]}
+                      onDragStart={handleTaskDragStart}
+                      col={layout?.col}
+                      totalCols={layout?.totalCols}
+                    />
+                  </TaskTooltip>
+                )
+              })}
+              {dd.timedEvents.map((ev) => {
+                const layout = dd.colLayout.get(ev.id)
+                return (
+                  <CalendarTimelineBlock
+                    key={ev.id}
+                    event={ev}
+                    isDragging={!!(calEvDrag?.event.id === ev.id && calEvDidMove && !isCalEvSameCol)}
+                    activeDragDy={calEvDrag?.event.id === ev.id && isCalEvSameCol ? calEvCurrentDy : 0}
+                    localHourHint={localCalEvHints[ev.id]}
+                    onDragStart={handleCalEvDragStart}
+                    col={layout?.col}
+                    totalCols={layout?.totalCols}
                   />
-                </TaskTooltip>
-              ))}
-              {dd.timedEvents.map((ev) => (
-                <CalendarTimelineBlock
-                  key={ev.id}
-                  event={ev}
-                  isDragging={!!(calEvDrag?.event.id === ev.id && calEvDidMove && !isCalEvSameCol)}
-                  activeDragDy={calEvDrag?.event.id === ev.id && isCalEvSameCol ? calEvCurrentDy : 0}
-                  localHourHint={localCalEvHints[ev.id]}
-                  onDragStart={handleCalEvDragStart}
-                />
-              ))}
+                )
+              })}
               {dd.scheduledHabits.map((habit) => {
                 const scheduledTime = getScheduledTimeForDate(habit, habitSchedules, dd.day)!
+                const layout = dd.colLayout.get(habit.id)
                 return (
                   <CalendarHabitBlock
                     key={habit.id}
@@ -964,6 +1034,8 @@ function TimelineGrid({
                     onToggle={() => onToggleHabitCompletion?.(habit.id, dd.day)}
                     onUpdateDuration={(mins) => onUpdateHabitDuration?.(habit.id, mins)}
                     onEdit={() => onEditHabit?.(habit, dd.day)}
+                    col={layout?.col}
+                    totalCols={layout?.totalCols}
                   />
                 )
               })}
@@ -979,7 +1051,7 @@ function TimelineGrid({
                   }}
                 >
                   <p className="truncate px-1.5 py-0.5 text-[11px] font-medium" style={{ color: habitDrag.habit.color }}>
-                    {habitDrag.habit.icon && `${habitDrag.habit.icon} `}{habitDrag.habit.name}
+                    {habitDrag.habit.icon && `${habitDrag.habit.icon} `}{stripHtmlTags(habitDrag.habit.name)}
                   </p>
                 </div>
               )}
@@ -1182,12 +1254,16 @@ function CalendarTimelineBlock({
   activeDragDy = 0,
   localHourHint,
   onDragStart,
+  col = 0,
+  totalCols = 1,
 }: {
   event: CalendarEvent
   isDragging: boolean
   activeDragDy?: number
   localHourHint?: number
   onDragStart: (event: CalendarEvent, e: React.MouseEvent) => void
+  col?: number
+  totalCols?: number
 }) {
   const HOUR_HEIGHT = useContext(HourHeightCtx)
   const { updateEvent } = useCalendarEventMutations()
@@ -1307,6 +1383,7 @@ function CalendarTimelineBlock({
           borderLeftColor: color,
           backgroundColor: `${color}1A`,
           transition: isSameColDrag || isDragging || resizing ? 'none' : 'top 0.15s ease, height 0.15s ease',
+          ...overlapPos(col, totalCols),
         }}
         onMouseDown={handleMouseDown}
       >
@@ -1357,6 +1434,8 @@ function TimelineTaskBlock({
   onDragStart,
   onMouseEnter,
   onMouseLeave,
+  col = 0,
+  totalCols = 1,
 }: {
   task: Task
   isDragging: boolean
@@ -1365,6 +1444,8 @@ function TimelineTaskBlock({
   onDragStart: (task: Task, e: React.MouseEvent) => void
   onMouseEnter?: (e: React.MouseEvent) => void
   onMouseLeave?: (e: React.MouseEvent) => void
+  col?: number
+  totalCols?: number
 }) {
   const HOUR_HEIGHT = useContext(HourHeightCtx)
   const updateTask = useUpdateTask()
@@ -1457,6 +1538,7 @@ function TimelineTaskBlock({
         borderLeftColor: color,
         backgroundColor: `${color}18`,
         transition: isSameColDrag || isDragging || resizing ? 'none' : 'top 0.15s ease, height 0.15s ease',
+        ...overlapPos(col, totalCols),
       }}
       onMouseDown={handleMouseDown}
       onMouseEnter={onMouseEnter}
@@ -1535,7 +1617,7 @@ function CalendarHabitChip({
   return (
     <>
     <div
-      className="group flex items-center gap-1 rounded px-1 py-0.5 text-[11px] truncate select-none"
+      className="group flex items-center gap-1 rounded px-1 py-0.5 text-[11px] overflow-hidden min-w-0 select-none"
       style={{
         backgroundColor: `${habit.color}15`,
         borderLeft: `2px solid ${habit.color}`,
@@ -1548,8 +1630,8 @@ function CalendarHabitChip({
     >
       <HabitCheckbox completed={completed} color={habit.color} onChange={onToggle} size="sm" />
       {habit.icon && <span className="shrink-0">{habit.icon}</span>}
-      <span className="truncate flex-1" style={{ color: 'var(--text-primary)', textDecoration: completed ? 'line-through' : 'none' }}>
-        {habit.name}
+      <span className="truncate flex-1 min-w-0" style={{ color: 'var(--text-primary)', textDecoration: completed ? 'line-through' : 'none' }}>
+        {stripHtmlTags(habit.name)}
       </span>
       <span className="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ backgroundColor: `${habit.color}22`, color: habit.color }}>
         Hábito
@@ -1581,6 +1663,8 @@ function CalendarHabitBlock({
   onToggle,
   onUpdateDuration,
   onEdit,
+  col = 0,
+  totalCols = 1,
 }: {
   habit: Habit
   scheduledTime: string
@@ -1590,6 +1674,8 @@ function CalendarHabitBlock({
   onToggle: () => void
   onUpdateDuration: (mins: number) => void
   onEdit?: () => void
+  col?: number
+  totalCols?: number
 }) {
   const HOUR_HEIGHT = useContext(HourHeightCtx)
   const completed = isCompletedOnDate(completions, habit.id, date)
@@ -1712,6 +1798,7 @@ function CalendarHabitBlock({
         borderLeftColor: habit.color,
         backgroundColor: `${habit.color}1A`,
         transition: interacting ? 'none' : 'top 0.15s ease, height 0.15s ease',
+        ...overlapPos(col, totalCols),
       }}
       onMouseDown={handleDragStart}
       {...tooltipHandlers}
@@ -1720,7 +1807,7 @@ function CalendarHabitBlock({
         <HabitCheckbox completed={completed} color={habit.color} onChange={onToggle} size="sm" />
         {habit.icon && <span className="shrink-0 text-[10px]">{habit.icon}</span>}
         <p className={cn('truncate text-[11px] font-medium leading-tight flex-1 min-w-0', completed && 'line-through')} style={{ color: 'var(--text-primary)' }}>
-          {habit.name}
+          {stripHtmlTags(habit.name)}
         </p>
         <span className="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ backgroundColor: `${habit.color}22`, color: habit.color }}>
           Hábito
@@ -1757,7 +1844,7 @@ function AllDayChip({ task, onMouseEnter, onMouseLeave }: { task: Task; onMouseE
   return (
     <div
       className={cn(
-        'mb-0.5 flex cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-[11px] truncate',
+        'mb-0.5 flex cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-[11px] overflow-hidden min-w-0',
         task.is_completed && 'opacity-50',
       )}
       style={{ backgroundColor: `${color}20` }}
@@ -1770,7 +1857,7 @@ function AllDayChip({ task, onMouseEnter, onMouseLeave }: { task: Task; onMouseE
         priority={task.priority}
         onChange={(completed) => completeTask.mutate({ id: task.id, completed })}
       />
-      <span className={cn('truncate', task.is_completed && 'line-through')} style={{ color: 'var(--text-primary)' }}>
+      <span className={cn('truncate min-w-0 flex-1', task.is_completed && 'line-through')} style={{ color: 'var(--text-primary)' }}>
         {stripLabelTokensFromText(stripHtmlTags(task.title))}
       </span>
     </div>
@@ -1833,7 +1920,7 @@ function MonthDayCell({
 
   return (
     <div
-      className="relative flex flex-col p-1.5 transition-colors select-none min-h-[108px]"
+      className="relative flex flex-col p-1.5 transition-colors select-none min-h-[108px] overflow-hidden"
       style={{
         borderRight: hasRightBorder ? '1px solid var(--border-secondary)' : 'none',
         backgroundColor: isOver ? 'var(--bg-active)' : !inCurrentMonth ? 'var(--bg-secondary)' : 'transparent',
@@ -1882,11 +1969,11 @@ function MonthDayCell({
             <div
               draggable
               onDragStart={(e) => onDragStart(e, task.id)}
-              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs cursor-grab active:cursor-grabbing truncate transition-opacity hover:opacity-80"
+              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs cursor-grab active:cursor-grabbing overflow-hidden min-w-0 transition-opacity hover:opacity-80"
               style={{ backgroundColor: PRIORITY_COLORS[task.priority] + '20' }}
             >
               <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: PRIORITY_COLORS[task.priority] }} />
-              <span className={cn('truncate', task.is_completed && 'line-through opacity-50')} style={{ color: 'var(--text-primary)' }}>
+              <span className={cn('truncate min-w-0 flex-1', task.is_completed && 'line-through opacity-50')} style={{ color: 'var(--text-primary)' }}>
                 {stripLabelTokensFromText(stripHtmlTags(task.title))}
               </span>
             </div>
@@ -1895,25 +1982,25 @@ function MonthDayCell({
         {visibleEvents.map((ev) => (
           <div
             key={ev.id}
-            className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs truncate cursor-pointer hover:opacity-80 transition-opacity"
+            className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs overflow-hidden min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
             style={{ backgroundColor: (ev.calendarColor ?? GOOGLE_COLOR) + '1A' }}
             title={ev.isAllDay ? ev.title : `${format(ev.start, 'HH:mm')} ${ev.title}`}
             onClick={() => onEditEvent(ev)}
           >
             <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: ev.calendarColor ?? GOOGLE_COLOR }} />
-            <span className="truncate" style={{ color: 'var(--text-primary)' }}>{ev.title}</span>
+            <span className="truncate min-w-0 flex-1" style={{ color: 'var(--text-primary)' }}>{ev.title}</span>
           </div>
         ))}
         {visibleHabits.map((habit) => (
           <div
             key={habit.id}
-            className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs truncate cursor-pointer hover:opacity-80 transition-opacity"
+            className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs overflow-hidden min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
             style={{ backgroundColor: `${habit.color}18`, borderLeft: `2px solid ${habit.color}` }}
-            title={habit.name}
+            title={stripHtmlTags(habit.name)}
             onClick={() => onEditHabit?.(habit, day)}
           >
             {habit.icon && <span className="shrink-0">{habit.icon}</span>}
-            <span className="truncate" style={{ color: 'var(--text-primary)' }}>{habit.name}</span>
+            <span className="truncate min-w-0 flex-1" style={{ color: 'var(--text-primary)' }}>{stripHtmlTags(habit.name)}</span>
           </div>
         ))}
         {overflow > 0 && (

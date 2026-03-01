@@ -33,6 +33,43 @@ const TOTAL_HOURS = END_HOUR - START_HOUR
 const SNAP_MINUTES = 15 // snap to 15-min increments
 const MIN_DURATION = 15 // minimum 15 minutes
 
+/** Calcula posiciones de columna para bloques que se superponen en el tiempo */
+function computeOverlapLayout(
+  items: { id: string; startH: number; endH: number }[]
+): Map<string, { col: number; totalCols: number }> {
+  const result = new Map<string, { col: number; totalCols: number }>()
+  if (items.length === 0) return result
+  const sorted = [...items].sort((a, b) => a.startH - b.startH || a.endH - b.endH)
+  const colEnds: number[] = []
+  const colOf: Record<string, number> = {}
+  for (const item of sorted) {
+    let col = colEnds.findIndex((end) => end <= item.startH)
+    if (col === -1) col = colEnds.length
+    colEnds[col] = item.endH
+    colOf[item.id] = col
+  }
+  for (const item of sorted) {
+    let maxCol = colOf[item.id]!
+    for (const other of sorted) {
+      if (other.id !== item.id && other.startH < item.endH && other.endH > item.startH) {
+        maxCol = Math.max(maxCol, colOf[other.id]!)
+      }
+    }
+    result.set(item.id, { col: colOf[item.id]!, totalCols: maxCol + 1 })
+  }
+  return result
+}
+
+/** CSS left/right para un bloque en su sub-columna de overlap */
+function overlapPos(col: number, totalCols: number): React.CSSProperties {
+  if (totalCols <= 1) return {}
+  const pct = 100 / totalCols
+  return {
+    left: `calc(${(col * pct).toFixed(1)}% + 2px)`,
+    right: `calc(${((totalCols - col - 1) * pct).toFixed(1)}% + 2px)`,
+  }
+}
+
 interface TodayCalendarViewProps {
   tasks: Task[]
   labelsMap?: Map<string, Label[]>
@@ -180,6 +217,29 @@ export function TodayCalendarView({ tasks, calendarEvents = [], showCompleted = 
   const allDayEvents = calendarEvents.filter((e) => e.isAllDay)
   const timedEvents = calendarEvents.filter((e) => !e.isAllDay)
   const hasAllDaySection = allDayTasks.length > 0 || allDayEvents.length > 0 || unscheduledHabits.length > 0
+
+  // Calcula columnas de overlap para todos los bloques con hora en el timeline
+  const timedLayout = useMemo(() => {
+    const items: { id: string; startH: number; endH: number }[] = []
+    for (const task of timedTasks) {
+      const dt = new Date(task.due_datetime!)
+      const startH = dt.getHours() + dt.getMinutes() / 60
+      const dur = task.duration_minutes ?? 60
+      items.push({ id: task.id, startH, endH: startH + dur / 60 })
+    }
+    for (const event of timedEvents) {
+      const startH = event.start.getHours() + event.start.getMinutes() / 60
+      const endH = event.end.getHours() + event.end.getMinutes() / 60
+      items.push({ id: event.id, startH, endH: Math.max(startH + MIN_DURATION / 60, endH) })
+    }
+    for (const habit of scheduledHabits) {
+      const time = getScheduledTimeForDate(habit, habitSchedules, new Date(todayDateStr))
+      if (!time) continue
+      const startH = timeStrToHour(time)
+      items.push({ id: habit.id, startH, endH: startH + habit.duration_minutes / 60 })
+    }
+    return computeOverlapLayout(items)
+  }, [timedTasks, timedEvents, scheduledHabits, habitSchedules, todayDateStr])
 
   // Current time position
   const nowHour = now.getHours() + now.getMinutes() / 60
@@ -370,24 +430,33 @@ export function TodayCalendarView({ tasks, calendarEvents = [], showCompleted = 
             </div>
 
             {/* Timed tasks */}
-            {timedTasks.map((task) => (
-              <TaskTooltip key={task.id} task={task}>
-                <TimedTaskBlock task={task} />
-              </TaskTooltip>
-            ))}
+            {timedTasks.map((task) => {
+              const layout = timedLayout.get(task.id)
+              return (
+                <TaskTooltip key={task.id} task={task}>
+                  <TimedTaskBlock task={task} col={layout?.col} totalCols={layout?.totalCols} />
+                </TaskTooltip>
+              )
+            })}
 
             {/* Timed calendar events (draggable) */}
-            {timedEvents.map((event) => (
-              <TimedEventBlock
-                key={event.id}
-                event={event}
-                onEdit={() => setEditingEvent(event)}
-              />
-            ))}
+            {timedEvents.map((event) => {
+              const layout = timedLayout.get(event.id)
+              return (
+                <TimedEventBlock
+                  key={event.id}
+                  event={event}
+                  onEdit={() => setEditingEvent(event)}
+                  col={layout?.col}
+                  totalCols={layout?.totalCols}
+                />
+              )
+            })}
 
             {/* Scheduled habit blocks */}
             {scheduledHabits.map((habit) => {
               const scheduledTime = getScheduledTimeForDate(habit, habitSchedules, today)!
+              const layout = timedLayout.get(habit.id)
               return (
                 <TimedHabitBlock
                   key={habit.id}
@@ -399,6 +468,8 @@ export function TodayCalendarView({ tasks, calendarEvents = [], showCompleted = 
                   onReschedule={(time) => upsertHabitSchedule.mutate({ habitId: habit.id, date: todayDateStr, time })}
                   onToggle={() => toggleHabitCompletion.mutate({ habitId: habit.id, date: today })}
                   onEdit={() => setSelectedHabit(habit.id, todayDateStr)}
+                  col={layout?.col}
+                  totalCols={layout?.totalCols}
                 />
               )
             })}
@@ -416,7 +487,7 @@ export function TodayCalendarView({ tasks, calendarEvents = [], showCompleted = 
                 }}
               >
                 <p className="truncate px-2 py-0.5 text-xs font-medium" style={{ color: habitDrag.habit.color }}>
-                  {habitDrag.habit.icon && `${habitDrag.habit.icon} `}{habitDrag.habit.name}
+                  {habitDrag.habit.icon && `${habitDrag.habit.icon} `}{stripHtmlTags(habitDrag.habit.name)}
                 </p>
               </div>
             )}
@@ -589,10 +660,14 @@ function TimedTaskBlock({
   task,
   onMouseEnter,
   onMouseLeave,
+  col = 0,
+  totalCols = 1,
 }: {
   task: Task
   onMouseEnter?: (e: React.MouseEvent) => void
   onMouseLeave?: (e: React.MouseEvent) => void
+  col?: number
+  totalCols?: number
 }) {
   // eslint-disable-next-line @typescript-eslint/no-shadow
   const HOUR_HEIGHT = useContext(HourHeightCtx)
@@ -786,6 +861,7 @@ function TimedTaskBlock({
         borderLeftColor: color,
         backgroundColor: `${color}18`,
         transition: interacting ? 'none' : 'top 0.15s ease, height 0.15s ease',
+        ...overlapPos(col, totalCols),
       }}
       onMouseDown={handleDragStart}
       onClick={handleClick}
@@ -863,9 +939,13 @@ function TimedTaskBlock({
 function TimedEventBlock({
   event,
   onEdit,
+  col = 0,
+  totalCols = 1,
 }: {
   event: CalendarEvent
   onEdit: () => void
+  col?: number
+  totalCols?: number
 }) {
   // eslint-disable-next-line @typescript-eslint/no-shadow
   const HOUR_HEIGHT = useContext(HourHeightCtx)
@@ -1050,6 +1130,7 @@ function TimedEventBlock({
     borderLeftColor: color,
     backgroundColor: `${color}22`,
     transition: interacting ? 'none' : 'top 0.15s ease, height 0.15s ease',
+    ...overlapPos(col, totalCols),
   }
 
   return (
@@ -1106,12 +1187,12 @@ function AllDayEventChip({ event, onEdit }: { event: CalendarEvent; onEdit: () =
   return (
     <CalendarEventTooltip event={event}>
       <div
-        className="mb-1 flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity"
+        className="mb-1 flex items-center gap-1.5 overflow-hidden min-w-0 rounded-md px-2 py-1 text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity"
         style={{ backgroundColor: `${color}22`, borderLeft: `2px solid ${color}` }}
         onClick={onEdit}
       >
         <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
-        <span className="truncate" style={{ color: 'var(--text-primary)' }}>{event.title}</span>
+        <span className="truncate min-w-0 flex-1" style={{ color: 'var(--text-primary)' }}>{event.title}</span>
         <span className="ml-auto shrink-0 text-[10px] font-normal" style={{ color: `${color}BB` }}>
           {calendarName}
         </span>
@@ -1193,7 +1274,7 @@ function HabitChip({
   return (
     <>
     <div
-      className="group mb-1 flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium select-none"
+      className="group mb-1 flex items-center gap-1.5 overflow-hidden rounded-md px-2 py-1 text-xs font-medium select-none"
       style={{
         backgroundColor: `${habit.color}15`,
         borderLeft: `2px solid ${habit.color}`,
@@ -1211,8 +1292,8 @@ function HabitChip({
         size="sm"
       />
       {habit.icon && <span className="shrink-0">{habit.icon}</span>}
-      <span className="truncate" style={{ color: 'var(--text-primary)', textDecoration: completed ? 'line-through' : 'none' }}>
-        {habit.name}
+      <span className="truncate min-w-0 flex-1" style={{ color: 'var(--text-primary)', textDecoration: completed ? 'line-through' : 'none' }}>
+        {stripHtmlTags(habit.name)}
       </span>
       <span className="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ backgroundColor: `${habit.color}22`, color: habit.color }}>
         Hábito
@@ -1247,6 +1328,8 @@ function TimedHabitBlock({
   onReschedule,
   onToggle,
   onEdit,
+  col = 0,
+  totalCols = 1,
 }: {
   habit: Habit
   scheduledTime: string
@@ -1256,6 +1339,8 @@ function TimedHabitBlock({
   onReschedule: (time: string) => void
   onToggle: () => void
   onEdit?: () => void
+  col?: number
+  totalCols?: number
 }) {
   const completed = isCompletedOnDate(completions, habit.id, date)
 
@@ -1383,6 +1468,7 @@ function TimedHabitBlock({
         borderLeftColor: habit.color,
         backgroundColor: `${habit.color}18`,
         transition: interacting ? 'none' : 'top 0.15s ease, height 0.15s ease',
+        ...overlapPos(col, totalCols),
       }}
       onMouseDown={handleDragStart}
       {...tooltipHandlers}
@@ -1398,7 +1484,7 @@ function TimedHabitBlock({
               className={cn('truncate text-xs font-medium flex-1 min-w-0', completed && 'line-through')}
               style={{ color: 'var(--text-primary)' }}
             >
-              {habit.name}
+              {stripHtmlTags(habit.name)}
             </p>
             <span className="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ backgroundColor: `${habit.color}22`, color: habit.color }}>
               Hábito

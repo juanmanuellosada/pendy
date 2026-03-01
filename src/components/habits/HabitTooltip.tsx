@@ -8,6 +8,7 @@ import {
   getWeeklyProgress,
   getRecurrenceLabel,
 } from '@/lib/habitUtils'
+import { stripHtmlTags } from '@/lib/utils'
 import type { Habit, HabitCompletion } from '@/lib/types'
 
 interface UseHabitTooltipOptions {
@@ -171,7 +172,7 @@ const HabitTooltipContent = forwardRef<HTMLDivElement, TooltipContentProps>(
               opacity: completed ? 0.7 : 1,
             }}
           >
-            {habit.name}
+            {stripHtmlTags(habit.name)}
           </p>
         </div>
 

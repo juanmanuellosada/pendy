@@ -21,6 +21,8 @@ import {
   calculateStreak,
   isCompletedOnDate,
 } from '@/lib/habitUtils'
+import { stripHtmlTags } from '@/lib/utils'
+import { TitleEditor } from '@/components/tasks/TitleEditor'
 import type { Habit } from '@/lib/types'
 
 const PRESET_COLORS = [
@@ -159,11 +161,11 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
     : null
 
   const handleSave = () => {
-    if (!form.name.trim()) return
+    if (!stripHtmlTags(form.name).trim()) return
     updateHabit.mutate({
       id: habit.id,
       updates: {
-        name: form.name.trim(),
+        name: form.name,
         icon: form.icon.trim() || null,
         color: form.color,
         duration_minutes: form.duration_minutes,
@@ -186,7 +188,7 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
 
   const handleDelete = () => {
     showConfirmDialog({
-      title: `¿Eliminar "${habit.name}"?`,
+      title: `¿Eliminar "${stripHtmlTags(habit.name)}"?`,
       message: 'Se eliminarán también todas las marcaciones de este hábito. Esta acción no se puede deshacer.',
       confirmLabel: 'Eliminar',
       onConfirm: async () => {
@@ -273,23 +275,24 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
                     color: 'var(--text-primary)',
                   }}
                 />
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => set('name', e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                  placeholder="Nombre del hábito"
-                  className="flex-1 rounded border px-2 py-1 text-sm font-semibold outline-none transition-colors"
+                <div
+                  className="flex-1 rounded border px-2 py-1 transition-colors"
                   style={{
                     borderColor: 'transparent',
                     backgroundColor: 'transparent',
-                    color: 'var(--text-primary)',
-                    textDecoration: completed ? 'line-through' : 'none',
                     opacity: completed ? 0.7 : 1,
                   }}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = form.color)}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = 'transparent')}
-                />
+                  onFocus={(e) => ((e.currentTarget as HTMLElement).style.borderColor = form.color)}
+                  onBlur={(e) => ((e.currentTarget as HTMLElement).style.borderColor = 'transparent')}
+                >
+                  <TitleEditor
+                    content={form.name}
+                    onChange={(html) => set('name', html)}
+                    onSubmit={handleSave}
+                    placeholder="Nombre del hábito"
+                    textClassName="text-sm font-semibold leading-normal"
+                  />
+                </div>
               </div>
               <p className="mt-1 text-sm capitalize" style={{ color: 'var(--text-secondary)' }}>
                 {dateLabel}
@@ -583,7 +586,7 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
         >
           <button
             onClick={handleSave}
-            disabled={updateHabit.isPending || !form.name.trim()}
+            disabled={updateHabit.isPending || !stripHtmlTags(form.name).trim()}
             className="flex-1 rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity disabled:opacity-60"
             style={{ backgroundColor: form.color }}
           >
