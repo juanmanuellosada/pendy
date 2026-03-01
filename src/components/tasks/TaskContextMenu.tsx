@@ -31,6 +31,7 @@ import { DeadlinePicker } from '@/components/common/DeadlinePicker'
 import { ReminderPicker, resolveReminderConfig } from '@/components/common/ReminderPicker'
 import type { ReminderConfig } from '@/components/common/ReminderPicker'
 import type { Task } from '@/lib/types'
+import { buildProjectTree, flattenProjectTree } from '@/lib/projectTree'
 
 interface TaskContextMenuProps {
   task: Task
@@ -591,7 +592,7 @@ function MoveSubmenu({
       <p className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
         Proyectos
       </p>
-      {projects.map((project) => (
+      {flattenProjectTree(buildProjectTree(projects)).map((project) => (
         <div
           key={project.id}
           className="relative"
@@ -599,8 +600,9 @@ function MoveSubmenu({
         >
           <button
             onClick={() => onMoveTo(project.id, null)}
-            className="flex w-full items-center gap-2.5 px-3 py-2 text-sm transition-colors"
+            className="flex w-full items-center gap-2.5 py-2 pr-3 text-sm transition-colors"
             style={{
+              paddingLeft: 12 + project.depth * 12,
               color: 'var(--text-primary)',
               backgroundColor: task.project_id === project.id ? 'var(--bg-hover)' : 'transparent',
             }}

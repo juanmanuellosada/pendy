@@ -85,6 +85,14 @@ export const projectService = {
     if (error) throw error
   },
 
+  async reorderProjects(items: { id: string; sort_order: number }[]): Promise<void> {
+    await Promise.all(
+      items.map(({ id, sort_order }) =>
+        supabase.from('projects').update({ sort_order }).eq('id', id),
+      ),
+    )
+  },
+
   async toggleFavorite(id: string, isFavorite: boolean): Promise<void> {
     const { error } = await supabase
       .from('projects')

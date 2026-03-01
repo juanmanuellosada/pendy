@@ -22,6 +22,8 @@ const SearchPage = lazy(() => import('@/pages/app/SearchPage'))
 const ProjectPage = lazy(() => import('@/pages/app/ProjectPage'))
 const SettingsPage = lazy(() => import('@/pages/app/SettingsPage'))
 const TaskPage = lazy(() => import('@/pages/app/TaskPage'))
+const LabelsPage = lazy(() => import('@/pages/app/LabelsPage'))
+const LabelPage = lazy(() => import('@/pages/app/LabelPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 function LoadingScreen() {
@@ -57,7 +59,7 @@ export default function App() {
   // Initialize theme
   useTheme()
 
-  const { projectEditorOpen, setProjectEditorOpen } = useUIStore()
+  const { projectEditorOpen, setProjectEditorOpen, newProjectParentId, setNewProjectParentId } = useUIStore()
   const { quickAddOpen, setQuickAddOpen } = useAppStore()
 
   return (
@@ -111,6 +113,8 @@ export default function App() {
             <Route path="project/:projectId" element={<ProjectPage />} />
             <Route path="task/:taskId" element={<TaskPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="labels" element={<LabelsPage />} />
+            <Route path="label/:labelId" element={<LabelPage />} />
           </Route>
 
           {/* 404 */}
@@ -121,7 +125,8 @@ export default function App() {
       {/* Global modals */}
       <ProjectEditor
         open={projectEditorOpen}
-        onClose={() => setProjectEditorOpen(false)}
+        onClose={() => { setProjectEditorOpen(false); setNewProjectParentId(null) }}
+        parentId={newProjectParentId}
       />
       <TaskEditor
         open={quickAddOpen}

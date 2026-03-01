@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { ChevronDown, X, Check, Plus, Trash2, Pencil, Flag, Tag } from 'lucide-react'
 import { ColorPicker } from '@/components/common/ColorPicker'
-import { useCreateTask, useUpdateTask } from '@/hooks/useTasks'
+import { useCreateTask, useUpdateTask, useSubtasks } from '@/hooks/useTasks'
 import { useProjects, useInboxProject, useCreateProject, useUpdateProject, useDeleteProject } from '@/hooks/useProjects'
+import { useAllSections } from '@/hooks/useSections'
 import { useAuth } from '@/hooks/useAuth'
 import { useLabels, useTaskLabels, useCreateLabel, useDeleteLabel, useUpdateLabel, LABEL_COLORS } from '@/hooks/useLabels'
 import { useCreateReminder } from '@/hooks/useReminders'
 import { useUIStore } from '@/stores/uiStore'
 import { PRIORITY_COLORS, PRIORITY_LABELS, PROJECT_COLORS } from '@/lib/constants'
 import { cn, stripHtmlTags } from '@/lib/utils'
+import { buildProjectTree, flattenProjectTree } from '@/lib/projectTree'
 import { DateTimePicker } from '@/components/common/DateTimePicker'
 import { DeadlinePicker } from '@/components/common/DeadlinePicker'
 import { ReminderPicker, resolveReminderConfig } from '@/components/common/ReminderPicker'
@@ -35,8 +37,10 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
   const { user } = useAuth()
   const { data: projects = [] } = useProjects()
   const { data: inboxProject } = useInboxProject()
+  const { data: sectionsMap } = useAllSections()
   const { data: labels = [] } = useLabels()
   const { data: existingLabels = [] } = useTaskLabels(task?.id ?? '')
+  const { data: existingSubtasks = [] } = useSubtasks(task?.id ?? null)
   const createTask = useCreateTask()
   const updateTask = useUpdateTask()
   const createLabel = useCreateLabel()
@@ -61,6 +65,7 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
   const [deadline, setDeadline] = useState<string | null>(null)
   const [pendingReminders, setPendingReminders] = useState<ReminderConfig[]>([])
   const [projectId, setProjectId] = useState('')
+  const [sectionId, setSectionId] = useState<string | null>(null)
   const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([])
   const [showPriorityMenu, setShowPriorityMenu] = useState(false)
   const [showProjectMenu, setShowProjectMenu] = useState(false)
@@ -75,6 +80,12 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
   const [editingProjectName, setEditingProjectName] = useState('')
   const [editingProjectColor, setEditingProjectColor] = useState('')
+
+  // Subtasks
+  const [pendingSubtasks, setPendingSubtasks] = useState<{ id: string; title: string }[]>([])
+  const [newSubtaskText, setNewSubtaskText] = useState('')
+  const newSubtaskRef = useRef<HTMLInputElement>(null)
+  const justAddedSubtaskRef = useRef<string | null>(null)
 
   // Hash autocomplete state (#labels)
   const [hashQuery, setHashQuery] = useState<string | null>(null)
@@ -103,6 +114,7 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
       setRecurrenceFrom(task.recurrence_from ?? 'due_date')
       setDeadline(task.deadline ?? null)
       setProjectId(task.project_id)
+      setSectionId(task.section_id ?? null)
       if (task.has_time && task.due_datetime) {
         const d = new Date(task.due_datetime)
         const hh = String(d.getHours()).padStart(2, '0')
@@ -127,8 +139,11 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
       setDeadline(null)
       setPendingReminders([])
       setProjectId(defaultProjectId ?? inboxProject?.id ?? '')
+      setSectionId(defaultSectionId ?? null)
       setSelectedLabelIds([])
     }
+    setPendingSubtasks([])
+    setNewSubtaskText('')
     setHashQuery(null)
     setAtQuery(null)
     nlpAppliedRef.current = { date: false, time: false, duration: false, recurrence: false }
@@ -498,6 +513,7 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
           recurrence_from: recurrenceFrom,
           deadline: deadline || null,
           project_id: targetProjectId,
+          section_id: sectionId,
           label_ids: finalLabelIds,
         },
       })
@@ -518,9 +534,28 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
         recurrence_from: recurrenceFrom,
         deadline: deadline || null,
         label_ids: finalLabelIds,
-        section_id: defaultSectionId ?? null,
+        section_id: sectionId,
       })
       savedTaskId = created.id
+    }
+
+    // Create pending subtasks
+    if (savedTaskId) {
+      // Also capture the newSubtaskText if the user didn't press Enter
+      const allPending = [
+        ...pendingSubtasks,
+        ...(newSubtaskText.trim() ? [{ id: 'last', title: newSubtaskText.trim() }] : []),
+      ]
+      for (const sub of allPending) {
+        if (sub.title.trim()) {
+          await createTask.mutateAsync({
+            user_id: user.id,
+            project_id: targetProjectId,
+            title: sub.title.trim(),
+            parent_id: savedTaskId,
+          })
+        }
+      }
     }
 
     // Create pending reminders
@@ -542,12 +577,17 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
   if (!open) return null
 
   const selectedProject = projects.find((p) => p.id === projectId) ?? inboxProject
+  const selectedSection = sectionId
+    ? (sectionsMap?.get(projectId) ?? []).find((s) => s.id === sectionId)
+    : null
   const selectedLabels = labels.filter((l) => selectedLabelIds.includes(l.id))
   const filteredLabels = labels.filter((l) =>
     l.name.toLowerCase().includes(labelSearch.toLowerCase()),
   )
-  const filteredProjects = projects.filter(
-    (p) => !p.is_archived && p.name.toLowerCase().includes(projectSearch.toLowerCase()),
+  const filteredProjects = flattenProjectTree(
+    buildProjectTree(
+      projects.filter((p) => !p.is_archived && p.name.toLowerCase().includes(projectSearch.toLowerCase())),
+    ),
   )
 
   // Hash autocomplete (#labels)
@@ -790,6 +830,150 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
             />
           </div>
 
+          {/* Subtasks */}
+          <div className="mt-3">
+            {/* Existing subtasks (edit mode) */}
+            {existingSubtasks.length > 0 && (
+              <div className="mb-1.5 space-y-0.5">
+                <p className="mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                  Subtareas existentes ({existingSubtasks.length})
+                </p>
+                {existingSubtasks.map((sub) => (
+                  <div key={sub.id} className="flex items-center gap-2 rounded-lg px-2 py-1" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                    <div
+                      className="h-3.5 w-3.5 flex-shrink-0 rounded-full border-2 flex items-center justify-center"
+                      style={{
+                        borderColor: sub.is_completed ? '#22C55E' : 'var(--border-primary)',
+                        backgroundColor: sub.is_completed ? '#22C55E' : 'transparent',
+                      }}
+                    >
+                      {sub.is_completed && <Check size={8} color="white" strokeWidth={3} />}
+                    </div>
+                    <span
+                      className="flex-1 truncate text-xs"
+                      style={{
+                        color: sub.is_completed ? 'var(--text-muted)' : 'var(--text-primary)',
+                        textDecoration: sub.is_completed ? 'line-through' : 'none',
+                      }}
+                    >
+                      {sub.title}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Pending subtasks */}
+            {pendingSubtasks.length > 0 && (
+              <div className="mb-1 space-y-0.5">
+                {existingSubtasks.length === 0 && (
+                  <p className="mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                    Subtareas ({pendingSubtasks.length})
+                  </p>
+                )}
+                {pendingSubtasks.map((sub) => (
+                  <div
+                    key={sub.id}
+                    className="group flex items-center gap-2 rounded-lg px-2 py-1 transition-colors"
+                    style={{ backgroundColor: 'var(--bg-secondary)' }}
+                  >
+                    <div
+                      className="h-3.5 w-3.5 flex-shrink-0 rounded-full border-2"
+                      style={{ borderColor: 'var(--border-primary)' }}
+                    />
+                    <input
+                      ref={(el) => {
+                        if (el && justAddedSubtaskRef.current === sub.id) {
+                          el.focus()
+                          justAddedSubtaskRef.current = null
+                        }
+                      }}
+                      value={sub.title}
+                      onChange={(e) =>
+                        setPendingSubtasks((prev) =>
+                          prev.map((s) => (s.id === sub.id ? { ...s, title: e.target.value } : s)),
+                        )
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          const id = `tmp-${Date.now()}`
+                          justAddedSubtaskRef.current = id
+                          setPendingSubtasks((prev) => {
+                            const idx = prev.findIndex((s) => s.id === sub.id)
+                            const next = [...prev]
+                            next.splice(idx + 1, 0, { id, title: '' })
+                            return next
+                          })
+                        }
+                        if (e.key === 'Backspace' && !sub.title) {
+                          e.preventDefault()
+                          setPendingSubtasks((prev) => prev.filter((s) => s.id !== sub.id))
+                          newSubtaskRef.current?.focus()
+                        }
+                      }}
+                      placeholder="Nombre de la subtarea..."
+                      className="flex-1 bg-transparent text-xs outline-none"
+                      style={{ color: 'var(--text-primary)' }}
+                    />
+                    <button
+                      onClick={() =>
+                        setPendingSubtasks((prev) => prev.filter((s) => s.id !== sub.id))
+                      }
+                      className="flex-shrink-0 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100"
+                      style={{ color: 'var(--text-muted)' }}
+                      title="Eliminar subtarea"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add subtask input */}
+            <div className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors"
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              <Plus size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+              <input
+                ref={newSubtaskRef}
+                value={newSubtaskText}
+                onChange={(e) => setNewSubtaskText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newSubtaskText.trim()) {
+                    e.preventDefault()
+                    const id = `tmp-${Date.now()}`
+                    justAddedSubtaskRef.current = id
+                    setPendingSubtasks((prev) => [...prev, { id, title: newSubtaskText.trim() }])
+                    setNewSubtaskText('')
+                  }
+                }}
+                placeholder="Agregar subtarea..."
+                className="flex-1 bg-transparent text-xs outline-none"
+                style={{ color: 'var(--text-secondary)' }}
+                onFocus={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+                onBlur={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+              />
+              {newSubtaskText.trim() && (
+                <button
+                  onClick={() => {
+                    const id = `tmp-${Date.now()}`
+                    justAddedSubtaskRef.current = id
+                    setPendingSubtasks((prev) => [...prev, { id, title: newSubtaskText.trim() }])
+                    setNewSubtaskText('')
+                    newSubtaskRef.current?.focus()
+                  }}
+                  className="flex-shrink-0 rounded px-1.5 py-0.5 text-xs font-medium text-white"
+                  style={{ backgroundColor: '#283B56' }}
+                >
+                  ↵
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Selected labels */}
           {selectedLabels.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
@@ -809,7 +993,7 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
           )}
 
           {/* Action bar */}
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="mt-3 pb-3 flex flex-wrap items-center gap-2">
             {/* Date/time picker */}
             <DateTimePicker
               date={dueDate}
@@ -885,8 +1069,13 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
                   color: 'var(--text-primary)',
                 }}
               >
-                <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: selectedProject?.color ?? '#283B56' }} />
-                {selectedProject?.name ?? 'Entrada'}
+                <span className="h-2.5 w-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: selectedProject?.color ?? '#283B56' }} />
+                <span className="truncate max-w-[140px]">
+                  {selectedProject?.name ?? 'Entrada'}
+                  {selectedSection && (
+                    <span style={{ color: 'var(--text-muted)' }}> / {selectedSection.name}</span>
+                  )}
+                </span>
                 <ChevronDown size={12} />
               </button>
               {showProjectMenu && (
@@ -975,22 +1164,29 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
                         )
                       }
 
+                      const pSections = sectionsMap?.get(p.id) ?? []
+                      const activeRoot = active && !sectionId
+
                       return (
-                        <div
-                          key={p.id}
-                          className="flex items-center px-2"
-                          onMouseEnter={() => setHoveredProjectId(p.id)}
-                          onMouseLeave={() => setHoveredProjectId(null)}
-                          style={{ backgroundColor: hovered ? 'var(--bg-hover)' : 'transparent' }}
-                        >
+                        <div key={p.id}>
+                          <div
+                            className="flex items-center"
+                            onMouseEnter={() => setHoveredProjectId(p.id)}
+                            onMouseLeave={() => setHoveredProjectId(null)}
+                            style={{
+                              paddingLeft: 8 + p.depth * 12,
+                              paddingRight: 8,
+                              backgroundColor: hovered ? 'var(--bg-hover)' : 'transparent',
+                            }}
+                          >
                           <button
-                            onClick={() => { setProjectId(p.id); setShowProjectMenu(false) }}
+                            onClick={() => { setProjectId(p.id); setSectionId(null); setShowProjectMenu(false) }}
                             className="flex flex-1 items-center gap-2 py-1.5 text-sm"
                             style={{ color: 'var(--text-primary)' }}
                           >
                             <span className="h-2.5 w-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: p.color }} />
                             <span className="flex-1 text-left truncate">{p.name}</span>
-                            {active && !hovered && <Check size={12} style={{ color: 'var(--text-primary)' }} />}
+                            {activeRoot && !hovered && <Check size={12} style={{ color: 'var(--text-primary)' }} />}
                           </button>
                           {hovered && !p.is_inbox && (
                             <>
@@ -1043,6 +1239,29 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
                               </button>
                             </>
                           )}
+                          </div>
+
+                          {/* Secciones del proyecto */}
+                          {pSections.map((s) => {
+                            const sActive = active && sectionId === s.id
+                            return (
+                              <button
+                                key={s.id}
+                                onClick={() => { setProjectId(p.id); setSectionId(s.id); setShowProjectMenu(false) }}
+                                className="flex w-full items-center gap-2 py-1 pr-3 text-xs transition-colors"
+                                style={{
+                                  paddingLeft: 28 + p.depth * 12,
+                                  color: sActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                              >
+                                <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color, opacity: 0.6 }} />
+                                <span className="flex-1 text-left truncate">{s.name}</span>
+                                {sActive && <Check size={11} style={{ color: 'var(--text-primary)' }} />}
+                              </button>
+                            )
+                          })}
                         </div>
                       )
                     })}

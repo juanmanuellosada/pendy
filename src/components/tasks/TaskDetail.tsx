@@ -28,6 +28,7 @@ import { DeadlinePicker } from '@/components/common/DeadlinePicker'
 import { ReminderPicker, resolveReminderConfig } from '@/components/common/ReminderPicker'
 import type { ReminderConfig } from '@/components/common/ReminderPicker'
 import { cn, stripHtmlTags, formatRelativeDate, stripLabelTokensFromHtml } from '@/lib/utils'
+import { buildProjectTree, flattenProjectTree } from '@/lib/projectTree'
 import { PRIORITY_COLORS, PRIORITY_LABELS } from '@/lib/constants'
 import { format } from 'date-fns'
 import type { Task } from '@/lib/types'
@@ -588,12 +589,15 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
           </button>
           {showProjectMenu && (
             <DropdownMenu onClose={() => setShowProjectMenu(false)} width={208} maxHeight={192}>
-              {projects.filter((p) => !p.is_archived).map((p) => (
+              {flattenProjectTree(buildProjectTree(projects.filter((p) => !p.is_archived))).map((p) => (
                 <DropdownItem
                   key={p.id}
                   onClick={() => handleProjectChange(p.id)}
                   active={task.project_id === p.id}
                 >
+                  {p.depth > 0 && (
+                    <span className="flex-shrink-0" style={{ width: p.depth * 12 }} />
+                  )}
                   <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: p.color }} />
                   <span className="truncate">{p.name}</span>
                 </DropdownItem>
@@ -616,13 +620,17 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
                 <span style={{ color: 'var(--text-muted)' }}>Agregar etiqueta</span>
               ) : (
                 taskLabels.map((label) => (
-                  <span
+                  <button
                     key={label.id}
-                    className="rounded-full px-2 py-0.5 text-xs font-medium"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      navigate(`/app/label/${label.id}`)
+                    }}
+                    className="rounded-full px-2 py-0.5 text-xs font-medium transition-opacity hover:opacity-75"
                     style={{ backgroundColor: label.color + '22', color: label.color }}
                   >
                     {label.name}
-                  </span>
+                  </button>
                 ))
               )}
             </div>

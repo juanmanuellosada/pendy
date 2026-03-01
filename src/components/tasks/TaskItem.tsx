@@ -1,5 +1,6 @@
 import { memo, useState } from 'react'
-import { Calendar, Flag, MoreHorizontal, Trash2, Clock } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Calendar, Flag, MoreHorizontal, Trash2, Clock, Check } from 'lucide-react'
 import { TaskCheckbox } from './TaskCheckbox'
 import { TaskContextMenu } from './TaskContextMenu'
 import { TaskTooltip } from '@/components/common/TaskTooltip'
@@ -17,13 +18,21 @@ interface TaskItemProps {
   showProject?: boolean
   labels?: Label[]
   compact?: boolean
+  // Bulk selection
+  isSelectMode?: boolean
+  isSelected?: boolean
+  onToggleSelect?: () => void
 }
 
 export const TaskItem = memo(function TaskItem({
   task,
   labels = [],
   compact,
+  isSelectMode,
+  isSelected,
+  onToggleSelect,
 }: TaskItemProps) {
+  const navigate = useNavigate()
   const completeTask = useCompleteTask()
   const deleteTask = useDeleteTask()
   const { setSelectedTaskId } = useAppStore()
@@ -33,6 +42,7 @@ export const TaskItem = memo(function TaskItem({
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
 
   const handleContextMenu = (e: React.MouseEvent) => {
+    if (isSelectMode) return
     e.preventDefault()
     e.stopPropagation()
     setContextMenu({ x: e.clientX, y: e.clientY })
@@ -55,39 +65,61 @@ export const TaskItem = memo(function TaskItem({
     })
   }
 
+  const handleClick = () => {
+    if (isSelectMode) {
+      onToggleSelect?.()
+      return
+    }
+    setSelectedTaskId(task.id)
+  }
+
   const dueDateOverdue = task.due_date && isOverdue(task.due_date) && !task.is_completed
 
-  return (
-    <>
-    <TaskTooltip task={task} disabled={showMenu || !!contextMenu}>
+  const rowBg = isSelected ? 'rgba(59,130,246,0.08)' : 'transparent'
+  const rowBgHover = isSelected ? 'rgba(59,130,246,0.14)' : 'var(--bg-hover)'
+
+  const inner = (
     <div
       className={cn(
         'group flex items-start gap-3 rounded-lg transition-colors cursor-pointer animate-fade-in',
         compact ? 'px-2.5 py-2' : 'px-3 py-2.5',
-        completing && 'task-completing',
+        completing && !isSelectMode && 'task-completing',
       )}
-      style={{ backgroundColor: 'transparent' }}
-      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+      style={{ backgroundColor: rowBg }}
+      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = rowBgHover)}
       onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'transparent'
-        setShowMenu(false)
+        e.currentTarget.style.backgroundColor = rowBg
+        if (!isSelectMode) setShowMenu(false)
       }}
-      onClick={() => setSelectedTaskId(task.id)}
+      onClick={handleClick}
       onContextMenu={handleContextMenu}
     >
-      <div className="pt-0.5">
-        <TaskCheckbox
-          checked={task.is_completed || completing}
-          priority={task.priority}
-          onChange={handleComplete}
-        />
+      {/* Checkbox / Selection indicator */}
+      <div className="pt-0.5 flex-shrink-0">
+        {isSelectMode ? (
+          <div
+            className="h-4 w-4 rounded-full border-2 flex items-center justify-center transition-colors"
+            style={{
+              borderColor: isSelected ? '#3B82F6' : 'var(--text-muted)',
+              backgroundColor: isSelected ? '#3B82F6' : 'transparent',
+            }}
+          >
+            {isSelected && <Check size={9} color="white" />}
+          </div>
+        ) : (
+          <TaskCheckbox
+            checked={task.is_completed || completing}
+            priority={task.priority}
+            onChange={handleComplete}
+          />
+        )}
       </div>
 
       <div className="flex-1 min-w-0">
         <span
           className={cn(
             'tiptap text-sm leading-snug transition-all block',
-            (task.is_completed || completing) && 'line-through opacity-50',
+            (task.is_completed || completing) && !isSelectMode && 'line-through opacity-50',
           )}
           style={{ color: 'var(--text-primary)' }}
           dangerouslySetInnerHTML={{
@@ -128,62 +160,91 @@ export const TaskItem = memo(function TaskItem({
           )}
 
           {labels.map((label) => (
-            <span
+            <button
               key={label.id}
-              className="rounded-full px-2 py-0.5 text-xs font-medium"
+              onClick={(e) => {
+                e.stopPropagation()
+                navigate(`/app/label/${label.id}`)
+              }}
+              className="rounded-full px-2 py-0.5 text-xs font-medium transition-opacity hover:opacity-75"
               style={{
                 backgroundColor: label.color + '22',
                 color: label.color,
               }}
             >
               {label.name}
-            </span>
+            </button>
           ))}
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        <div className="relative">
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setShowMenu(!showMenu)
-            }}
-            className="rounded p-1 transition-colors hover:opacity-70"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            <MoreHorizontal size={14} />
-          </button>
-          {showMenu && (
-            <div
-              className="absolute right-0 top-full z-10 mt-1 w-36 rounded-lg border py-1 shadow-lg"
-              style={{
-                backgroundColor: 'var(--bg-primary)',
-                borderColor: 'var(--border-primary)',
+      {/* More options — hidden in select mode */}
+      {!isSelectMode && (
+        <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowMenu(!showMenu)
               }}
+              className="rounded p-1 transition-colors hover:opacity-70"
+              style={{ color: 'var(--text-muted)' }}
             >
-              <button
-                onClick={handleDelete}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-sm text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
+              <MoreHorizontal size={14} />
+            </button>
+            {showMenu && (
+              <div
+                className="absolute right-0 top-full z-10 mt-1 w-36 rounded-lg border py-1 shadow-lg"
+                style={{
+                  backgroundColor: 'var(--bg-primary)',
+                  borderColor: 'var(--border-primary)',
+                }}
               >
-                <Trash2 size={14} />
-                Eliminar
-              </button>
-            </div>
-          )}
+                <button
+                  onClick={handleDelete}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-sm text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  <Trash2 size={14} />
+                  Eliminar
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
-    </TaskTooltip>
+  )
 
-    {contextMenu && (
-      <TaskContextMenu
-        task={task}
-        x={contextMenu.x}
-        y={contextMenu.y}
-        onClose={() => setContextMenu(null)}
-      />
-    )}
+  if (isSelectMode) {
+    return (
+      <>
+        {inner}
+        {contextMenu && (
+          <TaskContextMenu
+            task={task}
+            x={contextMenu.x}
+            y={contextMenu.y}
+            onClose={() => setContextMenu(null)}
+          />
+        )}
+      </>
+    )
+  }
+
+  return (
+    <>
+      <TaskTooltip task={task} disabled={showMenu || !!contextMenu}>
+        {inner}
+      </TaskTooltip>
+
+      {contextMenu && (
+        <TaskContextMenu
+          task={task}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </>
   )
 })

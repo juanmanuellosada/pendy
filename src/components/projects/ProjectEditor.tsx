@@ -10,9 +10,10 @@ interface ProjectEditorProps {
   open: boolean
   onClose: () => void
   project?: Project | null
+  parentId?: string | null
 }
 
-export function ProjectEditor({ open, onClose, project }: ProjectEditorProps) {
+export function ProjectEditor({ open, onClose, project, parentId }: ProjectEditorProps) {
   const { user } = useAuth()
   const createProject = useCreateProject()
   const updateProject = useUpdateProject()
@@ -47,6 +48,7 @@ export function ProjectEditor({ open, onClose, project }: ProjectEditorProps) {
         name: name.trim(),
         color,
         icon: icon || null,
+        parent_id: parentId ?? null,
       })
     }
 
@@ -67,7 +69,7 @@ export function ProjectEditor({ open, onClose, project }: ProjectEditorProps) {
       >
         <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: 'var(--border-primary)' }}>
           <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {project ? 'Editar proyecto' : 'Nuevo proyecto'}
+            {project ? 'Editar proyecto' : parentId ? 'Nuevo subproyecto' : 'Nuevo proyecto'}
           </h2>
           <button onClick={onClose} style={{ color: 'var(--text-muted)' }}>
             <X size={18} />
@@ -133,7 +135,7 @@ export function ProjectEditor({ open, onClose, project }: ProjectEditorProps) {
             className="rounded-lg px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
             style={{ backgroundColor: '#283B56' }}
           >
-            {project ? 'Guardar' : 'Crear proyecto'}
+            {project ? 'Guardar' : parentId ? 'Crear subproyecto' : 'Crear proyecto'}
           </button>
         </div>
       </div>

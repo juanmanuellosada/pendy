@@ -73,6 +73,18 @@ export function useDeleteProject() {
   })
 }
 
+export function useReorderProjects() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (items: { id: string; sort_order: number }[]) =>
+      projectService.reorderProjects(items),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: projectKeys.all })
+    },
+  })
+}
+
 export function useToggleProjectFavorite() {
   const queryClient = useQueryClient()
 
