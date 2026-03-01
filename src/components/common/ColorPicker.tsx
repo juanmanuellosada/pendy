@@ -151,11 +151,9 @@ export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) 
       const top = spaceBelow >= popupH
         ? rect.bottom + window.scrollY + 8
         : rect.top + window.scrollY - popupH - 8
-      // Flip left if overflows right edge
-      const popupW = 248
-      const left = rect.left + popupW > window.innerWidth
-        ? window.innerWidth - popupW - 8
-        : rect.left
+      // Clamp horizontally so popup stays within viewport
+      const popupW = Math.min(248, window.innerWidth - 16)
+      const left = Math.max(8, Math.min(rect.left, window.innerWidth - popupW - 8))
       setDropdownPos({ top, left })
     }
     setOpen((v) => !v)

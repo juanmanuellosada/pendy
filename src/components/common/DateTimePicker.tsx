@@ -450,7 +450,7 @@ export function DateTimePicker({
 
       {(inline || open) && !showCustomRecurrence && (
         <div
-          className={inline ? 'w-72 overflow-hidden' : 'w-72 rounded-xl shadow-xl overflow-hidden'}
+          className={inline ? 'w-[min(288px,100vw-32px)] overflow-hidden' : 'w-[min(288px,100vw-32px)] rounded-xl shadow-xl overflow-hidden'}
           style={{
             ...(inline ? {} : floatingStyle),
             backgroundColor: 'var(--bg-primary)',
@@ -724,7 +724,7 @@ export function DateTimePicker({
       {/* Custom recurrence dialog */}
       {(inline || open) && showCustomRecurrence && (
         <div
-          className={inline ? 'w-72 p-4' : 'w-72 rounded-xl p-4 shadow-xl'}
+          className={inline ? 'w-[min(288px,100vw-32px)] p-4' : 'w-[min(288px,100vw-32px)] rounded-xl p-4 shadow-xl'}
           style={{
             ...(inline ? {} : floatingStyle),
             backgroundColor: 'var(--bg-primary)',

@@ -116,9 +116,9 @@ export function TodayView() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+          <h1 className="text-lg font-bold md:text-xl" style={{ color: 'var(--text-primary)' }}>
             Hoy
           </h1>
           <p className="mt-0.5 text-sm capitalize" style={{ color: 'var(--text-secondary)' }}>

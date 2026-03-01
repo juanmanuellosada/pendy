@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   X,
@@ -17,7 +17,9 @@ import { useAppStore } from '@/stores/appStore'
 import { useUIStore } from '@/stores/uiStore'
 import { useTask, useSubtasks, useUpdateTask, useCreateTask, useCompleteTask, useDeleteTask } from '@/hooks/useTasks'
 import { useProjects } from '@/hooks/useProjects'
-import { useTaskLabels, useLabels, useSetTaskLabels } from '@/hooks/useLabels'
+import { useTaskLabels, useLabels, useSetTaskLabels, useCreateLabel, LABEL_COLORS } from '@/hooks/useLabels'
+import { useAllSections } from '@/hooks/useSections'
+import type { Editor } from '@tiptap/react'
 import { useTaskReminders, useCreateReminder, useDeleteReminder } from '@/hooks/useReminders'
 import { useAuth } from '@/hooks/useAuth'
 import { TaskCheckbox } from './TaskCheckbox'
@@ -56,8 +58,10 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
   const completeTask = useCompleteTask()
   const deleteTask = useDeleteTask()
   const setTaskLabels = useSetTaskLabels()
+  const createLabel = useCreateLabel()
   const createReminder = useCreateReminder()
   const deleteReminder = useDeleteReminder()
+  const { data: sectionsMap } = useAllSections()
 
   // Navigation stack for subtasks
   const [parentStack, setParentStack] = useState<string[]>([])
@@ -81,6 +85,60 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
   // Track which fields were set by live NLP so we can revert them when the token is removed
   const nlpAppliedRef = useRef({ date: false, time: false, duration: false, recurrence: false })
 
+  // Hash autocomplete state (#labels)
+  const [hashQuery, setHashQuery] = useState<string | null>(null)
+  const [hashStart, setHashStart] = useState(0)
+  const [hashHighlightIdx, setHashHighlightIdx] = useState(0)
+  // At autocomplete state (@projects + sections)
+  const [atQuery, setAtQuery] = useState<string | null>(null)
+  const [atStart, setAtStart] = useState(0)
+  const [atHighlightIdx, setAtHighlightIdx] = useState(0)
+  const titleEditorRef = useRef<Editor | null>(null)
+
+  const handleTitleUpdate = useCallback((editor: Editor) => {
+    const plainText = editor.getText()
+    const { anchor } = editor.state.selection
+    const textBeforeCursor = editor.state.doc.textBetween(0, anchor, '')
+    const cursor = textBeforeCursor.length
+
+    let hashIdx = -1
+    let atIdx = -1
+    for (let i = cursor - 1; i >= 0; i--) {
+      if (plainText[i] === '#') {
+        if (i === 0 || plainText[i - 1] === ' ') hashIdx = i
+        break
+      }
+      if (plainText[i] === '@') {
+        if (i === 0 || plainText[i - 1] === ' ') atIdx = i
+        break
+      }
+      if (plainText[i] === ' ') break
+    }
+
+    if (hashIdx !== -1) {
+      const query = plainText.slice(hashIdx + 1, cursor)
+      if (!query.includes(' ')) {
+        setHashQuery(query)
+        setHashStart(hashIdx)
+        setHashHighlightIdx(0)
+        setAtQuery(null)
+        return
+      }
+    }
+    setHashQuery(null)
+
+    if (atIdx !== -1) {
+      const query = plainText.slice(atIdx + 1, cursor)
+      if (!query.includes(' ')) {
+        setAtQuery(query)
+        setAtStart(atIdx)
+        setAtHighlightIdx(0)
+        return
+      }
+    }
+    setAtQuery(null)
+  }, [])
+
   // Sync from server
   useEffect(() => {
     if (!task) return
@@ -102,6 +160,8 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
       setDueTime(null)
     }
     nlpAppliedRef.current = { date: false, time: false, duration: false, recurrence: false }
+    setHashQuery(null)
+    setAtQuery(null)
   }, [task?.id, task?.updated_at]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Live NLP: update pickers as user types date/time/duration/recurrence tokens in title
@@ -188,6 +248,74 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
     setSaving(false)
   }
 
+  /* ── Autocomplete helpers ─────────────────────── */
+  type AtItem =
+    | { kind: 'project'; id: string; name: string; color: string; icon?: string | null; depth: number }
+    | { kind: 'section'; id: string; name: string; projectId: string; projectColor: string; depth: number }
+
+  const confirmHashLabel = (label: { id: string; name: string; color: string }) => {
+    const editor = titleEditorRef.current
+    if (!editor) return
+    const hashEnd = hashStart + 1 + (hashQuery?.length ?? 0)
+    const doc = editor.state.doc
+    let textSeen = 0
+    let fromPos = 0
+    let toPos = 0
+    doc.descendants((node, nodePos) => {
+      if (node.isText) {
+        const ns = textSeen
+        const ne = textSeen + node.text!.length
+        if (fromPos === 0 && hashStart >= ns && hashStart < ne) fromPos = nodePos + (hashStart - ns)
+        if (toPos === 0 && hashEnd >= ns && hashEnd <= ne) toPos = nodePos + (hashEnd - ns)
+        textSeen = ne
+      }
+      return fromPos === 0 || toPos === 0
+    })
+    if (fromPos && toPos) {
+      editor.chain().focus().deleteRange({ from: fromPos, to: toPos }).run()
+    }
+    if (!task) return
+    const currentIds = taskLabels.map((l) => l.id)
+    const next = currentIds.includes(label.id) ? currentIds : [...currentIds, label.id]
+    setTaskLabels.mutate({ taskId: task.id, labelIds: next })
+    setHashQuery(null)
+  }
+
+  const createAndConfirmHash = async (name: string) => {
+    const color = LABEL_COLORS[Math.floor(Math.random() * LABEL_COLORS.length)]!
+    const newLabel = await createLabel.mutateAsync({ name, color })
+    confirmHashLabel(newLabel)
+  }
+
+  const confirmAtItem = (item: AtItem) => {
+    const editor = titleEditorRef.current
+    if (!editor) return
+    const atEnd = atStart + 1 + (atQuery?.length ?? 0)
+    const doc = editor.state.doc
+    let textSeen = 0
+    let fromPos = 0
+    let toPos = 0
+    doc.descendants((node, nodePos) => {
+      if (node.isText) {
+        const ns = textSeen
+        const ne = textSeen + node.text!.length
+        if (fromPos === 0 && atStart >= ns && atStart < ne) fromPos = nodePos + (atStart - ns)
+        if (toPos === 0 && atEnd >= ns && atEnd <= ne) toPos = nodePos + (atEnd - ns)
+        textSeen = ne
+      }
+      return fromPos === 0 || toPos === 0
+    })
+    if (fromPos && toPos) {
+      editor.chain().focus().deleteRange({ from: fromPos, to: toPos }).run()
+    }
+    if (item.kind === 'project') {
+      save({ project_id: item.id, section_id: null })
+    } else {
+      save({ project_id: item.projectId, section_id: item.id })
+    }
+    setAtQuery(null)
+  }
+
   const handleTitleBlur = () => {
     if (!task) return
     const plainText = stripHtmlTags(title)
@@ -215,6 +343,49 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
 
     // Strip NLP tokens from HTML
     cleanTitle = stripNLPTokens(cleanTitle, nlp.patterns)
+
+    // Handle @projectname tokens (strip and save project change)
+    for (const project of projects) {
+      const escaped = project.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      if (new RegExp(`@${escaped}(?=\\s|$)`, 'i').test(stripHtmlTags(cleanTitle))) {
+        updates.project_id = project.id
+        updates.section_id = null
+        const div = document.createElement('div')
+        div.innerHTML = cleanTitle
+        const walker = document.createTreeWalker(div, NodeFilter.SHOW_TEXT)
+        let node: Text | null
+        while ((node = walker.nextNode() as Text | null)) {
+          node.textContent = (node.textContent ?? '')
+            .replace(new RegExp(`@${escaped}(?=\\s|$)`, 'gi'), '')
+            .replace(/\s+/g, ' ')
+        }
+        cleanTitle = div.innerHTML
+      }
+    }
+
+    // Handle #labelname tokens (strip and add labels to task)
+    const currentLabelIds = taskLabels.map((l) => l.id)
+    const newLabelIds = [...currentLabelIds]
+    let addedLabel = false
+    for (const label of labels) {
+      const escaped = label.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      if (new RegExp(`#${escaped}(?=\\s|$)`, 'i').test(stripHtmlTags(cleanTitle))) {
+        if (!newLabelIds.includes(label.id)) { newLabelIds.push(label.id); addedLabel = true }
+        const div = document.createElement('div')
+        div.innerHTML = cleanTitle
+        const walker = document.createTreeWalker(div, NodeFilter.SHOW_TEXT)
+        let node: Text | null
+        while ((node = walker.nextNode() as Text | null)) {
+          node.textContent = (node.textContent ?? '')
+            .replace(new RegExp(`#${escaped}(?=\\s|$)`, 'gi'), '')
+            .replace(/\s+/g, ' ')
+        }
+        cleanTitle = div.innerHTML
+      }
+    }
+    if (addedLabel) {
+      setTaskLabels.mutate({ taskId: task.id, labelIds: newLabelIds })
+    }
 
     // Detect and strip priority tokens (p1-p4)
     const plainAfterNLP = stripHtmlTags(cleanTitle)
@@ -419,6 +590,32 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
     document.body.style.userSelect = 'none'
   }
 
+  // Hash autocomplete (#labels)
+  const hashFilteredLabels =
+    hashQuery !== null ? labels.filter((l) => l.name.toLowerCase().includes(hashQuery.toLowerCase())) : []
+  const showHashCreate =
+    hashQuery !== null &&
+    hashQuery.trim() !== '' &&
+    !labels.some((l) => l.name.toLowerCase() === hashQuery.trim().toLowerCase())
+  const hashTotalItems = hashFilteredLabels.length + (showHashCreate ? 1 : 0)
+
+  // At autocomplete (@projects + sections)
+  const allAtItems: AtItem[] = (() => {
+    const flat = flattenProjectTree(buildProjectTree(projects.filter((p) => !p.is_archived)))
+    const result: AtItem[] = []
+    for (const proj of flat) {
+      result.push({ kind: 'project', id: proj.id, name: proj.name, color: proj.color, icon: proj.icon, depth: proj.depth })
+      const sections = (sectionsMap?.get(proj.id) ?? []).slice().sort((a, b) => a.sort_order - b.sort_order)
+      for (const sec of sections) {
+        result.push({ kind: 'section', id: sec.id, name: sec.name, projectId: proj.id, projectColor: proj.color, depth: proj.depth + 1 })
+      }
+    }
+    return result
+  })()
+  const atFilteredItems: AtItem[] =
+    atQuery !== null ? allAtItems.filter((item) => item.name.toLowerCase().includes(atQuery.toLowerCase())) : []
+  const atTotalItems = atFilteredItems.length
+
   /* ── Shared content (used in both panel and fullscreen) ── */
   const content = isLoading || !task ? (
     <div className="space-y-3 p-4">
@@ -430,21 +627,153 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
     <>
       {/* Title + checkbox */}
       <div className={cn('p-4 pb-0', fullScreen && 'px-0')} onBlur={handleTitleBlur}>
-        <TitleEditor
-          content={title}
-          onChange={setTitle}
-          className={cn(task.is_completed && 'line-through opacity-50')}
-          textClassName={cn('font-medium leading-snug', fullScreen ? 'text-lg' : 'text-base')}
-          leftSlot={
-            <div className="pt-0.5">
-              <TaskCheckbox
-                checked={task.is_completed}
-                priority={task.priority}
-                onChange={(checked) => completeTask.mutate({ id: task.id, completed: checked })}
-              />
+        <div className="relative">
+          <TitleEditor
+            content={title}
+            onChange={setTitle}
+            className={cn(task.is_completed && 'line-through opacity-50')}
+            textClassName={cn('font-medium leading-snug', fullScreen ? 'text-lg' : 'text-base')}
+            editorRef={titleEditorRef}
+            onUpdate={handleTitleUpdate}
+            onKeyDown={(event) => {
+              if (hashQuery !== null && hashTotalItems > 0) {
+                if (event.key === 'ArrowDown') {
+                  event.preventDefault()
+                  setHashHighlightIdx((prev) => (prev + 1) % hashTotalItems)
+                  return true
+                }
+                if (event.key === 'ArrowUp') {
+                  event.preventDefault()
+                  setHashHighlightIdx((prev) => (prev - 1 + hashTotalItems) % hashTotalItems)
+                  return true
+                }
+                if (event.key === 'Enter') {
+                  if (hashHighlightIdx < hashFilteredLabels.length) {
+                    confirmHashLabel(hashFilteredLabels[hashHighlightIdx]!)
+                  } else if (showHashCreate && hashQuery?.trim()) {
+                    createAndConfirmHash(hashQuery.trim())
+                  }
+                  return true
+                }
+              }
+              if (atQuery !== null && atTotalItems > 0) {
+                if (event.key === 'ArrowDown') {
+                  event.preventDefault()
+                  setAtHighlightIdx((prev) => (prev + 1) % atTotalItems)
+                  return true
+                }
+                if (event.key === 'ArrowUp') {
+                  event.preventDefault()
+                  setAtHighlightIdx((prev) => (prev - 1 + atTotalItems) % atTotalItems)
+                  return true
+                }
+                if (event.key === 'Enter') {
+                  confirmAtItem(atFilteredItems[atHighlightIdx]!)
+                  return true
+                }
+              }
+              return false
+            }}
+            leftSlot={
+              <div className="pt-0.5">
+                <TaskCheckbox
+                  checked={task.is_completed}
+                  priority={task.priority}
+                  onChange={(checked) => completeTask.mutate({ id: task.id, completed: checked })}
+                />
+              </div>
+            }
+          />
+
+          {/* Hash autocomplete dropdown */}
+          {hashQuery !== null && hashTotalItems > 0 && (
+            <div
+              className="absolute left-0 top-full z-30 mt-1 w-52 overflow-hidden rounded-lg border py-1 shadow-lg"
+              style={{
+                backgroundColor: 'var(--bg-primary)',
+                borderColor: 'var(--border-primary)',
+                boxShadow: 'var(--shadow-lg)',
+              }}
+            >
+              {hashFilteredLabels.map((label, idx) => (
+                <button
+                  key={label.id}
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); confirmHashLabel(label) }}
+                  onMouseEnter={() => setHashHighlightIdx(idx)}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-sm"
+                  style={{
+                    backgroundColor: idx === hashHighlightIdx ? 'var(--bg-hover)' : 'transparent',
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  <span className="h-3 w-3 flex-shrink-0 rounded-full" style={{ backgroundColor: label.color }} />
+                  <span className="flex-1 text-left">{label.name}</span>
+                  {taskLabels.some((l) => l.id === label.id) && (
+                    <Check size={11} style={{ color: 'var(--text-primary)' }} />
+                  )}
+                </button>
+              ))}
+              {showHashCreate && (
+                <div className="border-t" style={{ borderColor: 'var(--border-primary)' }}>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => { e.preventDefault(); createAndConfirmHash(hashQuery.trim()) }}
+                    onMouseEnter={() => setHashHighlightIdx(hashFilteredLabels.length)}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium"
+                    style={{
+                      backgroundColor: hashHighlightIdx === hashFilteredLabels.length ? 'var(--bg-hover)' : 'var(--bg-secondary)',
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    <Plus size={14} strokeWidth={2.5} />
+                    Crear «<span className="font-semibold">{hashQuery.trim()}</span>»
+                  </button>
+                </div>
+              )}
             </div>
-          }
-        />
+          )}
+
+          {/* At autocomplete dropdown (@projects + sections) */}
+          {atQuery !== null && atTotalItems > 0 && (
+            <div
+              className="absolute left-0 top-full z-30 mt-1 max-h-56 w-64 overflow-y-auto overflow-x-hidden rounded-lg border py-1 shadow-lg"
+              style={{
+                backgroundColor: 'var(--bg-primary)',
+                borderColor: 'var(--border-primary)',
+                boxShadow: 'var(--shadow-lg)',
+              }}
+            >
+              {atFilteredItems.map((item, idx) => (
+                <button
+                  key={item.kind + '-' + item.id}
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); confirmAtItem(item) }}
+                  onMouseEnter={() => setAtHighlightIdx(idx)}
+                  className="flex w-full items-center gap-1.5 py-1.5 pr-3 text-sm"
+                  style={{
+                    paddingLeft: `${8 + item.depth * 14}px`,
+                    backgroundColor: idx === atHighlightIdx ? 'var(--bg-hover)' : 'transparent',
+                    color: item.kind === 'section' ? 'var(--text-secondary)' : 'var(--text-primary)',
+                  }}
+                >
+                  {item.kind === 'project' ? (
+                    <span className="h-2.5 w-2.5 flex-shrink-0 rounded-sm" style={{ backgroundColor: item.color }} />
+                  ) : (
+                    <span className="flex-shrink-0 text-xs leading-none" style={{ color: 'var(--text-muted)' }}>—</span>
+                  )}
+                  <span className="flex-1 truncate text-left">{item.name}</span>
+                  {item.kind === 'project' && task.project_id === item.id && !task.section_id && (
+                    <Check size={11} style={{ color: 'var(--text-primary)' }} />
+                  )}
+                  {item.kind === 'section' && task.section_id === item.id && (
+                    <Check size={11} style={{ color: 'var(--text-primary)' }} />
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Description — MarkdownEditor */}

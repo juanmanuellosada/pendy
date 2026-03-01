@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect, useCallback } from 'react'
+import { useState, useRef, useMemo, useEffect, useCallback, createContext, useContext } from 'react'
 import { createPortal } from 'react-dom'
 import {
   startOfMonth,
@@ -35,10 +35,14 @@ import { CalendarEventTooltip, getEventColor, getCalendarName } from '@/componen
 import { CalendarEventEditor } from '@/components/common/CalendarEventEditor'
 import type { CalendarMode } from '@/stores/uiStore'
 import { useCalendarEventsByRange } from '@/hooks/useCalendarEvents'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 const GOOGLE_COLOR = '#4285F4'
 
 const HOUR_HEIGHT = 56
+
+/** Context que provee el HOUR_HEIGHT efectivo a los sub-componentes del calendario */
+const HourHeightCtx = createContext(HOUR_HEIGHT)
 const START_HOUR = 0
 const END_HOUR = 24
 const TOTAL_HOURS = END_HOUR - START_HOUR
@@ -50,8 +54,8 @@ interface CalendarViewProps {
   onAddTask: (dateStr: string) => void
 }
 
-function pxToHours(px: number): number {
-  return START_HOUR + px / HOUR_HEIGHT
+function pxToHours(px: number, hourHeight: number = HOUR_HEIGHT): number {
+  return START_HOUR + px / hourHeight
 }
 
 function snapMinutes(totalMinutes: number): number {
@@ -59,6 +63,11 @@ function snapMinutes(totalMinutes: number): number {
 }
 
 export function CalendarView({ calendarMode, onAddTask }: CalendarViewProps) {
+  const isMobile = useIsMobile()
+  // En mobile, semana y 4 días se colapsan a vista de día
+  const effectiveMode: CalendarMode = isMobile && (calendarMode === 'week' || calendarMode === '4days') ? 'day' : calendarMode
+  const hourHeight = isMobile ? 40 : HOUR_HEIGHT
+
   const [currentDate, setCurrentDate] = useState(() => {
     const d = new Date()
     d.setHours(0, 0, 0, 0)
@@ -74,7 +83,7 @@ export function CalendarView({ calendarMode, onAddTask }: CalendarViewProps) {
   const [creatingTaskInfo, setCreatingTaskInfo] = useState<{ date: string; time: string; durationMinutes: number } | null>(null)
 
   const days = useMemo((): Date[] => {
-    switch (calendarMode) {
+    switch (effectiveMode) {
       case 'week':
         return eachDayOfInterval({
           start: startOfWeek(currentDate, { weekStartsOn: 1 }),
@@ -91,7 +100,7 @@ export function CalendarView({ calendarMode, onAddTask }: CalendarViewProps) {
           end: endOfWeek(endOfMonth(currentDate), { weekStartsOn: 1 }),
         })
     }
-  }, [calendarMode, currentDate])
+  }, [effectiveMode, currentDate])
 
   const fromStr = days.length > 0 ? format(days[0]!, 'yyyy-MM-dd') : ''
   const toStr = days.length > 0 ? format(days[days.length - 1]!, 'yyyy-MM-dd') : ''
@@ -111,7 +120,7 @@ export function CalendarView({ calendarMode, onAddTask }: CalendarViewProps) {
 
   const navigate = (dir: 1 | -1) => {
     setCurrentDate((prev) => {
-      switch (calendarMode) {
+      switch (effectiveMode) {
         case 'week': return dir === 1 ? addWeeks(prev, 1) : subWeeks(prev, 1)
         case '4days': return dir === 1 ? addDays(prev, 4) : subDays(prev, 4)
         case 'day': return dir === 1 ? addDays(prev, 1) : subDays(prev, 1)
@@ -122,7 +131,7 @@ export function CalendarView({ calendarMode, onAddTask }: CalendarViewProps) {
   }
 
   const periodLabel = useMemo(() => {
-    switch (calendarMode) {
+    switch (effectiveMode) {
       case 'month':
         return format(currentDate, 'MMMM yyyy', { locale: es })
       case 'week': {
@@ -139,10 +148,10 @@ export function CalendarView({ calendarMode, onAddTask }: CalendarViewProps) {
       default:
         return format(currentDate, 'MMMM yyyy', { locale: es })
     }
-  }, [calendarMode, currentDate])
+  }, [effectiveMode, currentDate])
 
-  const isTimelineMode = calendarMode === 'week' || calendarMode === '4days' || calendarMode === 'day'
-  const isMonthView = calendarMode === 'month'
+  const isTimelineMode = effectiveMode === 'week' || effectiveMode === '4days' || effectiveMode === 'day'
+  const isMonthView = effectiveMode === 'month'
 
   /* ── Drag for month grid ── */
   const tasksForDay = (date: Date): Task[] => {
@@ -175,7 +184,8 @@ export function CalendarView({ calendarMode, onAddTask }: CalendarViewProps) {
   const headerCols = isMonthView ? 7 : days.length
 
   return (
-    <>
+    <HourHeightCtx.Provider value={hourHeight}>
+      <>
       <div className="flex flex-col animate-fade-in">
         {/* Navigation */}
         <div className="flex items-center gap-2 mb-5">
@@ -201,7 +211,6 @@ export function CalendarView({ calendarMode, onAddTask }: CalendarViewProps) {
             days={days}
             tasks={tasks}
             calendarEvents={calendarEvents}
-            onAddTask={onAddTask}
             onNavigate={navigate}
             onEditEvent={setEditingEvent}
             onCreateEvent={setCreatingEventInfo}
@@ -254,6 +263,7 @@ export function CalendarView({ calendarMode, onAddTask }: CalendarViewProps) {
       {editingEvent && (
         <CalendarEventEditor
           event={editingEvent}
+          variant="panel"
           onClose={() => setEditingEvent(null)}
         />
       )}
@@ -277,6 +287,7 @@ export function CalendarView({ calendarMode, onAddTask }: CalendarViewProps) {
         />
       )}
     </>
+    </HourHeightCtx.Provider>
   )
 }
 
@@ -308,7 +319,6 @@ function TimelineGrid({
   days,
   tasks,
   calendarEvents = [],
-  onAddTask,
   onNavigate,
   onEditEvent,
   onCreateEvent,
@@ -317,12 +327,12 @@ function TimelineGrid({
   days: Date[]
   tasks: Task[]
   calendarEvents?: CalendarEvent[]
-  onAddTask: (dateStr: string) => void
   onNavigate?: (dir: 1 | -1) => void
   onEditEvent: (event: CalendarEvent) => void
   onCreateEvent: (info: { date: Date; hour: number; durationMinutes?: number }) => void
   onCreateTask: (info: { date: string; time: string; durationMinutes: number }) => void
 }) {
+  const HOUR_HEIGHT = useContext(HourHeightCtx)
   const containerRef = useRef<HTMLDivElement>(null)
   const gridRef = useRef<HTMLDivElement>(null)
   const nowLineRef = useRef<HTMLDivElement>(null)
@@ -369,6 +379,7 @@ function TimelineGrid({
       const snapped = Math.max(createDrag.startHour, snapMinutes(Math.round(rawHour * 60)) / 60)
       setCreateDrag((prev) => prev ? { ...prev, currentHour: snapped } : null)
     }
+
     const onUp = (e: MouseEvent) => {
       if (!createDrag) return
       const dy = Math.abs(e.clientY - createDrag.startY)
@@ -433,8 +444,8 @@ function TimelineGrid({
     // rect.top ya incluye el efecto del scroll del contenedor (la grid sube en el viewport
     // cuando se scrollea), por lo que NO se suma scrollTop nuevamente.
     const py = clientY - rect.top
-    return pxToHours(py)
-  }, [])
+    return pxToHours(py, HOUR_HEIGHT)
+  }, [HOUR_HEIGHT])
 
   /* ── Start task drag (called by task blocks) ── */
   const handleTaskDragStart = useCallback((task: Task, e: React.MouseEvent) => {
@@ -559,7 +570,7 @@ function TimelineGrid({
         if (targetDay) {
           const isSameCol = clampedCol === drag.originCol
           const rawHour = isSameCol
-            ? pxToHours((drag.baseHour - START_HOUR) * HOUR_HEIGHT + (ev.clientY - drag.startY))
+            ? pxToHours((drag.baseHour - START_HOUR) * HOUR_HEIGHT + (ev.clientY - drag.startY), HOUR_HEIGHT)
             : getHourFromY(ev.clientY)
           const totalMin = snapMinutes(Math.round(rawHour * 60))
           const clampedMin = Math.max(0, Math.min(totalMin, 24 * 60 - drag.baseDuration))
@@ -651,7 +662,7 @@ function TimelineGrid({
         if (targetDay) {
           const isSameCol = clampedCol === frozenDrag.originCol
           const rawHour = isSameCol
-            ? pxToHours((frozenDrag.baseHour - START_HOUR) * HOUR_HEIGHT + (ev.clientY - frozenDrag.startY))
+            ? pxToHours((frozenDrag.baseHour - START_HOUR) * HOUR_HEIGHT + (ev.clientY - frozenDrag.startY), HOUR_HEIGHT)
             : getHourFromY(ev.clientY)
           const totalMin = snapMinutes(Math.round(rawHour * 60))
           const clampedMin = Math.max(0, Math.min(totalMin, 24 * 60 - frozenDrag.baseDuration))
@@ -1016,6 +1027,7 @@ function CalendarTimelineBlock({
   localHourHint?: number
   onDragStart: (event: CalendarEvent, e: React.MouseEvent) => void
 }) {
+  const HOUR_HEIGHT = useContext(HourHeightCtx)
   const { updateEvent } = useCalendarEventMutations()
   const color = getEventColor(event)
   const calendarName = getCalendarName(event)
@@ -1048,13 +1060,13 @@ function CalendarTimelineBlock({
     (MIN_DURATION / 60) * HOUR_HEIGHT,
   )
 
-  const displayHours = pxToHours(Math.max(0, baseTop))
+  const displayHours = pxToHours(Math.max(0, baseTop), HOUR_HEIGHT)
   const displayH = Math.floor(displayHours)
   const displayM = Math.round((displayHours - displayH) * 60)
   const durMin = Math.max(MIN_DURATION, Math.round((currentHeight / HOUR_HEIGHT) * 60))
   const eHours = displayHours + durMin / 60
   const startLabel = `${String(displayH).padStart(2, '0')}:${String(displayM).padStart(2, '0')}`
-  const endLabel = `${String(Math.min(Math.floor(eHours), 23)).padStart(2, '0')}:${String(Math.round((eHours % 1) * 60) % 60).padStart(2, '0')}`
+  const endLabel = `${String(Math.floor(eHours) % 24).padStart(2, '0')}:${String(Math.round((eHours % 1) * 60) % 60).padStart(2, '0')}`
 
   const showTime = currentHeight >= 38
   const showCalendarName = currentHeight >= 54
@@ -1108,7 +1120,7 @@ function CalendarTimelineBlock({
       document.addEventListener('mousemove', onMove)
       document.addEventListener('mouseup', onUp)
     },
-    [effectiveDuration, event, updateEvent],
+    [effectiveDuration, event, updateEvent, HOUR_HEIGHT],
   )
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -1191,6 +1203,7 @@ function TimelineTaskBlock({
   onMouseEnter?: (e: React.MouseEvent) => void
   onMouseLeave?: (e: React.MouseEvent) => void
 }) {
+  const HOUR_HEIGHT = useContext(HourHeightCtx)
   const updateTask = useUpdateTask()
   const completeTask = useCompleteTask()
   const { data: projects } = useProjects()
@@ -1214,7 +1227,7 @@ function TimelineTaskBlock({
   const [resizing, setResizing] = useState(false)
   const currentHeight = Math.max(baseHeight + resizeDelta, (MIN_DURATION / 60) * HOUR_HEIGHT)
 
-  const displayHours = pxToHours(Math.max(0, currentTop))
+  const displayHours = pxToHours(Math.max(0, currentTop), HOUR_HEIGHT)
   const displayH = Math.floor(displayHours)
   const displayM = Math.round((displayHours - displayH) * 60)
   const durationMin = Math.max(MIN_DURATION, Math.round((currentHeight / HOUR_HEIGHT) * 60))

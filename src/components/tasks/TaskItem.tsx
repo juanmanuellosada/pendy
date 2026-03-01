@@ -95,7 +95,7 @@ export const TaskItem = memo(function TaskItem({
       onContextMenu={handleContextMenu}
     >
       {/* Checkbox / Selection indicator */}
-      <div className="pt-0.5 flex-shrink-0">
+      <div className="flex-shrink-0 flex items-center justify-center min-w-[36px] min-h-[36px] md:min-w-0 md:min-h-0 md:pt-0.5">
         {isSelectMode ? (
           <div
             className="h-4 w-4 rounded-full border-2 flex items-center justify-center transition-colors"
@@ -180,14 +180,14 @@ export const TaskItem = memo(function TaskItem({
 
       {/* More options — hidden in select mode */}
       {!isSelectMode && (
-        <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="flex shrink-0 items-center gap-1 opacity-100 md:opacity-0 transition-opacity md:group-hover:opacity-100">
           <div className="relative">
             <button
               onClick={(e) => {
                 e.stopPropagation()
                 setShowMenu(!showMenu)
               }}
-              className="rounded p-1 transition-colors hover:opacity-70"
+              className="rounded p-2 md:p-1 transition-colors hover:opacity-70"
               style={{ color: 'var(--text-muted)' }}
             >
               <MoreHorizontal size={14} />

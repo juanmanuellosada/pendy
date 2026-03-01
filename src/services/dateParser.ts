@@ -16,6 +16,25 @@ const DAY_MAP: Record<string, number> = {
 
 const DAY_NAMES_PATTERN = 'domingo|lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado'
 
+// ── Meses para fechas explícitas ──────────────────────────────────────────────
+const MONTH_MAP: Record<string, number> = {
+  enero: 1, ene: 1,
+  febrero: 2, feb: 2,
+  marzo: 3, mar: 3,
+  abril: 4, abr: 4,
+  mayo: 5,
+  junio: 6, jun: 6,
+  julio: 7, jul: 7,
+  agosto: 8, ago: 8,
+  septiembre: 9, sep: 9, sept: 9,
+  octubre: 10, oct: 10,
+  noviembre: 11, nov: 11,
+  diciembre: 12, dic: 12,
+}
+
+const MONTH_NAMES_PATTERN =
+  'enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|ene|feb|mar|abr|jun|jul|ago|sept?|oct|nov|dic'
+
 export interface NLPResult {
   date: string | null
   time: string | null
@@ -201,6 +220,13 @@ export function parseNLPTokens(text: string): NLPResult {
     }
   }
 
+  // "ayer"
+  if (!result.date && /\bayer\b/.test(working)) {
+    result.date = format(addDays(today, -1), 'yyyy-MM-dd')
+    result.patterns.push(/\bayer\b/i)
+    working = working.replace(/\bayer\b/, ' ')
+  }
+
   // "hoy"
   if (!result.date && /\bhoy\b/.test(working)) {
     result.date = format(today, 'yyyy-MM-dd')
@@ -264,6 +290,52 @@ export function parseNLPTokens(text: string): NLPResult {
       result.date = format(target, 'yyyy-MM-dd')
       result.patterns.push(/\ben \d+\s+(?:d[ií]as?|semanas?|mes(?:es)?|a[ñn]os?)\b/i)
       working = working.replace(/\ben \d+\s+(?:d[ií]as?|semanas?|mes(?:es)?|a[ñn]os?)\b/, ' ')
+    }
+  }
+
+  // ── 5. Explicit date formats ────────────────────────────────────────────────
+
+  // "15 de marzo" / "15 de marzo de 2026" / "15 de mar"
+  if (!result.date) {
+    const re = new RegExp(
+      `\\b(\\d{1,2})\\s+de\\s+(${MONTH_NAMES_PATTERN})(?:\\s+(?:de\\s+)?(\\d{4}))?\\b`,
+      'i',
+    )
+    const m = working.match(re)
+    if (m) {
+      const day = parseInt(m[1]!)
+      const monthKey = m[2]!.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      const month = MONTH_MAP[monthKey] ?? MONTH_MAP[m[2]!.toLowerCase()]
+      const year = m[3] ? parseInt(m[3]) : today.getFullYear()
+      if (month && day >= 1 && day <= 31) {
+        result.date = format(new Date(year, month - 1, day), 'yyyy-MM-dd')
+        result.patterns.push(
+          new RegExp(
+            `\\b\\d{1,2}\\s+de\\s+(?:${MONTH_NAMES_PATTERN})(?:\\s+(?:de\\s+)?\\d{4})?\\b`,
+            'i',
+          ),
+        )
+        working = working.replace(re, ' ')
+      }
+    }
+  }
+
+  // "15/03" / "15/03/2026" / "15-03" / "15-03-2026" / "15-03-26"
+  if (!result.date) {
+    const m = working.match(/\b(\d{1,2})[/\-](\d{1,2})(?:[/\-](\d{2,4}))?\b/)
+    if (m) {
+      const day = parseInt(m[1]!)
+      const month = parseInt(m[2]!)
+      let year = today.getFullYear()
+      if (m[3]) {
+        const y = parseInt(m[3])
+        year = y < 100 ? 2000 + y : y
+      }
+      if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+        result.date = format(new Date(year, month - 1, day), 'yyyy-MM-dd')
+        result.patterns.push(/\b\d{1,2}[/\-]\d{1,2}(?:[/\-]\d{2,4})?\b/)
+        working = working.replace(/\b(\d{1,2})[/\-](\d{1,2})(?:[/\-](\d{2,4}))?\b/, ' ')
+      }
     }
   }
 

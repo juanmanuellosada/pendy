@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { Plus, CalendarDays, ListChecks } from 'lucide-react'
 import { useUpcomingTasks, useDeleteTask, useUpdateTask } from '@/hooks/useTasks'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
@@ -21,6 +22,7 @@ import type { Task, CalendarEvent } from '@/lib/types'
 const VIEW_ID = 'upcoming'
 
 export function UpcomingView() {
+  const isMobile = useIsMobile()
   const { getViewOptions, showConfirmDialog } = useUIStore()
   const opts = getViewOptions(VIEW_ID)
   const upcomingDays = opts.upcomingDays ?? 30
@@ -232,9 +234,9 @@ export function UpcomingView() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+          <h1 className="text-lg font-bold md:text-xl" style={{ color: 'var(--text-primary)' }}>
             Próximos
           </h1>
           <p className="mt-0.5 text-sm" style={{ color: 'var(--text-secondary)' }}>
@@ -254,7 +256,11 @@ export function UpcomingView() {
               Seleccionar
             </button>
           )}
-          <ViewOptionsBar viewId={VIEW_ID} showUpcomingDays availableCalendarModes={['week', '4days', 'month']} />
+          <ViewOptionsBar
+            viewId={VIEW_ID}
+            showUpcomingDays
+            availableCalendarModes={isMobile ? ['day', 'month'] : ['week', '4days', 'month']}
+          />
         </div>
       </div>
 

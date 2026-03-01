@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useRef, useState, useCallback } from 'react'
+import { useMemo, useEffect, useRef, useState, useCallback, createContext, useContext } from 'react'
 import { createPortal } from 'react-dom'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -17,8 +17,12 @@ import { TaskTooltip } from '@/components/common/TaskTooltip'
 import { CalendarEventEditor } from '@/components/common/CalendarEventEditor'
 import type { Task, Label, CalendarEvent } from '@/lib/types'
 import { CalendarEventTooltip, getEventColor, getCalendarName } from '@/components/common/CalendarEventTooltip'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
-const HOUR_HEIGHT = 64 // px per hour
+const HOUR_HEIGHT = 64 // px per hour (desktop)
+
+/** Context that provides the effective HOUR_HEIGHT to sub-components */
+const HourHeightCtx = createContext(HOUR_HEIGHT)
 const START_HOUR = 0
 const END_HOUR = 24
 const TOTAL_HOURS = END_HOUR - START_HOUR
@@ -32,8 +36,8 @@ interface TodayCalendarViewProps {
 }
 
 /** Convert a pixel offset (relative to grid top) to fractional hours */
-function pxToHours(px: number): number {
-  return START_HOUR + px / HOUR_HEIGHT
+function pxToHours(px: number, hourHeight: number = HOUR_HEIGHT): number {
+  return START_HOUR + px / hourHeight
 }
 
 /** Snap minutes to nearest SNAP_MINUTES */
@@ -42,6 +46,8 @@ function snapMinutes(totalMinutes: number): number {
 }
 
 export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: TodayCalendarViewProps) {
+  const isMobile = useIsMobile()
+  const hourHeight = isMobile ? 40 : HOUR_HEIGHT
   const containerRef = useRef<HTMLDivElement>(null)
   const gridRef = useRef<HTMLDivElement>(null)
   const nowLineRef = useRef<HTMLDivElement>(null)
@@ -97,7 +103,7 @@ export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: Tod
 
   // Current time position
   const nowHour = now.getHours() + now.getMinutes() / 60
-  const nowTop = (nowHour - START_HOUR) * HOUR_HEIGHT
+  const nowTop = (nowHour - START_HOUR) * hourHeight
   const nowLabel = format(now, 'HH:mm')
 
   // Drag-to-create: mousedown starts the gesture
@@ -106,9 +112,9 @@ export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: Tod
     e.preventDefault()
     const rect = gridRef.current.getBoundingClientRect()
     const relY = e.clientY - rect.top
-    const hour = Math.max(0, Math.min(pxToHours(relY), 23.75))
+    const hour = Math.max(0, Math.min(pxToHours(relY, hourHeight), 23.75))
     setCreateDrag({ startHour: hour, currentHour: hour, startY: e.clientY })
-  }, [])
+  }, [hourHeight])
 
   // Drag-to-create: mousemove + mouseup on window
   useEffect(() => {
@@ -117,7 +123,7 @@ export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: Tod
       if (!gridRef.current) return
       const rect = gridRef.current.getBoundingClientRect()
       const relY = e.clientY - rect.top
-      const rawHour = Math.max(createDrag.startHour, Math.min(pxToHours(relY), 24))
+      const rawHour = Math.max(createDrag.startHour, Math.min(pxToHours(relY, hourHeight), 24))
       const snapped = Math.max(createDrag.startHour, snapMinutes(Math.round(rawHour * 60)) / 60)
       setCreateDrag((prev) => prev ? { ...prev, currentHour: snapped } : null)
     }
@@ -139,6 +145,7 @@ export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: Tod
   }, [createDrag])
 
   return (
+    <HourHeightCtx.Provider value={hourHeight}>
     <>
       <div className="flex flex-col">
         {/* Overdue section */}
@@ -211,7 +218,7 @@ export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: Tod
                 <div
                   key={hour}
                   className="relative pr-2 text-right text-xs"
-                  style={{ height: HOUR_HEIGHT, color: 'var(--text-muted)' }}
+                  style={{ height: hourHeight, color: 'var(--text-muted)' }}
                 >
                   <span className="relative -top-2">
                     {`${hour.toString().padStart(2, '0')}:00`}
@@ -234,8 +241,8 @@ export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: Tod
               <div
                 className="pointer-events-none absolute left-1 right-1 z-20 rounded-md"
                 style={{
-                  top: (createDrag.startHour - START_HOUR) * HOUR_HEIGHT,
-                  height: Math.max(MIN_DURATION / 60, createDrag.currentHour - createDrag.startHour) * HOUR_HEIGHT,
+                  top: (createDrag.startHour - START_HOUR) * hourHeight,
+                  height: Math.max(MIN_DURATION / 60, createDrag.currentHour - createDrag.startHour) * hourHeight,
                   backgroundColor: 'rgba(40,59,86,0.25)',
                   border: '2px dashed #283B56',
                 }}
@@ -247,7 +254,7 @@ export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: Tod
               <div
                 key={i}
                 className="pointer-events-none border-t"
-                style={{ height: HOUR_HEIGHT, borderColor: 'var(--border-secondary)' }}
+                style={{ height: hourHeight, borderColor: 'var(--border-secondary)' }}
               />
             ))}
 
@@ -294,6 +301,7 @@ export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: Tod
       {editingEvent && (
         <CalendarEventEditor
           event={editingEvent}
+          variant="panel"
           onClose={() => setEditingEvent(null)}
         />
       )}
@@ -340,6 +348,7 @@ export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: Tod
         document.body,
       )}
     </>
+    </HourHeightCtx.Provider>
   )
 }
 
@@ -459,6 +468,8 @@ function TimedTaskBlock({
   onMouseEnter?: (e: React.MouseEvent) => void
   onMouseLeave?: (e: React.MouseEvent) => void
 }) {
+  // eslint-disable-next-line @typescript-eslint/no-shadow
+  const HOUR_HEIGHT = useContext(HourHeightCtx)
   const updateTask = useUpdateTask()
   const completeTask = useCompleteTask()
   const { setSelectedTaskId } = useAppStore()
@@ -505,7 +516,7 @@ function TimedTaskBlock({
   )
 
   // Computed display times
-  const displayHours = pxToHours(currentTop)
+  const displayHours = pxToHours(currentTop, HOUR_HEIGHT)
   const displayH = Math.floor(displayHours)
   const displayM = Math.round((displayHours - displayH) * 60)
   const displayDurationMin = Math.max(
@@ -556,7 +567,7 @@ function TimedTaskBlock({
         setDragOffset((prev) => {
           if (Math.abs(prev) < 4) return 0
 
-          const newHours = pxToHours((baseHour - START_HOUR) * HOUR_HEIGHT + prev)
+          const newHours = pxToHours((baseHour - START_HOUR) * HOUR_HEIGHT + prev, HOUR_HEIGHT)
           const totalMin = snapMinutes(Math.round(newHours * 60))
           const clampedMin = Math.max(0, Math.min(totalMin, 24 * 60 - baseDuration))
           const newH = Math.floor(clampedMin / 60)
@@ -729,13 +740,19 @@ function TimedEventBlock({
   event: CalendarEvent
   onEdit: () => void
 }) {
+  // eslint-disable-next-line @typescript-eslint/no-shadow
+  const HOUR_HEIGHT = useContext(HourHeightCtx)
   const { updateEvent } = useCalendarEventMutations()
   const color = getEventColor(event)
   const calendarName = getCalendarName(event)
 
-  const serverStartHour = event.start.getHours() + event.start.getMinutes() / 60
+  // Clip cross-day events: if the event started before today, treat today 00:00 as the start
+  const todayMidnight = new Date()
+  todayMidnight.setHours(0, 0, 0, 0)
+  const effectiveStart = event.start < todayMidnight ? todayMidnight : event.start
+  const serverStartHour = effectiveStart.getHours() + effectiveStart.getMinutes() / 60
   const serverDuration =
-    Math.max((event.end.getTime() - event.start.getTime()) / 60_000, MIN_DURATION)
+    Math.max((event.end.getTime() - effectiveStart.getTime()) / 60_000, MIN_DURATION)
 
   // Local optimistic overrides
   const [localStartHour, setLocalStartHour] = useState<number | null>(null)
@@ -770,7 +787,7 @@ function TimedEventBlock({
   )
 
   // Display strings
-  const displayHours = pxToHours(Math.max(0, top))
+  const displayHours = pxToHours(Math.max(0, top), HOUR_HEIGHT)
   const displayH = Math.floor(displayHours)
   const displayM = Math.round((displayHours - displayH) * 60)
   const durMin = Math.max(MIN_DURATION, Math.round((height / HOUR_HEIGHT) * 60))
@@ -778,7 +795,7 @@ function TimedEventBlock({
   const endH = Math.floor(endHours)
   const endM = Math.round((endHours % 1) * 60) % 60
   const startStr = `${String(displayH).padStart(2, '0')}:${String(displayM).padStart(2, '0')}`
-  const endStr = `${String(Math.min(endH, 23)).padStart(2, '0')}:${String(endM).padStart(2, '0')}`
+  const endStr = `${String(endH % 24).padStart(2, '0')}:${String(endM).padStart(2, '0')}`
 
   const showTime = height >= 42
   const showCalendarName = height >= 58
@@ -811,7 +828,7 @@ function TimedEventBlock({
           return
         }
 
-        const newHours = pxToHours((baseHour - START_HOUR) * HOUR_HEIGHT + latestDelta)
+        const newHours = pxToHours((baseHour - START_HOUR) * HOUR_HEIGHT + latestDelta, HOUR_HEIGHT)
         const totalMin = snapMinutes(Math.round(newHours * 60))
         const clampedMin = Math.max(0, Math.min(totalMin, 24 * 60 - baseDuration))
         const newH = Math.floor(clampedMin / 60)

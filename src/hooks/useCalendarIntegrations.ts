@@ -119,6 +119,10 @@ export function useDisconnectCalendar() {
 
 // ─── List Google Calendars ────────────────────────────────────────────────────
 export function useGoogleCalendarList(integration: CalendarIntegration | undefined) {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  const refreshMutation = useRefreshCalendarToken()
+
   return useQuery<GoogleCalendarListEntry[]>({
     queryKey: ['googleCalendarList', integration?.id],
     enabled: !!integration,
@@ -126,9 +130,37 @@ export function useGoogleCalendarList(integration: CalendarIntegration | undefin
     gcTime: 0,
     queryFn: async () => {
       if (!integration) return []
+
+      const doRefresh = async () => {
+        const result = await refreshMutation.mutateAsync()
+        queryClient.invalidateQueries({ queryKey: calendarKeys.all(user?.id ?? '') })
+        return result.access_token
+      }
+
+      let token = integration.access_token
+
+      // Refresh proactivo si el token ya caducó o caduca en menos de 60 s
+      const isExpired = new Date(integration.token_expiry) <= new Date(Date.now() + 60_000)
+      if (isExpired) {
+        try {
+          token = await doRefresh()
+        } catch {
+          return []
+        }
+      }
+
       try {
-        return await fetchGoogleCalendarList(integration.access_token)
-      } catch {
+        return await fetchGoogleCalendarList(token)
+      } catch (err) {
+        // Refresh reactivo: si el token estaba expirado en el servidor aunque no localmente
+        if (err instanceof Error && err.message === 'TOKEN_EXPIRED') {
+          try {
+            token = await doRefresh()
+            return await fetchGoogleCalendarList(token)
+          } catch {
+            return []
+          }
+        }
         return []
       }
     },

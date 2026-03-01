@@ -21,6 +21,8 @@
 }
 
 :root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
   --bg-primary: #FFFFFF;
   --bg-secondary: #F5F7FA;
   --bg-tertiary: #F0F2F5;

@@ -8,17 +8,19 @@ import { useAppStore } from '@/stores/appStore'
 import { useUIStore } from '@/stores/uiStore'
 import { useCalendarIntegrations } from '@/hooks/useCalendarIntegrations'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { cn } from '@/lib/utils'
 import { useEffect } from 'react'
 
 export function AppLayout() {
-  const { sidebarOpen, sidebarCollapsed, taskDetailOpen, setQuickAddOpen, eventEditorOpen, setEventEditorOpen } = useAppStore()
+  const { sidebarOpen, sidebarCollapsed, taskDetailOpen, setQuickAddOpen, eventEditorOpen, setEventEditorOpen, selectedTaskId } = useAppStore()
   const { getViewOptions } = useUIStore()
   const { data: integrations = [] } = useCalendarIntegrations()
   usePushNotifications() // registers SW and syncs subscription on login
   const isCalendarConnected = integrations.length > 0
   const location = useLocation()
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
 
   // Atajos de teclado globales
   useEffect(() => {
@@ -80,6 +82,13 @@ export function AppLayout() {
     return () => window.removeEventListener('keydown', handler)
   }, [navigate, setQuickAddOpen, setEventEditorOpen, isCalendarConnected])
 
+  // En mobile, redirigir el panel de TaskDetail a la vista fullscreen
+  useEffect(() => {
+    if (isMobile && taskDetailOpen && selectedTaskId && !location.pathname.startsWith('/app/task/')) {
+      navigate(`/app/task/${selectedTaskId}`)
+    }
+  }, [isMobile, taskDetailOpen, selectedTaskId, location.pathname, navigate])
+
   // Detectar si estamos en la vista de tarea a pantalla completa
   const isTaskPage = location.pathname.startsWith('/app/task/')
 
@@ -121,7 +130,7 @@ export function AppLayout() {
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-6">
           <div
             className={cn(
               'mx-auto',
@@ -133,8 +142,8 @@ export function AppLayout() {
         </main>
       </div>
 
-      {/* Task detail right panel (hidden on fullscreen task page) */}
-      {taskDetailOpen && !isTaskPage && <TaskDetail />}
+      {/* Task detail right panel (hidden on fullscreen task page and on mobile) */}
+      {taskDetailOpen && !isTaskPage && !isMobile && <TaskDetail />}
 
       {/* Global calendar event editor */}
       {eventEditorOpen && (

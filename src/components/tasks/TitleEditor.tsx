@@ -111,6 +111,24 @@ function computeNLPDecorations(state: EditorState): DecorationSet {
     }
   }
 
+  // Tokens inline: p1-p4, #etiqueta, @proyecto
+  const INLINE_TOKEN_PATTERNS = [/\bp[1-4]\b/g, /#\S+/g, /@\S+/g]
+  for (const re of INLINE_TOKEN_PATTERNS) {
+    const g = new RegExp(re.source, re.flags)
+    let em: RegExpExecArray | null
+    while ((em = g.exec(lower)) !== null) {
+      const ms = em.index
+      const me = ms + em[0].length
+      if (ms < posMap.length && me - 1 < posMap.length) {
+        const from = posMap[ms]!
+        const to = posMap[me - 1]! + 1
+        decorations.push(
+          Decoration.inline(from, to, { style: `color: ${NLP_HIGHLIGHT_COLOR}`, class: 'nlp-token' }),
+        )
+      }
+    }
+  }
+
   if (decorations.length === 0) return DecorationSet.empty
   return DecorationSet.create(state.doc, decorations)
 }
@@ -162,7 +180,7 @@ function ToolbarButton({
       aria-label={label}
       title={label}
       aria-pressed={isActive}
-      className="rounded p-1 text-sm transition-colors"
+      className="rounded p-2 md:p-1 text-sm transition-colors min-w-[36px] min-h-[36px] md:min-w-0 md:min-h-0 flex items-center justify-center"
       style={{
         backgroundColor: isActive ? 'var(--bg-hover)' : 'transparent',
         color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',

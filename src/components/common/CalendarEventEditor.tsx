@@ -16,10 +16,14 @@ import {
   Check,
   Plus,
   BellOff,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react'
 import { useCalendarEventMutations } from '@/hooks/useCalendarEvents'
 import { useCalendarIntegrations, useGoogleCalendarList } from '@/hooks/useCalendarIntegrations'
 import { cn } from '@/lib/utils'
+import { useAppStore } from '@/stores/appStore'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import type { CalendarEvent, CalendarEventReminder } from '@/lib/types'
 
 // ── Internal types ─────────────────────────────────────────────────────────────
@@ -943,6 +947,7 @@ interface CalendarEventEditorProps {
   defaultDate?: Date
   defaultHour?: number
   defaultDurationMinutes?: number
+  variant?: 'panel'
   onClose: () => void
 }
 
@@ -951,6 +956,7 @@ export function CalendarEventEditor({
   defaultDate,
   defaultHour = 9,
   defaultDurationMinutes,
+  variant,
   onClose,
 }: CalendarEventEditorProps) {
   const isEditing = !!event
@@ -959,6 +965,9 @@ export function CalendarEventEditor({
   const googleIntegration = integrations.find((i) => i.provider === 'google' && i.is_active)
   const { data: calendarList = [] } = useGoogleCalendarList(googleIntegration)
 
+  const { sidebarCollapsed } = useAppStore()
+  const isMobile = useIsMobile()
+  const [fullscreen, setFullscreen] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const titleRef = useRef<HTMLInputElement>(null)
@@ -1088,6 +1097,10 @@ export function CalendarEventEditor({
       label: c.summary,
       color: c.backgroundColor,
     }))
+
+  const handleCalendarChange = useCallback((value: string) => {
+    setCalendarId(value)
+  }, [])
 
   const calendarChanged = isEditing && calendarId !== originalCalendarId.current
 
@@ -1221,19 +1234,8 @@ export function CalendarEventEditor({
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto py-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose()
-      }}
-    >
-      <div
-        className="relative w-full max-w-lg rounded-2xl shadow-2xl"
-        style={{ backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
+  const cardInner = (
+    <>
         {/* Header */}
         <div
           className="flex items-center justify-between border-b px-5 py-4"
@@ -1242,16 +1244,30 @@ export function CalendarEventEditor({
           <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
             {isEditing ? 'Editar evento' : 'Nuevo evento'}
           </h2>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 transition-colors"
-            style={{ color: 'var(--text-muted)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-            aria-label="Cerrar"
-          >
-            <X size={16} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setFullscreen((f) => !f)}
+              className="rounded-lg p-1.5 transition-colors"
+              style={{ color: 'var(--text-muted)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              title={fullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+              aria-label={fullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+            >
+              {fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </button>
+            <button
+              onClick={onClose}
+              className="rounded-lg p-1.5 transition-colors"
+              style={{ color: 'var(--text-muted)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              aria-label="Cerrar"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
@@ -1538,6 +1554,55 @@ export function CalendarEventEditor({
             </div>
           </div>
         </form>
+    </>
+  )
+
+  if (fullscreen || isMobile) {
+    return (
+      <div
+        className={cn(
+          'fixed inset-y-0 right-0 z-40 overflow-y-auto left-0',
+          !isMobile && (sidebarCollapsed ? 'md:left-16' : 'md:left-72'),
+        )}
+        style={{ backgroundColor: 'var(--bg-primary)' }}
+      >
+        <div className="mx-auto w-full max-w-3xl px-4 py-4 md:px-6 md:py-6">
+          <div
+            className="rounded-2xl shadow-sm"
+            style={{ border: '1px solid var(--border-primary)' }}
+          >
+            {cardInner}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (variant === 'panel') {
+    return (
+      <div
+        className="fixed right-0 inset-y-0 z-40 w-[420px] overflow-y-auto border-l"
+        style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}
+      >
+        {cardInner}
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto py-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
+      <div
+        className="relative w-full max-w-lg mx-4 rounded-2xl shadow-2xl"
+        style={{ backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        {cardInner}
       </div>
     </div>
   )

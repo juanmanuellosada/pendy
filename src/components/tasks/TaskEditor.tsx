@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { ChevronDown, X, Check, Plus, Trash2, Pencil, Flag, Tag } from 'lucide-react'
+import { ChevronDown, X, Check, Plus, Trash2, Pencil, Flag, Tag, Maximize2, Minimize2 } from 'lucide-react'
 import { ColorPicker } from '@/components/common/ColorPicker'
 import { useCreateTask, useUpdateTask, useSubtasks } from '@/hooks/useTasks'
 import { useProjects, useInboxProject, useCreateProject, useUpdateProject, useDeleteProject } from '@/hooks/useProjects'
@@ -8,6 +8,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { useLabels, useTaskLabels, useCreateLabel, useDeleteLabel, useUpdateLabel, LABEL_COLORS } from '@/hooks/useLabels'
 import { useCreateReminder } from '@/hooks/useReminders'
 import { useUIStore } from '@/stores/uiStore'
+import { useAppStore } from '@/stores/appStore'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { PRIORITY_COLORS, PRIORITY_LABELS, PROJECT_COLORS } from '@/lib/constants'
 import { cn, stripHtmlTags } from '@/lib/utils'
 import { buildProjectTree, flattenProjectTree } from '@/lib/projectTree'
@@ -34,6 +36,8 @@ interface TaskEditorProps {
 }
 
 export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate, defaultTime, defaultDurationMinutes, defaultSectionId, inline }: TaskEditorProps) {
+  const { sidebarCollapsed } = useAppStore()
+  const isMobile = useIsMobile()
   const { user } = useAuth()
   const { data: projects = [] } = useProjects()
   const { data: inboxProject } = useInboxProject()
@@ -97,7 +101,10 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
   const [atHighlightIdx, setAtHighlightIdx] = useState(0)
   const titleEditorRef = useRef<Editor | null>(null)
   // Track which fields were set by live NLP so we can clear them when the token is removed
-  const nlpAppliedRef = useRef({ date: false, time: false, duration: false, recurrence: false })
+  const nlpAppliedRef = useRef({ date: false, time: false, duration: false, recurrence: false, priority: false })
+  // Priority value before any NLP override (used to restore when token is removed)
+  const initialPriorityRef = useRef<1 | 2 | 3 | 4>(4)
+  const [fullscreen, setFullscreen] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -146,7 +153,8 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
     setNewSubtaskText('')
     setHashQuery(null)
     setAtQuery(null)
-    nlpAppliedRef.current = { date: false, time: false, duration: false, recurrence: false }
+    initialPriorityRef.current = (task ? task.priority : 4) as 1 | 2 | 3 | 4
+    nlpAppliedRef.current = { date: false, time: false, duration: false, recurrence: false, priority: false }
   }, [task, open, defaultProjectId, defaultDate, defaultTime, defaultDurationMinutes, inboxProject, existingLabels.length])
 
   // â”€â”€ Helper: remove a #labelname token from HTML via DOM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -203,11 +211,15 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
   }, [])
 
   // â”€â”€ Confirm a project from at autocomplete â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const confirmAtProject = (project: { id: string; name: string; color: string }) => {
+  type AtItem =
+    | { kind: 'project'; id: string; name: string; color: string; icon?: string | null; depth: number }
+    | { kind: 'section'; id: string; name: string; projectId: string; projectColor: string; depth: number }
+
+  const confirmAtItem = (item: AtItem) => {
     const editor = titleEditorRef.current
     if (!editor) return
     const plainText = editor.getText()
-    const token = '@' + project.name
+    const token = '@' + item.name
     const before = plainText.slice(0, atStart)
     const after = plainText.slice(atStart + 1 + (atQuery?.length ?? 0))
     const newPlainTitle = (before + token + ' ' + after.trimStart()).trimEnd()
@@ -230,19 +242,25 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
       }
       return fromPos === 0 || toPos === 0
     })
+    const tokenColor = item.kind === 'project' ? item.color : item.projectColor
     if (fromPos && toPos) {
-      // Insert colored token via Tiptap content with marks
       editor.chain().focus()
         .deleteRange({ from: fromPos, to: toPos })
         .insertContentAt(fromPos, [
-          { type: 'text', text: token, marks: [{ type: 'textStyle', attrs: { color: project.color } }] },
+          { type: 'text', text: token, marks: [{ type: 'textStyle', attrs: { color: tokenColor } }] },
           { type: 'text', text: ' ' },
         ])
         .run()
     } else {
       editor.commands.setContent(newPlainTitle)
     }
-    setProjectId(project.id)
+    if (item.kind === 'project') {
+      setProjectId(item.id)
+      setSectionId(null)
+    } else {
+      setProjectId(item.projectId)
+      setSectionId(item.id)
+    }
     setAtQuery(null)
   }
 
@@ -388,6 +406,17 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
       setIsRecurring(false)
       setRecurrenceRule(null)
       applied.recurrence = false
+    }
+
+    // p1-p4 priority token live detection
+    const prioMatches = [...plainText.matchAll(/\bp([1-4])\b/gi)]
+    if (prioMatches.length > 0) {
+      const p = parseInt(prioMatches[prioMatches.length - 1]![1]!) as 1 | 2 | 3 | 4
+      setPriority(p)
+      applied.priority = true
+    } else if (applied.priority) {
+      setPriority(initialPriorityRef.current)
+      applied.priority = false
     }
   }, [title, open])
 
@@ -601,12 +630,24 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
     !labels.some((l) => l.name.toLowerCase() === hashQuery.trim().toLowerCase())
   const hashTotalItems = hashFilteredLabels.length + (showHashCreate ? 1 : 0)
 
-  // At autocomplete (@projects)
-  const atFilteredProjects =
+  // At autocomplete (@projects + sections en árbol)
+  const allAtItems: AtItem[] = (() => {
+    const flat = flattenProjectTree(buildProjectTree(projects.filter((p) => !p.is_archived)))
+    const result: AtItem[] = []
+    for (const proj of flat) {
+      result.push({ kind: 'project', id: proj.id, name: proj.name, color: proj.color, icon: proj.icon, depth: proj.depth })
+      const sections = (sectionsMap?.get(proj.id) ?? []).slice().sort((a, b) => a.sort_order - b.sort_order)
+      for (const sec of sections) {
+        result.push({ kind: 'section', id: sec.id, name: sec.name, projectId: proj.id, projectColor: proj.color, depth: proj.depth + 1 })
+      }
+    }
+    return result
+  })()
+  const atFilteredItems: AtItem[] =
     atQuery !== null
-      ? projects.filter((p) => !p.is_archived && p.name.toLowerCase().includes(atQuery.toLowerCase()))
+      ? allAtItems.filter((item) => item.name.toLowerCase().includes(atQuery.toLowerCase()))
       : []
-  const atTotalItems = atFilteredProjects.length
+  const atTotalItems = atFilteredItems.length
 
   const editorCard = (
     <>
@@ -623,7 +664,7 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
                     createAndConfirmHash(hashQuery.trim())
                   }
                 } else if (atQuery !== null && atTotalItems > 0) {
-                  confirmAtProject(atFilteredProjects[atHighlightIdx]!)
+                  confirmAtItem(atFilteredItems[atHighlightIdx]!)
                 } else {
                   handleSubmit()
                 }
@@ -778,37 +819,47 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
               </div>
             )}
 
-            {/* At autocomplete dropdown (@projects) */}
+            {/* At autocomplete dropdown (@projects + sections) */}
             {atQuery !== null && atTotalItems > 0 && (
               <div
-                className="absolute left-0 top-full z-30 mt-1 w-52 overflow-hidden rounded-lg border py-1 shadow-lg"
+                className="absolute left-0 top-full z-30 mt-1 max-h-56 w-64 overflow-y-auto overflow-x-hidden rounded-lg border py-1 shadow-lg"
                 style={{
                   backgroundColor: 'var(--bg-primary)',
                   borderColor: 'var(--border-primary)',
                   boxShadow: 'var(--shadow-lg)',
                 }}
               >
-                {atFilteredProjects.map((project, idx) => (
+                {atFilteredItems.map((item, idx) => (
                   <button
-                    key={project.id}
+                    key={item.kind + '-' + item.id}
                     type="button"
                     onMouseDown={(e) => {
                       e.preventDefault()
-                      confirmAtProject(project)
+                      confirmAtItem(item)
                     }}
                     onMouseEnter={() => setAtHighlightIdx(idx)}
-                    className="flex w-full items-center gap-2 px-3 py-1.5 text-sm"
+                    className="flex w-full items-center gap-1.5 py-1.5 pr-3 text-sm"
                     style={{
+                      paddingLeft: `${8 + item.depth * 14}px`,
                       backgroundColor: idx === atHighlightIdx ? 'var(--bg-hover)' : 'transparent',
-                      color: 'var(--text-primary)',
+                      color: item.kind === 'section' ? 'var(--text-secondary)' : 'var(--text-primary)',
                     }}
                   >
-                    <span
-                      className="h-2.5 w-2.5 flex-shrink-0 rounded-sm"
-                      style={{ backgroundColor: project.color }}
-                    />
-                    <span className="flex-1 text-left">{project.name}</span>
-                    {projectId === project.id && (
+                    {item.kind === 'project' ? (
+                      <span
+                        className="h-2.5 w-2.5 flex-shrink-0 rounded-sm"
+                        style={{ backgroundColor: item.color }}
+                      />
+                    ) : (
+                      <span className="flex-shrink-0 text-xs leading-none" style={{ color: 'var(--text-muted)' }}>
+                        —
+                      </span>
+                    )}
+                    <span className="flex-1 truncate text-left">{item.name}</span>
+                    {item.kind === 'project' && projectId === item.id && sectionId === null && (
+                      <Check size={11} style={{ color: 'var(--text-primary)' }} />
+                    )}
+                    {item.kind === 'section' && sectionId === item.id && (
                       <Check size={11} style={{ color: 'var(--text-primary)' }} />
                     )}
                   </button>
@@ -1538,9 +1589,23 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
 
         {/* Footer */}
         <div
-          className="flex items-center justify-end gap-2 border-t px-4 py-3"
+          className="flex items-center gap-2 border-t px-4 py-3"
           style={{ borderColor: 'var(--border-primary)' }}
         >
+          {!inline && (
+            <button
+              type="button"
+              onClick={() => setFullscreen((f) => !f)}
+              className="rounded-lg p-1.5 transition-colors"
+              style={{ color: 'var(--text-muted)' }}
+              title={fullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              {fullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+            </button>
+          )}
+          <div className="flex-1" />
           <button
             onClick={onClose}
             className="rounded-lg px-4 py-1.5 text-sm font-medium transition-colors"
@@ -1574,11 +1639,27 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
     )
   }
 
+  if (fullscreen || (isMobile && !inline)) {
+    return (
+      <div
+        className={cn(
+          'fixed inset-y-0 right-0 z-40 overflow-y-auto left-0',
+          !isMobile && (sidebarCollapsed ? 'md:left-16' : 'md:left-72'),
+        )}
+        style={{ backgroundColor: 'var(--bg-primary)' }}
+      >
+        <div className="mx-auto w-full max-w-3xl px-4 py-4 md:px-6 md:py-6">
+          {editorCard}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh]">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
       <div
-        className="relative z-10 w-full max-w-3xl rounded-xl border shadow-2xl"
+        className="relative z-10 w-full max-w-3xl mx-4 rounded-xl border shadow-2xl"
         style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}
       >
         <div className="p-4">
