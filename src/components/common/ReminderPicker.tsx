@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import {
   format,
   subMinutes,
@@ -82,6 +83,7 @@ export function ReminderPicker({
   const [beforeDropdownOpen, setBeforeDropdownOpen] = useState(false)
   const [selectedBeforeMinutes, setSelectedBeforeMinutes] = useState(30)
   const containerRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
   const floatingStyle = useFloatingPosition(containerRef, open && !inline, 340) // w-[340px]
 
   const today = useMemo(() => new Date(), [])
@@ -113,7 +115,11 @@ export function ReminderPicker({
   useEffect(() => {
     if (!open || inline) return
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      // The panel is a portal (child of document.body, not containerRef), so check both
+      const insideTrigger = containerRef.current?.contains(target) ?? false
+      const insidePanel = panelRef.current?.contains(target) ?? false
+      if (!insideTrigger && !insidePanel) {
         setOpen(false)
         setBeforeDropdownOpen(false)
       }
@@ -153,50 +159,22 @@ export function ReminderPicker({
     if (!inline) setOpen(false)
   }
 
-  return (
-    <div className={inline ? '' : 'relative'} ref={containerRef}>
-      {!inline && (
-        <button
-          onClick={() => setOpen(!open)}
-          className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
-          style={{
-            backgroundColor: reminders.length > 0 ? 'rgba(59,130,246,0.1)' : 'var(--bg-secondary)',
-            borderColor: reminders.length > 0 ? 'rgba(59,130,246,0.3)' : 'var(--border-primary)',
-            color: reminders.length > 0 ? '#3B82F6' : 'var(--text-primary)',
-          }}
-        >
-          <Bell size={14} />
-          Recordatorios
-          {reminders.length > 0 && (
-            <span
-              className="rounded-full px-1.5 py-0.5 text-xs font-bold text-white"
-              style={{ backgroundColor: '#3B82F6' }}
-            >
-              {reminders.length}
-            </span>
-          )}
-          {shortcutKey && (
-            <span
-              className="rounded px-1 py-0.5 font-mono text-[9px] leading-none"
-              style={{ backgroundColor: reminders.length > 0 ? 'rgba(59,130,246,0.15)' : 'var(--bg-primary)', color: 'var(--text-muted)' }}
-            >
-              {shortcutKey}
-            </span>
-          )}
-        </button>
-      )}
-
-      {(inline || open) && (
+  const panelNode = (inline || open) ? (
         <div
-          className={inline ? 'w-[340px] overflow-hidden' : 'w-[340px] rounded-xl border shadow-xl'}
+          ref={panelRef}
+          className={
+            inline
+              ? 'flex w-[340px] flex-col overflow-hidden'
+              : 'flex w-[340px] flex-col overflow-hidden rounded-xl border shadow-xl'
+          }
           style={{
             ...(inline ? {} : floatingStyle),
             backgroundColor: 'var(--bg-primary)',
             ...(inline ? {} : { borderColor: 'var(--border-primary)', boxShadow: 'var(--shadow-lg)' }),
           }}
         >
-          {/* Header */}
-          <div className="border-b px-4 pt-3 pb-0" style={{ borderColor: 'var(--border-secondary)' }}>
+          {/* Header — no scrollea */}
+          <div className="shrink-0 border-b px-4 pt-3 pb-0" style={{ borderColor: 'var(--border-secondary)' }}>
             <h3
               className="mb-3 text-sm font-semibold"
               style={{ color: 'var(--text-primary)' }}
@@ -241,8 +219,8 @@ export function ReminderPicker({
             </div>
           </div>
 
-          {/* Content */}
-          <div className="p-4">
+          {/* Content — scrollable para que el botón siempre sea alcanzable */}
+          <div className="min-h-0 flex-1 overflow-y-auto p-4">
             {activeTab === 'datetime' && (
               <div>
                 {/* Quick date shortcuts */}
@@ -449,8 +427,8 @@ export function ReminderPicker({
                   </div>
                 ) : (
                   <div>
-                    {/* Before dropdown */}
-                    <div className="relative mb-4">
+                    {/* Before selector — inline list, no absolute positioning to avoid overflow clipping */}
+                    <div className="mb-4">
                       <button
                         onClick={() => setBeforeDropdownOpen(!beforeDropdownOpen)}
                         className="flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors"
@@ -464,18 +442,25 @@ export function ReminderPicker({
                           <Clock size={14} style={{ color: 'var(--text-muted)' }} />
                           {selectedBeforeLabel}
                         </div>
-                        <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />
+                        <ChevronDown
+                          size={14}
+                          style={{
+                            color: 'var(--text-muted)',
+                            transform: beforeDropdownOpen ? 'rotate(180deg)' : 'none',
+                            transition: 'transform 0.15s',
+                          }}
+                        />
                       </button>
 
                       {beforeDropdownOpen && (
                         <div
-                          className="absolute left-0 top-full z-40 mt-1 w-full rounded-lg border shadow-lg"
+                          className="mt-1 rounded-lg border"
                           style={{
                             backgroundColor: 'var(--bg-primary)',
                             borderColor: 'var(--border-primary)',
                           }}
                         >
-                          <div className="max-h-64 overflow-y-auto py-1">
+                          <div className="py-1">
                             {BEFORE_OPTIONS.map((option) => (
                               <button
                                 key={option.minutes}
@@ -565,7 +550,43 @@ export function ReminderPicker({
             )}
           </div>
         </div>
+  ) : null
+
+  return (
+    <div className={inline ? '' : 'relative'} ref={containerRef}>
+      {!inline && (
+        <button
+          onClick={() => setOpen(!open)}
+          className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
+          style={{
+            backgroundColor: reminders.length > 0 ? 'rgba(59,130,246,0.1)' : 'var(--bg-secondary)',
+            borderColor: reminders.length > 0 ? 'rgba(59,130,246,0.3)' : 'var(--border-primary)',
+            color: reminders.length > 0 ? '#3B82F6' : 'var(--text-primary)',
+          }}
+        >
+          <Bell size={14} />
+          Recordatorios
+          {reminders.length > 0 && (
+            <span
+              className="rounded-full px-1.5 py-0.5 text-xs font-bold text-white"
+              style={{ backgroundColor: '#3B82F6' }}
+            >
+              {reminders.length}
+            </span>
+          )}
+          {shortcutKey && (
+            <span
+              className="rounded px-1 py-0.5 font-mono text-[9px] leading-none"
+              style={{ backgroundColor: reminders.length > 0 ? 'rgba(59,130,246,0.15)' : 'var(--bg-primary)', color: 'var(--text-muted)' }}
+            >
+              {shortcutKey}
+            </span>
+          )}
+        </button>
       )}
+
+      {/* Inline: render in-place. Dropdown: render via portal to escape parent stacking contexts */}
+      {inline ? panelNode : panelNode && createPortal(panelNode, document.body)}
     </div>
   )
 }

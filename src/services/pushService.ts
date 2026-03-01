@@ -48,7 +48,7 @@ export const pushService = {
         p256dh: json.keys.p256dh,
         auth: json.keys.auth,
       },
-      { onConflict: 'endpoint' }
+      { onConflict: 'user_id,endpoint' }
     )
   },
 
@@ -79,11 +79,20 @@ export const pushService = {
     return 'granted'
   },
 
-  /** Re-save an existing subscription (called on login to keep DB in sync). */
+  /** Re-save an existing subscription (called on login to keep DB in sync).
+   *  If permission is granted but no active subscription exists (e.g. after SW was
+   *  destroyed), silently re-subscribes so reminders can be delivered. */
   async syncSubscription(userId: string): Promise<void> {
     if (!this.isSupported() || Notification.permission !== 'granted') return
     await this.registerServiceWorker()
-    const sub = await this.getExistingSubscription()
+    let sub = await this.getExistingSubscription()
+    if (!sub) {
+      try {
+        sub = await this.subscribe()
+      } catch {
+        return
+      }
+    }
     if (sub) await this.saveSubscription(userId, sub)
   },
 }

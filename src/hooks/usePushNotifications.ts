@@ -15,10 +15,20 @@ export function usePushNotifications() {
     pushService.syncSubscription(user.id).catch(console.error)
   }, [user?.id])
 
-  // Keep local permission state in sync with browser state
+  // Keep local permission state in sync with browser state (including external changes)
   useEffect(() => {
     if (!supported) return
     setPermission(Notification.permission)
+
+    // Listen for permission changes made in browser settings
+    navigator.permissions
+      .query({ name: 'notifications' as PermissionName })
+      .then((status) => {
+        const handler = () => setPermission(Notification.permission)
+        status.addEventListener('change', handler)
+        return () => status.removeEventListener('change', handler)
+      })
+      .catch(() => {/* Permissions API not supported, ignore */})
   }, [supported])
 
   const enable = async (): Promise<boolean> => {
