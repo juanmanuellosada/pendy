@@ -68,19 +68,23 @@ export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: Tod
     }
   }, [])
 
-  // Split tasks: all-day (no time) vs timed
+  const todayDateStr = format(new Date(), 'yyyy-MM-dd')
+
+  // Split tasks: timed (has time AND due today) vs all-day/overdue
+  // Overdue tasks with a time are shown in the all-day section instead of
+  // being incorrectly positioned on today's timeline at a past-day's hour.
   const { allDayTasks, timedTasks } = useMemo(() => {
     const allDay: Task[] = []
     const timed: Task[] = []
     tasks.forEach((t) => {
-      if (t.has_time && t.due_datetime) {
+      if (t.has_time && t.due_datetime && t.due_date === todayDateStr) {
         timed.push(t)
       } else {
         allDay.push(t)
       }
     })
     return { allDayTasks: allDay, timedTasks: timed }
-  }, [tasks])
+  }, [tasks, todayDateStr])
 
   const allDayEvents = calendarEvents.filter((e) => e.isAllDay)
   const timedEvents = calendarEvents.filter((e) => !e.isAllDay)
