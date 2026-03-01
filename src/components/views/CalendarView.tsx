@@ -1221,6 +1221,7 @@ function CalendarTimelineBlock({
     (effectiveDuration / 60) * HOUR_HEIGHT + resizeDelta,
     (MIN_DURATION / 60) * HOUR_HEIGHT,
   )
+  const renderHeight = Math.max(currentHeight, (30 / 60) * HOUR_HEIGHT)
 
   const displayHours = pxToHours(Math.max(0, baseTop), HOUR_HEIGHT)
   const displayH = Math.floor(displayHours)
@@ -1230,8 +1231,8 @@ function CalendarTimelineBlock({
   const startLabel = `${String(displayH).padStart(2, '0')}:${String(displayM).padStart(2, '0')}`
   const endLabel = `${String(Math.floor(eHours) % 24).padStart(2, '0')}:${String(Math.round((eHours % 1) * 60) % 60).padStart(2, '0')}`
 
-  const showTime = currentHeight >= 38
-  const showCalendarName = currentHeight >= 54
+  const showTime = renderHeight >= 38
+  const showCalendarName = renderHeight >= 54
   const isSameColDrag = activeDragDy !== 0
 
   const handleResizeStart = useCallback(
@@ -1302,7 +1303,7 @@ function CalendarTimelineBlock({
         )}
         style={{
           top: Math.max(0, baseTop),
-          height: currentHeight,
+          height: renderHeight,
           borderLeftColor: color,
           backgroundColor: `${color}1A`,
           transition: isSameColDrag || isDragging || resizing ? 'none' : 'top 0.15s ease, height 0.15s ease',
@@ -1621,6 +1622,7 @@ function CalendarHabitBlock({
     (baseDuration / 60) * HOUR_HEIGHT + resizeDelta,
     (MIN_DURATION / 60) * HOUR_HEIGHT,
   )
+  const renderHeight = Math.max(currentHeight, (30 / 60) * HOUR_HEIGHT)
 
   const displayHours = pxToHours(Math.max(0, baseTop), HOUR_HEIGHT)
   const displayH = Math.floor(displayHours)
@@ -1629,7 +1631,7 @@ function CalendarHabitBlock({
   const endHours = displayHours + durMin / 60
   const startLabel = `${String(displayH).padStart(2, '0')}:${String(displayM).padStart(2, '0')}`
   const endLabel = `${String(Math.floor(endHours) % 24).padStart(2, '0')}:${String(Math.round((endHours % 1) * 60) % 60).padStart(2, '0')}`
-  const showTime = currentHeight >= 38
+  const showTime = renderHeight >= 38
 
   const handleDragStart = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('[data-resize-handle]')) return
@@ -1706,7 +1708,7 @@ function CalendarHabitBlock({
       )}
       style={{
         top: Math.max(0, baseTop),
-        height: currentHeight,
+        height: renderHeight,
         borderLeftColor: habit.color,
         backgroundColor: `${habit.color}1A`,
         transition: interacting ? 'none' : 'top 0.15s ease, height 0.15s ease',

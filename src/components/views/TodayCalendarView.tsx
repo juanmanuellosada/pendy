@@ -640,6 +640,7 @@ function TimedTaskBlock({
     (baseDuration / 60) * HOUR_HEIGHT + resizeDelta,
     (MIN_DURATION / 60) * HOUR_HEIGHT,
   )
+  const renderHeight = Math.max(currentHeight, (30 / 60) * HOUR_HEIGHT)
 
   // Computed display times
   const displayHours = pxToHours(currentTop, HOUR_HEIGHT)
@@ -662,10 +663,10 @@ function TimedTaskBlock({
   const description = task.description ? stripHtmlTags(task.description).trim() : ''
 
   // Progressive thresholds (px) — HOUR_HEIGHT=64
-  const showTimeSeparate = currentHeight >= 42
-  const showDescription = currentHeight >= 64 && description
-  const showProject = currentHeight >= 84 && project
-  const showLabels = currentHeight >= 104 && labels.length > 0
+  const showTimeSeparate = renderHeight >= 42
+  const showDescription = renderHeight >= 64 && description
+  const showProject = renderHeight >= 84 && project
+  const showLabels = renderHeight >= 104 && labels.length > 0
 
   /* ── Drag to move ── */
   const handleDragStart = useCallback(
@@ -781,7 +782,7 @@ function TimedTaskBlock({
       )}
       style={{
         top: currentTop,
-        height: currentHeight,
+        height: renderHeight,
         borderLeftColor: color,
         backgroundColor: `${color}18`,
         transition: interacting ? 'none' : 'top 0.15s ease, height 0.15s ease',
@@ -911,6 +912,7 @@ function TimedEventBlock({
     (baseDuration / 60) * HOUR_HEIGHT + resizeDelta,
     (MIN_DURATION / 60) * HOUR_HEIGHT,
   )
+  const renderHeight = Math.max(height, (30 / 60) * HOUR_HEIGHT)
 
   // Display strings
   const displayHours = pxToHours(Math.max(0, top), HOUR_HEIGHT)
@@ -923,8 +925,8 @@ function TimedEventBlock({
   const startStr = `${String(displayH).padStart(2, '0')}:${String(displayM).padStart(2, '0')}`
   const endStr = `${String(endH % 24).padStart(2, '0')}:${String(endM).padStart(2, '0')}`
 
-  const showTime = height >= 42
-  const showCalendarName = height >= 58
+  const showTime = renderHeight >= 42
+  const showCalendarName = renderHeight >= 58
 
   /* ── Drag to move ── */
   const handleDragStart = useCallback(
@@ -1044,7 +1046,7 @@ function TimedEventBlock({
 
   const blockStyle: React.CSSProperties = {
     top: Math.max(0, top),
-    height,
+    height: renderHeight,
     borderLeftColor: color,
     backgroundColor: `${color}22`,
     transition: interacting ? 'none' : 'top 0.15s ease, height 0.15s ease',
@@ -1286,6 +1288,7 @@ function TimedHabitBlock({
     (baseDuration / 60) * hourHeight + resizeDelta,
     (MIN_DURATION / 60) * hourHeight,
   )
+  const renderHeight = Math.max(currentHeight, (30 / 60) * hourHeight)
 
   const displayHours = pxToHours(currentTop, hourHeight)
   const displayH = Math.floor(displayHours)
@@ -1294,7 +1297,7 @@ function TimedHabitBlock({
   const timeStart = `${String(displayH).padStart(2, '0')}:${String(displayM).padStart(2, '0')}`
   const endHours = displayHours + durMin / 60
   const timeEnd = `${String(Math.floor(endHours) % 24).padStart(2, '0')}:${String(Math.round((endHours % 1) * 60) % 60).padStart(2, '0')}`
-  const showTimeSeparate = currentHeight >= 42
+  const showTimeSeparate = renderHeight >= 42
 
   // Drag to move
   const handleDragStart = useCallback((e: React.MouseEvent) => {
@@ -1376,7 +1379,7 @@ function TimedHabitBlock({
       )}
       style={{
         top: currentTop,
-        height: currentHeight,
+        height: renderHeight,
         borderLeftColor: habit.color,
         backgroundColor: `${habit.color}18`,
         transition: interacting ? 'none' : 'top 0.15s ease, height 0.15s ease',
