@@ -149,7 +149,7 @@ export function TodayCalendarView({ tasks, labelsMap, calendarEvents = [] }: Tod
                 className="w-14 shrink-0 pr-2 pt-1 text-right text-xs font-medium"
                 style={{ color: '#EC1E2A' }}
               >
-                Atrás
+                Vencidas
               </div>
               <div
                 className="flex-1 rounded-lg border-l-2 py-1 pl-2"
