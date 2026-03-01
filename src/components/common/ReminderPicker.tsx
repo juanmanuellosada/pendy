@@ -128,9 +128,11 @@ export function ReminderPicker({
   )
 
   const handleAddDatetime = () => {
-    const dateStr = format(selectedDate, 'yyyy-MM-dd')
     const timeStr = `${selectedHour}:${selectedMinute}`
-    const datetime = `${dateStr}T${timeStr}:00`
+    // Construct Date in local timezone so .toISOString() produces the correct UTC offset
+    const localDate = new Date(selectedDate)
+    localDate.setHours(parseInt(selectedHour, 10), parseInt(selectedMinute, 10), 0, 0)
+    const datetime = localDate.toISOString()
     const label = `${format(selectedDate, 'd MMM', { locale: es })} ${timeStr}`
     onAdd({
       type: 'datetime',
