@@ -155,7 +155,7 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
     setAtQuery(null)
     initialPriorityRef.current = (task ? task.priority : 4) as 1 | 2 | 3 | 4
     nlpAppliedRef.current = { date: false, time: false, duration: false, recurrence: false, priority: false }
-  }, [task, open, defaultProjectId, defaultDate, defaultTime, defaultDurationMinutes, inboxProject, existingLabels.length])
+  }, [task?.id, open, defaultProjectId, defaultDate, defaultTime, defaultDurationMinutes, inboxProject?.id, existingLabels.length])
 
   // â”€â”€ Helper: remove a #labelname token from HTML via DOM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const removeLabelToken = useCallback((html: string, labelName: string) => {

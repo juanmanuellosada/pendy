@@ -12,6 +12,7 @@ import {
   Bell,
   ArrowLeft,
   Maximize2,
+  Repeat,
 } from 'lucide-react'
 import { useAppStore } from '@/stores/appStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -398,11 +399,13 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
     const cleanPlain = stripHtmlTags(cleanTitle).trim()
     if (!cleanPlain) return
 
-    // Save if title changed or NLP/priority tokens were detected
-    if (cleanPlain !== stripHtmlTags(task.title).trim() || Object.keys(updates).length > 0) {
-      updates.title = cleanTitle
+    // Update local title state (stripped of tokens)
+    setTitle(cleanTitle)
+
+    // Save metadata changes immediately (date, priority, project) but NOT the title text
+    // Title text is saved explicitly via the Save button
+    if (Object.keys(updates).length > 0) {
       save(updates)
-      setTitle(cleanTitle)
     }
   }
 
@@ -410,11 +413,24 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
     setDescription(html)
   }
 
-  const handleDescriptionBlur = () => {
-    if (task && description !== (task.description ?? '')) {
-      save({ description: description || null })
-    }
+  // Description changes are saved via the Save button, not on blur
+  const handleDescriptionBlur = () => {}
+
+  /* ── Explicit save (title + description) ──── */
+  const isDirty = !!task && (
+    title !== task.title ||
+    description !== (task.description ?? '')
+  )
+
+  // Keep a stable ref so the Ctrl+S keyboard handler always uses the latest version
+  const saveMainRef = useRef<() => void>(() => {})
+  const handleSaveMain = async () => {
+    if (!task) return
+    const plainTitle = stripHtmlTags(title).trim()
+    if (!plainTitle) return
+    await save({ title, description: description || null })
   }
+  saveMainRef.current = handleSaveMain
 
   /* ── Date/Time handlers (save immediately) ──── */
   const handleDateChange = (date: string | null) => {
@@ -521,6 +537,13 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
   // Keyboard shortcuts for TaskDetail sections
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Ctrl+S / Cmd+S → explicit save
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault()
+        saveMainRef.current()
+        return
+      }
+
       const tag = (e.target as HTMLElement).tagName
       const isInput =
         tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable
@@ -1066,6 +1089,21 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
             </span>
           </div>
           <div className="flex items-center gap-2">
+            {/* Save button */}
+            <button
+              onClick={handleSaveMain}
+              disabled={!isDirty || saving}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all"
+              style={{
+                backgroundColor: isDirty ? '#283B56' : 'var(--bg-secondary)',
+                color: isDirty ? '#ffffff' : 'var(--text-muted)',
+                cursor: isDirty ? 'pointer' : 'default',
+              }}
+              title="Guardar cambios (Ctrl+S)"
+            >
+              {saving ? 'Guardando...' : 'Guardar'}
+            </button>
+
             {task && (
               <button
                 onClick={() => {
@@ -1092,15 +1130,6 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
             {content}
           </div>
         </div>
-
-        {saving && (
-          <div
-            className="border-t px-6 py-2 text-xs"
-            style={{ borderColor: 'var(--border-primary)', color: 'var(--text-muted)' }}
-          >
-            Guardando...
-          </div>
-        )}
       </div>
     )
   }
@@ -1154,6 +1183,21 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
             </span>
           </div>
           <div className="flex items-center gap-2">
+            {/* Save button */}
+            <button
+              onClick={handleSaveMain}
+              disabled={!isDirty || saving}
+              className="rounded-lg px-2.5 py-1 text-xs font-medium transition-all"
+              style={{
+                backgroundColor: isDirty ? '#283B56' : 'var(--bg-secondary)',
+                color: isDirty ? '#ffffff' : 'var(--text-muted)',
+                cursor: isDirty ? 'pointer' : 'default',
+              }}
+              title="Guardar cambios (Ctrl+S)"
+            >
+              {saving ? 'Guardando...' : 'Guardar'}
+            </button>
+
             {effectiveTaskId && (
               <button
                 onClick={() => navigate(`/app/task/${effectiveTaskId}`)}
@@ -1196,15 +1240,6 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
         <div className="flex-1 overflow-y-auto">
           {content}
         </div>
-
-        {saving && (
-          <div
-            className="border-t px-4 py-2 text-xs"
-            style={{ borderColor: 'var(--border-primary)', color: 'var(--text-muted)' }}
-          >
-            Guardando...
-          </div>
-        )}
       </aside>
     </>
   )
@@ -1246,8 +1281,9 @@ function SubtaskRow({ task, onOpen }: { task: Task; onOpen: () => void }) {
         />
       </button>
       {task.due_date && (
-        <span className="shrink-0 text-xs" style={{ color: 'var(--text-muted)' }}>
+        <span className="shrink-0 flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}>
           {formatRelativeDate(task.due_date)}
+          {task.is_recurring && <Repeat size={11} />}
         </span>
       )}
       {task.priority < 4 && (

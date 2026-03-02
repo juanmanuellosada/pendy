@@ -180,13 +180,21 @@ function generateRecurrencePresets(date: Date) {
   const month = MONTH_NAMES_ES[date.getMonth()]
   const byDay = BYDAY[dayOfWeek]
 
-  return [
+  const presets = [
     { label: 'Cada día', rule: 'RRULE:FREQ=DAILY;INTERVAL=1' },
     { label: `Cada semana el ${dayName}`, rule: `RRULE:FREQ=WEEKLY;BYDAY=${byDay}` },
     { label: 'Cada día laborable (lun - vie)', rule: 'RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR' },
     { label: `Cada mes el ${dayOfMonth}`, rule: `RRULE:FREQ=MONTHLY;BYMONTHDAY=${dayOfMonth}` },
-    { label: `Cada año el ${dayOfMonth} de ${month}`, rule: `RRULE:FREQ=YEARLY;BYMONTH=${date.getMonth() + 1};BYMONTHDAY=${dayOfMonth}` },
   ]
+
+  // Cuando el día es 29, 30 o 31 algunos meses lo omiten → ofrecer "último día del mes"
+  if (dayOfMonth >= 29) {
+    presets.push({ label: 'Último día de cada mes', rule: 'RRULE:FREQ=MONTHLY;BYMONTHDAY=-1' })
+  }
+
+  presets.push({ label: `Cada año el ${dayOfMonth} de ${month}`, rule: `RRULE:FREQ=YEARLY;BYMONTH=${date.getMonth() + 1};BYMONTHDAY=${dayOfMonth}` })
+
+  return presets
 }
 
 const FREQ_OPTIONS = [
@@ -226,6 +234,7 @@ export function DateTimePicker({
   const [customEndDate, setCustomEndDate] = useState<string | null>(null)
   const [customHasEnd, setCustomHasEnd] = useState(false)
   const [customDays, setCustomDays] = useState<string[]>([])
+  const [customUseLastDay, setCustomUseLastDay] = useState(false)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const floatingStyle = useFloatingPosition(containerRef, open && !inline, 288) // w-72 = 288px
@@ -403,6 +412,7 @@ export function DateTimePicker({
       const intervalMatch = recurrenceRule.match(/INTERVAL=(\d+)/)
       const untilMatch = recurrenceRule.match(/UNTIL=(\d{8})/)
       const bydayMatch = recurrenceRule.match(/BYDAY=([^;]+)/)
+      const bymonthDayMatch = recurrenceRule.match(/BYMONTHDAY=(-?\d+)/)
       if (freqMatch) setCustomFreq(freqMatch[1]! as typeof customFreq)
       setCustomInterval(intervalMatch ? parseInt(intervalMatch[1]!) : 1)
       if (untilMatch) {
@@ -416,12 +426,14 @@ export function DateTimePicker({
         setCustomHasEnd(false)
       }
       setCustomDays(bydayMatch && freqMatch?.[1] === 'WEEKLY' ? bydayMatch[1]!.split(',').filter(Boolean) : [])
+      setCustomUseLastDay(bymonthDayMatch?.[1] === '-1')
     } else {
       setCustomFreq('WEEKLY')
       setCustomInterval(1)
       setCustomEndDate(null)
       setCustomHasEnd(false)
       setCustomDays([])
+      setCustomUseLastDay(false)
     }
     setCustomFrom(recurrenceFrom)
     setShowCustomRecurrence(true)
@@ -434,13 +446,16 @@ export function DateTimePicker({
       const sorted = BYDAY_ORDER.filter((d) => customDays.includes(d))
       rule += `;BYDAY=${sorted.join(',')}`
     }
+    if (customFreq === 'MONTHLY' && customUseLastDay) {
+      rule += ';BYMONTHDAY=-1'
+    }
     if (customHasEnd && customEndDate) {
       const untilStr = customEndDate.replace(/-/g, '')
       rule += `;UNTIL=${untilStr}T235959Z`
     }
     onRecurrenceChange(true, rule, customFrom)
     setShowCustomRecurrence(false)
-  }, [customFreq, customInterval, customDays, customHasEnd, customEndDate, customFrom, onRecurrenceChange])
+  }, [customFreq, customInterval, customDays, customUseLastDay, customHasEnd, customEndDate, customFrom, onRecurrenceChange])
 
   // Trigger label — includes time + duration when set
   const triggerLabel = useMemo(() => {
@@ -501,9 +516,13 @@ export function DateTimePicker({
     const freqMatch = recurrenceRule.match(/FREQ=(\w+)/)
     const intervalMatch = recurrenceRule.match(/INTERVAL=(\d+)/)
     const bydayMatch = recurrenceRule.match(/BYDAY=([^;]+)/)
+    const bymonthDayMatch = recurrenceRule.match(/BYMONTHDAY=(-?\d+)/)
     if (freqMatch) {
       const freq = freqMatch[1]!
       const interval = intervalMatch ? parseInt(intervalMatch[1]!) : 1
+      if (freq === 'MONTHLY' && bymonthDayMatch?.[1] === '-1') {
+        return interval > 1 ? `Último día cada ${interval} meses` : 'Último día del mes'
+      }
       if (freq === 'WEEKLY' && bydayMatch) {
         const dayMap: Record<string, string> = { MO: 'lun', TU: 'mar', WE: 'mié', TH: 'jue', FR: 'vie', SA: 'sáb', SU: 'dom' }
         const days = bydayMatch[1]!.split(',').map((x) => dayMap[x] ?? x)
@@ -988,6 +1007,29 @@ export function DateTimePicker({
               </select>
             </div>
           </div>
+
+          {/* Último día del mes (solo cuando es mensual) */}
+          {customFreq === 'MONTHLY' && (
+            <div className="mb-3">
+              <label
+                className="flex items-center gap-2 text-xs cursor-pointer select-none"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                <input
+                  type="checkbox"
+                  checked={customUseLastDay}
+                  onChange={(e) => setCustomUseLastDay(e.target.checked)}
+                  className="accent-[#283B56]"
+                />
+                Siempre el último día del mes
+              </label>
+              {customUseLastDay && (
+                <p className="mt-1 text-[11px] pl-5" style={{ color: 'var(--text-muted)' }}>
+                  En meses cortos se usará el último día (ej: feb 28/29, abr 30).
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Días (solo cuando es semanal) */}
           {customFreq === 'WEEKLY' && (

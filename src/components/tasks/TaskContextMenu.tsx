@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { format, addDays, nextSaturday, getDay } from 'date-fns'
 import { useUpdateTask, useDeleteTask, useCreateTask } from '@/hooks/useTasks'
+import { useTaskLabels } from '@/hooks/useLabels'
 import { useProjects } from '@/hooks/useProjects'
 import { useProjectSections } from '@/hooks/useSections'
 import { useUIStore } from '@/stores/uiStore'
@@ -51,6 +52,7 @@ export function TaskContextMenu({ task, x, y, onClose }: TaskContextMenuProps) {
   const { showConfirmDialog } = useUIStore()
   const { user } = useAuth()
 
+  const { data: taskLabels = [] } = useTaskLabels(task.id)
   const createReminder = useCreateReminder()
 
   // Submenu state
@@ -187,6 +189,7 @@ export function TaskContextMenu({ task, x, y, onClose }: TaskContextMenuProps) {
       due_datetime: task.due_datetime,
       has_time: task.has_time,
       duration_minutes: task.duration_minutes,
+      label_ids: taskLabels.map((l) => l.id),
     })
   }
 

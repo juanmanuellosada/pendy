@@ -11,18 +11,15 @@
   "lang": "es",
   "categories": ["productivity", "utilities"],
   "icons": [
-    {
-      "src": "/pendy/pendy-logo.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/pendy/pendy-logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    { "src": "/pendy/icon-72.png",  "sizes": "72x72",   "type": "image/png", "purpose": "any maskable" },
+    { "src": "/pendy/icon-96.png",  "sizes": "96x96",   "type": "image/png", "purpose": "any maskable" },
+    { "src": "/pendy/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/pendy/icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/pendy/icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/pendy/icon-167.png", "sizes": "167x167", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/pendy/icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/pendy/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/pendy/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "screenshots": [],
   "shortcuts": [
@@ -31,14 +28,14 @@
       "short_name": "Hoy",
       "description": "Ver tareas de hoy",
       "url": "/pendy/app/today",
-      "icons": [{ "src": "/pendy/pendy-logo.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/pendy/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Bandeja de entrada",
       "short_name": "Inbox",
       "description": "Ver bandeja de entrada",
       "url": "/pendy/app/inbox",
-      "icons": [{ "src": "/pendy/pendy-logo.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/pendy/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

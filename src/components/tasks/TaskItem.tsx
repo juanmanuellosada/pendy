@@ -1,6 +1,6 @@
 import { memo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, Flag, MoreHorizontal, Trash2, Clock, Check } from 'lucide-react'
+import { Calendar, Flag, MoreHorizontal, Trash2, Clock, Check, Repeat } from 'lucide-react'
 import { TaskCheckbox } from './TaskCheckbox'
 import { TaskContextMenu } from './TaskContextMenu'
 import { TaskTooltip } from '@/components/common/TaskTooltip'
@@ -150,6 +150,7 @@ export const TaskItem = memo(function TaskItem({
                   })}
                 </>
               )}
+              {task.is_recurring && <Repeat size={11} className="ml-0.5" />}
             </span>
           )}
 
