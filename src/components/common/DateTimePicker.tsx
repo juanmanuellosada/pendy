@@ -60,14 +60,20 @@ const MONTH_NAMES_ES = [
   'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
 ]
 
-const DURATION_OPTIONS: { label: string; value: number | null }[] = [
+function formatDuration(v: number): string {
+  if (v < 60) return `${v}m`
+  const h = Math.floor(v / 60)
+  const m = v % 60
+  return m === 0 ? `${h}h` : `${h}h${m}m`
+}
+
+// 5, 10, 15, ..., 120 en pasos de 5
+const DURATION_PRESETS: { label: string; value: number | null }[] = [
   { label: 'Sin duración', value: null },
-  { label: '15m', value: 15 },
-  { label: '30m', value: 30 },
-  { label: '45m', value: 45 },
-  { label: '1h', value: 60 },
-  { label: '1h30m', value: 90 },
-  { label: '2h', value: 120 },
+  ...Array.from({ length: 24 }, (_, i) => {
+    const v = (i + 1) * 5
+    return { label: formatDuration(v), value: v }
+  }),
 ]
 
 interface DateTimePickerProps {
@@ -131,6 +137,7 @@ export function DateTimePicker({
   const [timeExpanded, setTimeExpanded] = useState(false)
   const [repeatExpanded, setRepeatExpanded] = useState(false)
   const [showCustomRecurrence, setShowCustomRecurrence] = useState(false)
+  const [showCustomDuration, setShowCustomDuration] = useState(false)
 
   // Custom recurrence dialog state
   const [customFreq, setCustomFreq] = useState<'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY'>('WEEKLY')
@@ -401,8 +408,7 @@ export function DateTimePicker({
   // Duration label
   const durationLabel = useMemo(() => {
     if (durationMinutes === null) return null
-    const opt = DURATION_OPTIONS.find((o) => o.value === durationMinutes)
-    return opt ? opt.label : `${durationMinutes}m`
+    return formatDuration(durationMinutes)
   }, [durationMinutes])
 
   // Recurrence summary for trigger button
@@ -633,10 +639,10 @@ export function DateTimePicker({
 
             {timeExpanded && (
               <div className="px-3 pb-2 pt-1 flex items-center gap-2">
-                {/* HH : MM selects */}
+                {/* HH : MM selects — explicit bg para tema oscuro */}
                 <div
-                  className="flex items-center rounded-lg overflow-hidden"
-                  style={{ border: '1px solid var(--border-primary)', backgroundColor: 'var(--bg-secondary)' }}
+                  className="flex items-center rounded-lg overflow-hidden flex-shrink-0"
+                  style={{ border: '1px solid var(--border-primary)' }}
                 >
                   <select
                     value={(time ?? '09:00').split(':')[0]}
@@ -645,14 +651,14 @@ export function DateTimePicker({
                       onTimeChange(`${e.target.value}:${m}`)
                       if (!hasTime) onHasTimeChange(true)
                     }}
-                    className="bg-transparent outline-none text-sm font-medium px-2 py-1.5 cursor-pointer appearance-none"
-                    style={{ color: 'var(--text-primary)' }}
+                    className="outline-none text-sm font-medium px-2 py-1.5 cursor-pointer appearance-none"
+                    style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
                   >
                     {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map((h) => (
                       <option key={h} value={h}>{h}</option>
                     ))}
                   </select>
-                  <span className="text-sm font-medium select-none" style={{ color: 'var(--text-muted)' }}>:</span>
+                  <span className="text-sm font-medium select-none px-0.5" style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)' }}>:</span>
                   <select
                     value={String(Math.round(parseInt((time ?? '09:00').split(':')[1] ?? '0') / 5) * 5 % 60).padStart(2, '0')}
                     onChange={(e) => {
@@ -660,34 +666,76 @@ export function DateTimePicker({
                       onTimeChange(`${h}:${e.target.value}`)
                       if (!hasTime) onHasTimeChange(true)
                     }}
-                    className="bg-transparent outline-none text-sm font-medium px-2 py-1.5 cursor-pointer appearance-none"
-                    style={{ color: 'var(--text-primary)' }}
+                    className="outline-none text-sm font-medium px-2 py-1.5 cursor-pointer appearance-none"
+                    style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
                   >
                     {Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0')).map((m) => (
                       <option key={m} value={m}>{m}</option>
                     ))}
                   </select>
                 </div>
-                {/* Duration selector */}
-                <select
-                  value={durationMinutes ?? ''}
-                  onChange={(e) => {
-                    const val = e.target.value
-                    onDurationChange(val === '' ? null : parseInt(val, 10))
-                  }}
-                  className="flex-1 rounded-lg border px-2 py-1.5 text-xs outline-none appearance-none cursor-pointer"
-                  style={{
-                    backgroundColor: 'var(--bg-secondary)',
-                    borderColor: 'var(--border-primary)',
-                    color: 'var(--text-primary)',
-                  }}
-                >
-                  {DURATION_OPTIONS.map((opt) => (
-                    <option key={opt.label} value={opt.value ?? ''}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+
+                {/* Duración — intervalos de 5 min + Personalizado */}
+                {showCustomDuration ? (
+                  <div className="flex flex-1 items-center gap-1">
+                    <input
+                      type="number"
+                      min={1}
+                      max={480}
+                      autoFocus
+                      placeholder="min"
+                      defaultValue={durationMinutes ?? ''}
+                      onBlur={(e) => {
+                        const v = parseInt(e.target.value)
+                        onDurationChange(isNaN(v) || v <= 0 ? null : v)
+                        setShowCustomDuration(false)
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                        if (e.key === 'Escape') { onDurationChange(null); setShowCustomDuration(false) }
+                      }}
+                      className="flex-1 rounded-lg border px-2 py-1.5 text-xs outline-none"
+                      style={{
+                        backgroundColor: 'var(--bg-secondary)',
+                        borderColor: '#283B56',
+                        color: 'var(--text-primary)',
+                      }}
+                    />
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>min</span>
+                  </div>
+                ) : (
+                  <select
+                    value={(() => {
+                      if (durationMinutes === null) return ''
+                      const isPreset = DURATION_PRESETS.some((p) => p.value === durationMinutes)
+                      return isPreset ? String(durationMinutes) : 'custom'
+                    })()}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      if (val === 'custom') {
+                        setShowCustomDuration(true)
+                      } else {
+                        onDurationChange(val === '' ? null : parseInt(val, 10))
+                      }
+                    }}
+                    className="flex-1 rounded-lg border px-2 py-1.5 text-xs outline-none appearance-none cursor-pointer"
+                    style={{
+                      backgroundColor: 'var(--bg-secondary)',
+                      borderColor: 'var(--border-primary)',
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    {DURATION_PRESETS.map((opt) => (
+                      <option key={String(opt.value)} value={opt.value ?? ''}>
+                        {opt.label}
+                      </option>
+                    ))}
+                    {durationMinutes !== null && !DURATION_PRESETS.some((p) => p.value === durationMinutes) && (
+                      <option value="custom">{formatDuration(durationMinutes)}</option>
+                    )}
+                    <option value="custom">Personalizado...</option>
+                  </select>
+                )}
               </div>
             )}
           </div>
