@@ -539,7 +539,7 @@ function TimelineGrid({
       for (const task of timed) {
         const dt = new Date(task.due_datetime!)
         const startH = dt.getHours() + dt.getMinutes() / 60
-        const dur = task.duration_minutes ?? 60
+        const dur = Math.max(30, task.duration_minutes ?? 60)
         layoutItems.push({ id: task.id, startH, endH: startH + dur / 60 })
       }
       for (const ev of timedEvents) {
@@ -551,7 +551,9 @@ function TimelineGrid({
         const time = getScheduledTimeForDate(h, habitSchedules, day)
         if (!time) continue
         const startH = timeStrToHour(time)
-        layoutItems.push({ id: h.id, startH, endH: startH + h.duration_minutes / 60 })
+        // Use same minimum as renderHeight (30 min) so visual overlap matches algorithm
+        const effectiveDur = Math.max(30, h.duration_minutes)
+        layoutItems.push({ id: h.id, startH, endH: startH + effectiveDur / 60 })
       }
       const colLayout = computeOverlapLayout(layoutItems)
 

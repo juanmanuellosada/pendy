@@ -224,7 +224,7 @@ export function TodayCalendarView({ tasks, calendarEvents = [], showCompleted = 
     for (const task of timedTasks) {
       const dt = new Date(task.due_datetime!)
       const startH = dt.getHours() + dt.getMinutes() / 60
-      const dur = task.duration_minutes ?? 60
+      const dur = Math.max(30, task.duration_minutes ?? 60)
       items.push({ id: task.id, startH, endH: startH + dur / 60 })
     }
     for (const event of timedEvents) {
@@ -236,7 +236,9 @@ export function TodayCalendarView({ tasks, calendarEvents = [], showCompleted = 
       const time = getScheduledTimeForDate(habit, habitSchedules, new Date(todayDateStr))
       if (!time) continue
       const startH = timeStrToHour(time)
-      items.push({ id: habit.id, startH, endH: startH + habit.duration_minutes / 60 })
+      // Use same minimum as renderHeight (30 min) so visual overlap matches algorithm
+      const effectiveDur = Math.max(30, habit.duration_minutes)
+      items.push({ id: habit.id, startH, endH: startH + effectiveDur / 60 })
     }
     return computeOverlapLayout(items)
   }, [timedTasks, timedEvents, scheduledHabits, habitSchedules, todayDateStr])
