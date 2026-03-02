@@ -1297,7 +1297,7 @@ function CalendarTimelineBlock({
     (effectiveDuration / 60) * HOUR_HEIGHT + resizeDelta,
     (MIN_DURATION / 60) * HOUR_HEIGHT,
   )
-  const renderHeight = Math.max(currentHeight, (30 / 60) * HOUR_HEIGHT)
+  const renderHeight = currentHeight
 
   const displayHours = pxToHours(Math.max(0, baseTop), HOUR_HEIGHT)
   const displayH = Math.floor(displayHours)

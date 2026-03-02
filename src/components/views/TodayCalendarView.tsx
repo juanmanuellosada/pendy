@@ -715,7 +715,7 @@ function TimedTaskBlock({
     (baseDuration / 60) * HOUR_HEIGHT + resizeDelta,
     (MIN_DURATION / 60) * HOUR_HEIGHT,
   )
-  const renderHeight = Math.max(currentHeight, (30 / 60) * HOUR_HEIGHT)
+  const renderHeight = currentHeight
 
   // Computed display times
   const displayHours = pxToHours(currentTop, HOUR_HEIGHT)
@@ -992,7 +992,7 @@ function TimedEventBlock({
     (baseDuration / 60) * HOUR_HEIGHT + resizeDelta,
     (MIN_DURATION / 60) * HOUR_HEIGHT,
   )
-  const renderHeight = Math.max(height, (30 / 60) * HOUR_HEIGHT)
+  const renderHeight = height
 
   // Display strings
   const displayHours = pxToHours(Math.max(0, top), HOUR_HEIGHT)
