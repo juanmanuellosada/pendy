@@ -181,6 +181,7 @@ export function HabitsView() {
       )}
 
       <HabitEditor
+        key={editingHabit?.id ?? 'new'}
         open={editorOpen}
         onClose={handleCloseEditor}
         habit={editingHabit}
