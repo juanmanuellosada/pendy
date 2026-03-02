@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react'
 import {
   format,
   addDays,
@@ -35,6 +35,123 @@ import {
   Check,
 } from 'lucide-react'
 
+// ── Time wheel picker ──────────────────────────────────────────────────────────
+const HOURS_LIST = Array.from({ length: 24 }, (_, i) => i)
+const MINUTES_LIST = Array.from({ length: 12 }, (_, i) => i * 5)
+const TIME_ITEM_H = 30
+const TIME_VISIBLE = 5 // must be odd
+
+function TimeWheelColumn({
+  items,
+  selected,
+  onSelect,
+}: {
+  items: number[]
+  selected: number
+  onSelect: (v: number) => void
+}) {
+  const listRef = useRef<HTMLDivElement>(null)
+  const padding = Math.floor(TIME_VISIBLE / 2)
+
+  // Scroll to selected on mount / when selected changes from outside
+  useLayoutEffect(() => {
+    const el = listRef.current
+    if (!el) return
+    const idx = items.indexOf(selected)
+    if (idx === -1) return
+    el.scrollTop = idx * TIME_ITEM_H
+  }, [selected, items])
+
+  const handleScroll = useCallback(() => {
+    const el = listRef.current
+    if (!el) return
+    const idx = Math.round(el.scrollTop / TIME_ITEM_H)
+    const clamped = Math.min(Math.max(0, idx), items.length - 1)
+    const snapped = items[clamped]!
+    if (snapped !== selected) onSelect(snapped)
+  }, [items, selected, onSelect])
+
+  return (
+    <div className="relative" style={{ width: 40, height: TIME_ITEM_H * TIME_VISIBLE }}>
+      {/* Selection highlight */}
+      <div
+        className="pointer-events-none absolute inset-x-0 rounded-lg"
+        style={{ top: padding * TIME_ITEM_H, height: TIME_ITEM_H, backgroundColor: 'var(--bg-active)' }}
+      />
+      {/* Scrollable column */}
+      <div
+        ref={listRef}
+        onScroll={handleScroll}
+        style={{
+          height: TIME_ITEM_H * TIME_VISIBLE,
+          overflowY: 'scroll',
+          scrollSnapType: 'y mandatory',
+          scrollbarWidth: 'none',
+        }}
+      >
+        {Array.from({ length: padding }).map((_, i) => (
+          <div key={`t${i}`} style={{ height: TIME_ITEM_H, scrollSnapAlign: 'center', flexShrink: 0 }} />
+        ))}
+        {items.map((item) => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => {
+              onSelect(item)
+              const idx = items.indexOf(item)
+              listRef.current?.scrollTo({ top: idx * TIME_ITEM_H, behavior: 'smooth' })
+            }}
+            style={{
+              height: TIME_ITEM_H,
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              scrollSnapAlign: 'center',
+              fontWeight: item === selected ? 600 : 400,
+              color: item === selected ? 'var(--text-primary)' : 'var(--text-muted)',
+              fontSize: item === selected ? 15 : 13,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            {String(item).padStart(2, '0')}
+          </button>
+        ))}
+        {Array.from({ length: padding }).map((_, i) => (
+          <div key={`b${i}`} style={{ height: TIME_ITEM_H, scrollSnapAlign: 'center', flexShrink: 0 }} />
+        ))}
+      </div>
+      {/* Top fade */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0"
+        style={{ height: padding * TIME_ITEM_H, background: 'linear-gradient(to bottom, var(--bg-primary) 20%, transparent)' }}
+      />
+      {/* Bottom fade */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0"
+        style={{ height: padding * TIME_ITEM_H, background: 'linear-gradient(to top, var(--bg-primary) 20%, transparent)' }}
+      />
+    </div>
+  )
+}
+
+// ── Day-of-week toggles ────────────────────────────────────────────────────────
+const WEEK_DAYS = [
+  { label: 'Lu', value: 'MO' },
+  { label: 'Ma', value: 'TU' },
+  { label: 'Mi', value: 'WE' },
+  { label: 'Ju', value: 'TH' },
+  { label: 'Vi', value: 'FR' },
+  { label: 'Sá', value: 'SA' },
+  { label: 'Do', value: 'SU' },
+] as const
+
+const BYDAY_ORDER = WEEK_DAYS.map((d) => d.value)
+
+// ── Calendar grid constants ────────────────────────────────────────────────────
 const DAY_HEADERS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do']
 
 const BYDAY = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const
@@ -124,6 +241,7 @@ export function DateTimePicker({
   const [customFrom, setCustomFrom] = useState<'due_date' | 'completion_date'>('due_date')
   const [customEndDate, setCustomEndDate] = useState<string | null>(null)
   const [customHasEnd, setCustomHasEnd] = useState(false)
+  const [customDays, setCustomDays] = useState<string[]>([])
 
   const containerRef = useRef<HTMLDivElement>(null)
   const floatingStyle = useFloatingPosition(containerRef, open && !inline, 288) // w-72 = 288px
@@ -296,13 +414,13 @@ export function DateTimePicker({
 
   // Open custom recurrence dialog
   const openCustomRecurrence = useCallback(() => {
-    // Parse current rule if present
     if (recurrenceRule) {
       const freqMatch = recurrenceRule.match(/FREQ=(\w+)/)
       const intervalMatch = recurrenceRule.match(/INTERVAL=(\d+)/)
       const untilMatch = recurrenceRule.match(/UNTIL=(\d{8})/)
+      const bydayMatch = recurrenceRule.match(/BYDAY=([^;]+)/)
       if (freqMatch) setCustomFreq(freqMatch[1]! as typeof customFreq)
-      if (intervalMatch) setCustomInterval(parseInt(intervalMatch[1]!))
+      setCustomInterval(intervalMatch ? parseInt(intervalMatch[1]!) : 1)
       if (untilMatch) {
         const y = untilMatch[1]!.slice(0, 4)
         const m = untilMatch[1]!.slice(4, 6)
@@ -313,11 +431,13 @@ export function DateTimePicker({
         setCustomEndDate(null)
         setCustomHasEnd(false)
       }
+      setCustomDays(bydayMatch && freqMatch?.[1] === 'WEEKLY' ? bydayMatch[1]!.split(',').filter(Boolean) : [])
     } else {
       setCustomFreq('WEEKLY')
       setCustomInterval(1)
       setCustomEndDate(null)
       setCustomHasEnd(false)
+      setCustomDays([])
     }
     setCustomFrom(recurrenceFrom)
     setShowCustomRecurrence(true)
@@ -326,13 +446,17 @@ export function DateTimePicker({
   const handleSaveCustomRecurrence = useCallback(() => {
     let rule = `RRULE:FREQ=${customFreq}`
     if (customInterval > 1) rule += `;INTERVAL=${customInterval}`
+    if (customFreq === 'WEEKLY' && customDays.length > 0) {
+      const sorted = BYDAY_ORDER.filter((d) => customDays.includes(d))
+      rule += `;BYDAY=${sorted.join(',')}`
+    }
     if (customHasEnd && customEndDate) {
       const untilStr = customEndDate.replace(/-/g, '')
       rule += `;UNTIL=${untilStr}T235959Z`
     }
     onRecurrenceChange(true, rule, customFrom)
     setShowCustomRecurrence(false)
-  }, [customFreq, customInterval, customHasEnd, customEndDate, customFrom, onRecurrenceChange])
+  }, [customFreq, customInterval, customDays, customHasEnd, customEndDate, customFrom, onRecurrenceChange])
 
   // Trigger label — includes time + duration when set
   const triggerLabel = useMemo(() => {
@@ -387,17 +511,22 @@ export function DateTimePicker({
   // Recurrence summary for trigger button
   const recurrenceSummary = useMemo(() => {
     if (!isRecurring || !recurrenceRule) return null
-    // Check against presets
     const d = selectedDate ?? today
     const presets = generateRecurrencePresets(d)
     const match = presets.find((p) => p.rule === recurrenceRule)
     if (match) return match.label
-    // Parse custom
     const freqMatch = recurrenceRule.match(/FREQ=(\w+)/)
     const intervalMatch = recurrenceRule.match(/INTERVAL=(\d+)/)
+    const bydayMatch = recurrenceRule.match(/BYDAY=([^;]+)/)
     if (freqMatch) {
       const freq = freqMatch[1]!
       const interval = intervalMatch ? parseInt(intervalMatch[1]!) : 1
+      if (freq === 'WEEKLY' && bydayMatch) {
+        const dayMap: Record<string, string> = { MO: 'lun', TU: 'mar', WE: 'mié', TH: 'jue', FR: 'vie', SA: 'sáb', SU: 'dom' }
+        const days = bydayMatch[1]!.split(',').map((x) => dayMap[x] ?? x)
+        const prefix = interval > 1 ? `Cada ${interval} sem: ` : ''
+        return `${prefix}${days.join(', ')}`
+      }
       const freqLabels: Record<string, string> = {
         DAILY: interval > 1 ? `Cada ${interval} días` : 'Cada día',
         WEEKLY: interval > 1 ? `Cada ${interval} semanas` : 'Cada semana',
@@ -606,28 +735,42 @@ export function DateTimePicker({
             </button>
 
             {timeExpanded && (
-              <div className="px-3 pb-2 pt-1 flex items-center gap-2">
-                <input
-                  type="time"
-                  value={time ?? '09:00'}
-                  onChange={(e) => {
-                    onTimeChange(e.target.value || null)
-                    if (!hasTime) onHasTimeChange(true)
-                  }}
-                  className="w-24 rounded-lg border px-2 py-1.5 text-xs outline-none"
-                  style={{
-                    backgroundColor: 'var(--bg-secondary)',
-                    borderColor: 'var(--border-primary)',
-                    color: 'var(--text-primary)',
-                  }}
-                />
+              <div className="px-3 pb-2 pt-1">
+                {/* Custom time wheel picker */}
+                <div
+                  className="flex items-center gap-1 mb-2 rounded-xl overflow-hidden"
+                  style={{ border: '1px solid var(--border-primary)', backgroundColor: 'var(--bg-secondary)' }}
+                >
+                  <TimeWheelColumn
+                    items={HOURS_LIST}
+                    selected={parseInt((time ?? '09:00').split(':')[0]!)}
+                    onSelect={(h) => {
+                      const m = (time ?? '09:00').split(':')[1] ?? '00'
+                      const next = `${String(h).padStart(2, '0')}:${m}`
+                      onTimeChange(next)
+                      if (!hasTime) onHasTimeChange(true)
+                    }}
+                  />
+                  <span className="text-base font-bold select-none" style={{ color: 'var(--text-primary)' }}>:</span>
+                  <TimeWheelColumn
+                    items={MINUTES_LIST}
+                    selected={Math.round(parseInt((time ?? '09:00').split(':')[1] ?? '0') / 5) * 5 % 60}
+                    onSelect={(m) => {
+                      const h = (time ?? '09:00').split(':')[0] ?? '09'
+                      const next = `${h}:${String(m).padStart(2, '0')}`
+                      onTimeChange(next)
+                      if (!hasTime) onHasTimeChange(true)
+                    }}
+                  />
+                </div>
+                {/* Duration selector */}
                 <select
                   value={durationMinutes ?? ''}
                   onChange={(e) => {
                     const val = e.target.value
                     onDurationChange(val === '' ? null : parseInt(val, 10))
                   }}
-                  className="flex-1 rounded-lg border px-2 py-1.5 text-xs outline-none appearance-none cursor-pointer"
+                  className="w-full rounded-lg border px-2 py-1.5 text-xs outline-none appearance-none cursor-pointer"
                   style={{
                     backgroundColor: 'var(--bg-secondary)',
                     borderColor: 'var(--border-primary)',
@@ -812,6 +955,39 @@ export function DateTimePicker({
               </select>
             </div>
           </div>
+
+          {/* Días (solo cuando es semanal) */}
+          {customFreq === 'WEEKLY' && (
+            <div className="mb-3">
+              <span className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                Días
+              </span>
+              <div className="flex gap-1">
+                {WEEK_DAYS.map(({ label, value }) => {
+                  const isOn = customDays.includes(value)
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() =>
+                        setCustomDays((prev) =>
+                          prev.includes(value) ? prev.filter((d) => d !== value) : [...prev, value],
+                        )
+                      }
+                      className="flex-1 rounded-lg py-1.5 text-xs font-medium transition-colors"
+                      style={{
+                        backgroundColor: isOn ? '#283B56' : 'var(--bg-secondary)',
+                        color: isOn ? '#fff' : 'var(--text-muted)',
+                        border: `1px solid ${isOn ? '#283B56' : 'var(--border-primary)'}`,
+                      }}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Finaliza */}
           <div className="mb-4">
