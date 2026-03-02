@@ -633,41 +633,40 @@ export function DateTimePicker({
 
             {timeExpanded && (
               <div className="px-3 pb-2 pt-1 flex items-center gap-2">
-                {/* HH : MM inputs */}
+                {/* HH : MM selects */}
                 <div
-                  className="flex items-center gap-1 rounded-lg px-2 py-1.5"
+                  className="flex items-center rounded-lg overflow-hidden"
                   style={{ border: '1px solid var(--border-primary)', backgroundColor: 'var(--bg-secondary)' }}
                 >
-                  <input
-                    type="number"
-                    min={0}
-                    max={23}
-                    value={parseInt((time ?? '09:00').split(':')[0]!)}
+                  <select
+                    value={(time ?? '09:00').split(':')[0]}
                     onChange={(e) => {
-                      const h = Math.min(23, Math.max(0, parseInt(e.target.value) || 0))
                       const m = (time ?? '09:00').split(':')[1] ?? '00'
-                      onTimeChange(`${String(h).padStart(2, '0')}:${m}`)
+                      onTimeChange(`${e.target.value}:${m}`)
                       if (!hasTime) onHasTimeChange(true)
                     }}
-                    className="w-8 text-center bg-transparent outline-none text-sm font-medium"
+                    className="bg-transparent outline-none text-sm font-medium px-2 py-1.5 cursor-pointer appearance-none"
                     style={{ color: 'var(--text-primary)' }}
-                  />
-                  <span className="text-sm font-bold select-none" style={{ color: 'var(--text-muted)' }}>:</span>
-                  <input
-                    type="number"
-                    min={0}
-                    max={59}
-                    step={5}
-                    value={parseInt((time ?? '09:00').split(':')[1] ?? '0')}
+                  >
+                    {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map((h) => (
+                      <option key={h} value={h}>{h}</option>
+                    ))}
+                  </select>
+                  <span className="text-sm font-medium select-none" style={{ color: 'var(--text-muted)' }}>:</span>
+                  <select
+                    value={String(Math.round(parseInt((time ?? '09:00').split(':')[1] ?? '0') / 5) * 5 % 60).padStart(2, '0')}
                     onChange={(e) => {
-                      const m = Math.min(59, Math.max(0, parseInt(e.target.value) || 0))
                       const h = (time ?? '09:00').split(':')[0] ?? '09'
-                      onTimeChange(`${h}:${String(m).padStart(2, '0')}`)
+                      onTimeChange(`${h}:${e.target.value}`)
                       if (!hasTime) onHasTimeChange(true)
                     }}
-                    className="w-8 text-center bg-transparent outline-none text-sm font-medium"
+                    className="bg-transparent outline-none text-sm font-medium px-2 py-1.5 cursor-pointer appearance-none"
                     style={{ color: 'var(--text-primary)' }}
-                  />
+                  >
+                    {Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0')).map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
                 </div>
                 {/* Duration selector */}
                 <select
