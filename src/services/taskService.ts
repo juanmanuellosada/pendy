@@ -62,6 +62,18 @@ export const taskService = {
     return data ?? []
   },
 
+  async getRecurringTasks(userId: string): Promise<Task[]> {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_recurring', true)
+      .eq('is_completed', false)
+
+    if (error) throw error
+    return data ?? []
+  },
+
   async getInboxTasks(userId: string): Promise<Task[]> {
     const { data: inboxProject } = await supabase
       .from('projects')

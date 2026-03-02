@@ -21,7 +21,7 @@ import {
 import { es } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Plus, Calendar, CheckSquare, X, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
-import { useCalendarTasks, useUpdateTask, useCompleteTask } from '@/hooks/useTasks'
+import { useCalendarTasks, useRecurringTasks, useUpdateTask, useCompleteTask } from '@/hooks/useTasks'
 import { useProjects } from '@/hooks/useProjects'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { useAppStore } from '@/stores/appStore'
@@ -198,6 +198,7 @@ export function CalendarView({ calendarMode, onAddTask, showFutureRecurrences = 
   const fromStr = days.length > 0 ? format(days[0]!, 'yyyy-MM-dd') : ''
   const toStr = days.length > 0 ? format(days[days.length - 1]!, 'yyyy-MM-dd') : ''
   const { data: tasks = [] } = useCalendarTasks(fromStr, toStr)
+  const { data: recurringTasks = [] } = useRecurringTasks()
 
   const rangeFrom = days.length > 0 ? days[0]! : null
   const rangeTo = days.length > 0 ? days[days.length - 1]! : null
@@ -265,8 +266,17 @@ export function CalendarView({ calendarMode, onAddTask, showFutureRecurrences = 
     const rangeEnd = days[days.length - 1]!
     if (rangeEnd <= today) return tasks
     const rangeStart = days[0]! > today ? days[0]! : today
-    return [...tasks, ...expandRecurringTasks(tasks, rangeStart, rangeEnd)]
-  }, [tasks, days, showFutureRecurrences])
+    // Usamos recurringTasks (todas las recurrentes sin filtro de rango) como fuente
+    // para que las tareas cuyo due_date original está fuera del rango visible también se expandan
+    const virtual = expandRecurringTasks(recurringTasks, rangeStart, rangeEnd)
+    // Evitar duplicar tareas que ya están en tasks (mismo id original, misma fecha)
+    const realKeys = new Set(tasks.map((t) => `${t.id}_${t.due_date}`))
+    const filtered = virtual.filter((v) => {
+      const origId = originalTaskId(v.id)
+      return !realKeys.has(`${origId}_${v.due_date}`)
+    })
+    return [...tasks, ...filtered]
+  }, [tasks, recurringTasks, days, showFutureRecurrences])
 
   const tasksForDay = (date: Date): Task[] => {
     const dateStr = format(date, 'yyyy-MM-dd')

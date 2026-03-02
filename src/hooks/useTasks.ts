@@ -52,6 +52,16 @@ export function useCalendarTasks(from: string, to: string) {
   })
 }
 
+export function useRecurringTasks() {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: [...taskKeys.all, 'recurring', user?.id ?? ''],
+    queryFn: () => taskService.getRecurringTasks(user!.id),
+    enabled: !!user,
+    staleTime: 60_000,
+  })
+}
+
 export function useProjectTasks(projectId: string) {
   return useQuery({
     queryKey: taskKeys.project(projectId),
