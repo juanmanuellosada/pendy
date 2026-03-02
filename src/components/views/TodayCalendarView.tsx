@@ -23,7 +23,7 @@ import { CalendarEventTooltip, getEventColor, getCalendarName } from '@/componen
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { habitAppearsOnDate, getScheduledTimeForDate, timeStrToHour, hourToTimeStr, isCompletedOnDate } from '@/lib/habitUtils'
 
-const HOUR_HEIGHT = 64 // px per hour (desktop)
+const HOUR_HEIGHT = 80 // px per hour (desktop)
 
 /** Context that provides the effective HOUR_HEIGHT to sub-components */
 const HourHeightCtx = createContext(HOUR_HEIGHT)

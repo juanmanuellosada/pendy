@@ -43,7 +43,7 @@ import { habitAppearsOnDate, getScheduledTimeForDate, timeStrToHour, hourToTimeS
 
 const GOOGLE_COLOR = '#4285F4'
 
-const HOUR_HEIGHT = 64
+const HOUR_HEIGHT = 80
 
 /** Context que provee el HOUR_HEIGHT efectivo a los sub-componentes del calendario */
 const HourHeightCtx = createContext(HOUR_HEIGHT)
