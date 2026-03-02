@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo, useEffect, useCallback, createContext, useContext } from 'react'
+import { RRule } from 'rrule'
 import { createPortal } from 'react-dom'
 import {
   startOfMonth,
@@ -42,6 +43,52 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { habitAppearsOnDate, getScheduledTimeForDate, timeStrToHour, hourToTimeStr, isCompletedOnDate } from '@/lib/habitUtils'
 
 const GOOGLE_COLOR = '#4285F4'
+
+/** Devuelve el ID original de una tarea virtual (quita el sufijo ::fecha) */
+function originalTaskId(id: string): string {
+  return id.includes('::') ? id.split('::')[0]! : id
+}
+
+/** Expande tareas recurrentes en instancias virtuales para el rango [rangeStart, rangeEnd] */
+function expandRecurringTasks(tasks: Task[], rangeStart: Date, rangeEnd: Date): Task[] {
+  const virtual: Task[] = []
+  for (const task of tasks) {
+    if (!task.is_recurring || !task.recurrence_rule || !task.due_date) continue
+    try {
+      const ruleStr = task.recurrence_rule.replace(/^RRULE:/i, '')
+      const [y, m, d] = task.due_date.split('-').map(Number)
+      const dtstart = new Date(Date.UTC(y!, m! - 1, d!))
+      const rule = new RRule({ ...RRule.parseString(ruleStr), dtstart })
+      const startUTC = new Date(Date.UTC(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate()))
+      const endUTC = new Date(Date.UTC(rangeEnd.getFullYear(), rangeEnd.getMonth(), rangeEnd.getDate()))
+      for (const occ of rule.between(startUTC, endUTC, true)) {
+        const occStr = [
+          occ.getUTCFullYear(),
+          String(occ.getUTCMonth() + 1).padStart(2, '0'),
+          String(occ.getUTCDate()).padStart(2, '0'),
+        ].join('-')
+        if (occStr === task.due_date) continue // ya está la tarea real
+        virtual.push({
+          ...task,
+          id: `${task.id}::${occStr}`,
+          due_date: occStr,
+          due_datetime:
+            task.has_time && task.due_datetime
+              ? (() => {
+                  const orig = new Date(task.due_datetime)
+                  return new Date(
+                    occ.getUTCFullYear(), occ.getUTCMonth(), occ.getUTCDate(),
+                    orig.getHours(), orig.getMinutes(), orig.getSeconds(),
+                  ).toISOString()
+                })()
+              : null,
+          is_completed: false,
+        })
+      }
+    } catch { /* RRULE inválida */ }
+  }
+  return virtual
+}
 
 const HOUR_HEIGHT = 100
 
@@ -211,9 +258,19 @@ export function CalendarView({ calendarMode, onAddTask, showFutureRecurrences = 
   const todayViewStr = format(new Date(), 'yyyy-MM-dd')
 
   /* ── Drag for month grid ── */
+  // Tareas expandidas con recurrencias virtuales para el rango visible
+  const allTasks = useMemo(() => {
+    if (!showFutureRecurrences || days.length === 0) return tasks
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const rangeEnd = days[days.length - 1]!
+    if (rangeEnd <= today) return tasks
+    const rangeStart = days[0]! > today ? days[0]! : today
+    return [...tasks, ...expandRecurringTasks(tasks, rangeStart, rangeEnd)]
+  }, [tasks, days, showFutureRecurrences])
+
   const tasksForDay = (date: Date): Task[] => {
     const dateStr = format(date, 'yyyy-MM-dd')
-    return tasks.filter((t) => t.due_date === dateStr && (showCompleted || !t.is_completed))
+    return allTasks.filter((t) => t.due_date === dateStr && (showCompleted || !t.is_completed))
   }
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
@@ -266,7 +323,7 @@ export function CalendarView({ calendarMode, onAddTask, showFutureRecurrences = 
         {isTimelineMode && (
           <TimelineGrid
             days={days}
-            tasks={tasks}
+            tasks={allTasks}
             calendarEvents={calendarEvents}
             habits={habits}
             habitCompletions={habitCompletions}
@@ -582,6 +639,7 @@ function TimelineGrid({
 
   /* ── Start task drag (called by task blocks) ── */
   const handleTaskDragStart = useCallback((task: Task, e: React.MouseEvent) => {
+    if (task.id.includes('::')) return // tarea virtual — no arrastrar
     const dt = new Date(task.due_datetime!)
     const hour = dt.getHours() + dt.getMinutes() / 60
     const col = getColFromX(e.clientX)
@@ -730,7 +788,7 @@ function TimelineGrid({
           }
         }
       } else {
-        setSelectedTaskId(drag.taskId)
+        setSelectedTaskId(originalTaskId(drag.taskId))
       }
 
       setDrag(null)
@@ -1453,6 +1511,7 @@ function TimelineTaskBlock({
   const { data: projects } = useProjects()
   const { data: labelsMap } = useAllTaskLabelsMap()
   const color = PRIORITY_COLORS[task.priority] ?? PRIORITY_COLORS[4]
+  const isVirtual = task.id.includes('::')
 
   const dt = new Date(task.due_datetime!)
   const serverHour = dt.getHours() + dt.getMinutes() / 60
@@ -1493,6 +1552,7 @@ function TimelineTaskBlock({
 
   const handleResizeStart = useCallback(
     (e: React.MouseEvent) => {
+      if (isVirtual) return
       e.preventDefault()
       e.stopPropagation()
       setResizing(true)
@@ -1514,7 +1574,7 @@ function TimelineTaskBlock({
       document.addEventListener('mousemove', onMove)
       document.addEventListener('mouseup', onUp)
     },
-    [baseHeight, task.id, updateTask],
+    [isVirtual, baseHeight, task.id, updateTask],
   )
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -1530,6 +1590,7 @@ function TimelineTaskBlock({
         'group absolute left-0.5 right-0.5 z-10 select-none overflow-hidden rounded-md border-l-3 px-1.5 py-0.5',
         task.is_completed && 'opacity-50',
         isDragging && 'opacity-30',
+        isVirtual && 'opacity-60',
         isSameColDrag ? 'shadow-lg z-30' : resizing ? 'shadow-lg z-30' : 'cursor-pointer',
       )}
       style={{
@@ -1537,6 +1598,7 @@ function TimelineTaskBlock({
         height: currentHeight,
         borderLeftColor: color,
         backgroundColor: `${color}18`,
+        ...(isVirtual ? { outline: `1px dashed ${color}80`, outlineOffset: '-1px' } : {}),
         transition: isSameColDrag || isDragging || resizing ? 'none' : 'top 0.15s ease, height 0.15s ease',
         ...overlapPos(col, totalCols),
       }}
@@ -1549,7 +1611,7 @@ function TimelineTaskBlock({
           <TaskCheckbox
             checked={task.is_completed}
             priority={task.priority}
-            onChange={(completed) => completeTask.mutate({ id: task.id, completed })}
+            onChange={isVirtual ? () => {} : (completed) => completeTask.mutate({ id: task.id, completed })}
           />
         </div>
         <div className="min-w-0 flex-1">
@@ -1840,22 +1902,24 @@ function AllDayChip({ task, onMouseEnter, onMouseLeave }: { task: Task; onMouseE
   const completeTask = useCompleteTask()
   const { setSelectedTaskId } = useAppStore()
   const color = PRIORITY_COLORS[task.priority] ?? PRIORITY_COLORS[4]
+  const isVirtual = task.id.includes('::')
 
   return (
     <div
       className={cn(
         'mb-0.5 flex cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-[11px] overflow-hidden min-w-0',
         task.is_completed && 'opacity-50',
+        isVirtual && 'opacity-70',
       )}
-      style={{ backgroundColor: `${color}20` }}
-      onClick={() => setSelectedTaskId(task.id)}
+      style={{ backgroundColor: `${color}20`, ...(isVirtual ? { outline: `1px dashed ${color}60` } : {}) }}
+      onClick={() => setSelectedTaskId(originalTaskId(task.id))}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
       <TaskCheckbox
         checked={task.is_completed}
         priority={task.priority}
-        onChange={(completed) => completeTask.mutate({ id: task.id, completed })}
+        onChange={isVirtual ? () => {} : (completed) => completeTask.mutate({ id: task.id, completed })}
       />
       <span className={cn('truncate min-w-0 flex-1', task.is_completed && 'line-through')} style={{ color: 'var(--text-primary)' }}>
         {stripLabelTokensFromText(stripHtmlTags(task.title))}
