@@ -6,6 +6,12 @@ import { Toaster } from 'sonner'
 import App from './App'
 import './index.css'
 
+// Cuando Vite no puede cargar un chunk (404 tras nuevo deploy con hash distinto),
+// recarga la página automáticamente para obtener el index.html actualizado.
+window.addEventListener('vite:preloadError', () => {
+  window.location.reload()
+})
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
