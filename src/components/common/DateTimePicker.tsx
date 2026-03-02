@@ -35,6 +35,86 @@ import {
   Check,
 } from 'lucide-react'
 
+// ── Mini calendar para selección de fecha de fin ──────────────────────────────
+function MiniCalendar({ selected, onSelect }: { selected: string | null; onSelect: (d: string) => void }) {
+  const today = new Date()
+  const selectedDate = selected ? parseLocalDate(selected) : null
+  const [viewMonth, setViewMonth] = useState(() => (selected ? parseLocalDate(selected) : new Date()))
+
+  const calendarDays = useMemo(() => {
+    return eachDayOfInterval({
+      start: startOfWeek(startOfMonth(viewMonth), { weekStartsOn: 1 }),
+      end: endOfWeek(endOfMonth(viewMonth), { weekStartsOn: 1 }),
+    })
+  }, [viewMonth])
+
+  return (
+    <div className="mt-2 rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-primary)', backgroundColor: 'var(--bg-primary)' }}>
+      {/* Navegación de mes */}
+      <div className="flex items-center justify-between px-2 pt-2 pb-1">
+        <button
+          type="button"
+          onClick={() => setViewMonth((m) => subMonths(m, 1))}
+          className="rounded p-0.5 transition-colors"
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+        >
+          <ChevronLeft size={14} style={{ color: 'var(--text-primary)' }} />
+        </button>
+        <span className="text-xs font-semibold capitalize" style={{ color: 'var(--text-primary)' }}>
+          {format(viewMonth, 'MMMM yyyy', { locale: es })}
+        </span>
+        <button
+          type="button"
+          onClick={() => setViewMonth((m) => addMonths(m, 1))}
+          className="rounded p-0.5 transition-colors"
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+        >
+          <ChevronRight size={14} style={{ color: 'var(--text-primary)' }} />
+        </button>
+      </div>
+      {/* Cabecera de días */}
+      <div className="grid grid-cols-7 text-center px-1 mb-0.5">
+        {DAY_HEADERS.map((d) => (
+          <span key={d} className="py-0.5 text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>{d}</span>
+        ))}
+      </div>
+      {/* Grilla */}
+      <div className="grid grid-cols-7 gap-y-0.5 text-center px-1 pb-2">
+        {calendarDays.map((day) => {
+          const isSelected = selectedDate ? isSameDay(day, selectedDate) : false
+          const isTodayDay = isSameDay(day, today)
+          const isCurrentMonth = isSameMonth(day, viewMonth)
+          return (
+            <button
+              key={day.toISOString()}
+              type="button"
+              onClick={() => onSelect(format(day, 'yyyy-MM-dd'))}
+              className="relative flex flex-col items-center justify-center rounded-md py-0.5 text-[11px] transition-colors"
+              style={{
+                backgroundColor: isSelected ? '#283B56' : undefined,
+                color: isSelected ? '#fff' : isCurrentMonth ? 'var(--text-primary)' : 'var(--text-muted)',
+                fontWeight: isSelected ? 700 : undefined,
+              }}
+              onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--bg-hover)' }}
+              onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = '' }}
+            >
+              {format(day, 'd')}
+              {isTodayDay && (
+                <span
+                  className="absolute bottom-0 left-1/2 h-0.5 w-0.5 -translate-x-1/2 rounded-full"
+                  style={{ backgroundColor: isSelected ? '#fff' : '#EC1E2A' }}
+                />
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── Day-of-week toggles ────────────────────────────────────────────────────────
 const WEEK_DAYS = [
   { label: 'Lu', value: 'MO' },
@@ -972,16 +1052,10 @@ export function DateTimePicker({
                 En la fecha
               </label>
               {customHasEnd && (
-                <input
-                  type="date"
-                  value={customEndDate ?? ''}
-                  onChange={(e) => setCustomEndDate(e.target.value || null)}
-                  className="ml-5 rounded-lg border px-2 py-1.5 text-xs outline-none"
-                  style={{
-                    backgroundColor: 'var(--bg-secondary)',
-                    borderColor: 'var(--border-primary)',
-                    color: 'var(--text-primary)',
-                  }}
+                <MiniCalendar
+                  key={customEndDate ?? 'empty'}
+                  selected={customEndDate}
+                  onSelect={setCustomEndDate}
                 />
               )}
             </div>
