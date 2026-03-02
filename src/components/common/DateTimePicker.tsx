@@ -450,7 +450,7 @@ export function DateTimePicker({
 
       {(inline || open) && !showCustomRecurrence && (
         <div
-          className={inline ? 'w-[min(288px,100vw-32px)] overflow-hidden' : 'w-[min(288px,100vw-32px)] rounded-xl shadow-xl overflow-hidden'}
+          className={inline ? 'w-[min(288px,100vw-32px)] overflow-hidden' : 'w-[min(288px,100vw-32px)] rounded-xl shadow-xl overflow-y-auto'}
           style={{
             ...(inline ? {} : floatingStyle),
             backgroundColor: 'var(--bg-primary)',
