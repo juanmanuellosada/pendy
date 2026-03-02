@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
   format,
   addDays,
@@ -34,109 +34,6 @@ import {
   ChevronDown,
   Check,
 } from 'lucide-react'
-
-// ── Time wheel picker ──────────────────────────────────────────────────────────
-const HOURS_LIST = Array.from({ length: 24 }, (_, i) => i)
-const MINUTES_LIST = Array.from({ length: 12 }, (_, i) => i * 5)
-const TIME_ITEM_H = 30
-const TIME_VISIBLE = 5 // must be odd
-
-function TimeWheelColumn({
-  items,
-  selected,
-  onSelect,
-}: {
-  items: number[]
-  selected: number
-  onSelect: (v: number) => void
-}) {
-  const listRef = useRef<HTMLDivElement>(null)
-  const padding = Math.floor(TIME_VISIBLE / 2)
-
-  // Scroll to selected on mount / when selected changes from outside
-  useLayoutEffect(() => {
-    const el = listRef.current
-    if (!el) return
-    const idx = items.indexOf(selected)
-    if (idx === -1) return
-    el.scrollTop = idx * TIME_ITEM_H
-  }, [selected, items])
-
-  const handleScroll = useCallback(() => {
-    const el = listRef.current
-    if (!el) return
-    const idx = Math.round(el.scrollTop / TIME_ITEM_H)
-    const clamped = Math.min(Math.max(0, idx), items.length - 1)
-    const snapped = items[clamped]!
-    if (snapped !== selected) onSelect(snapped)
-  }, [items, selected, onSelect])
-
-  return (
-    <div className="relative" style={{ width: 40, height: TIME_ITEM_H * TIME_VISIBLE }}>
-      {/* Selection highlight */}
-      <div
-        className="pointer-events-none absolute inset-x-0 rounded-lg"
-        style={{ top: padding * TIME_ITEM_H, height: TIME_ITEM_H, backgroundColor: 'var(--bg-active)' }}
-      />
-      {/* Scrollable column */}
-      <div
-        ref={listRef}
-        onScroll={handleScroll}
-        style={{
-          height: TIME_ITEM_H * TIME_VISIBLE,
-          overflowY: 'scroll',
-          scrollSnapType: 'y mandatory',
-          scrollbarWidth: 'none',
-        }}
-      >
-        {Array.from({ length: padding }).map((_, i) => (
-          <div key={`t${i}`} style={{ height: TIME_ITEM_H, scrollSnapAlign: 'center', flexShrink: 0 }} />
-        ))}
-        {items.map((item) => (
-          <button
-            key={item}
-            type="button"
-            onClick={() => {
-              onSelect(item)
-              const idx = items.indexOf(item)
-              listRef.current?.scrollTo({ top: idx * TIME_ITEM_H, behavior: 'smooth' })
-            }}
-            style={{
-              height: TIME_ITEM_H,
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              scrollSnapAlign: 'center',
-              fontWeight: item === selected ? 600 : 400,
-              color: item === selected ? 'var(--text-primary)' : 'var(--text-muted)',
-              fontSize: item === selected ? 15 : 13,
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
-            {String(item).padStart(2, '0')}
-          </button>
-        ))}
-        {Array.from({ length: padding }).map((_, i) => (
-          <div key={`b${i}`} style={{ height: TIME_ITEM_H, scrollSnapAlign: 'center', flexShrink: 0 }} />
-        ))}
-      </div>
-      {/* Top fade */}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0"
-        style={{ height: padding * TIME_ITEM_H, background: 'linear-gradient(to bottom, var(--bg-primary) 20%, transparent)' }}
-      />
-      {/* Bottom fade */}
-      <div
-        className="pointer-events-none absolute inset-x-0 bottom-0"
-        style={{ height: padding * TIME_ITEM_H, background: 'linear-gradient(to top, var(--bg-primary) 20%, transparent)' }}
-      />
-    </div>
-  )
-}
 
 // ── Day-of-week toggles ────────────────────────────────────────────────────────
 const WEEK_DAYS = [
@@ -735,32 +632,41 @@ export function DateTimePicker({
             </button>
 
             {timeExpanded && (
-              <div className="px-3 pb-2 pt-1">
-                {/* Custom time wheel picker */}
+              <div className="px-3 pb-2 pt-1 flex items-center gap-2">
+                {/* HH : MM inputs */}
                 <div
-                  className="flex items-center gap-1 mb-2 rounded-xl overflow-hidden"
+                  className="flex items-center gap-1 rounded-lg px-2 py-1.5"
                   style={{ border: '1px solid var(--border-primary)', backgroundColor: 'var(--bg-secondary)' }}
                 >
-                  <TimeWheelColumn
-                    items={HOURS_LIST}
-                    selected={parseInt((time ?? '09:00').split(':')[0]!)}
-                    onSelect={(h) => {
+                  <input
+                    type="number"
+                    min={0}
+                    max={23}
+                    value={parseInt((time ?? '09:00').split(':')[0]!)}
+                    onChange={(e) => {
+                      const h = Math.min(23, Math.max(0, parseInt(e.target.value) || 0))
                       const m = (time ?? '09:00').split(':')[1] ?? '00'
-                      const next = `${String(h).padStart(2, '0')}:${m}`
-                      onTimeChange(next)
+                      onTimeChange(`${String(h).padStart(2, '0')}:${m}`)
                       if (!hasTime) onHasTimeChange(true)
                     }}
+                    className="w-8 text-center bg-transparent outline-none text-sm font-medium"
+                    style={{ color: 'var(--text-primary)' }}
                   />
-                  <span className="text-base font-bold select-none" style={{ color: 'var(--text-primary)' }}>:</span>
-                  <TimeWheelColumn
-                    items={MINUTES_LIST}
-                    selected={Math.round(parseInt((time ?? '09:00').split(':')[1] ?? '0') / 5) * 5 % 60}
-                    onSelect={(m) => {
+                  <span className="text-sm font-bold select-none" style={{ color: 'var(--text-muted)' }}>:</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={59}
+                    step={5}
+                    value={parseInt((time ?? '09:00').split(':')[1] ?? '0')}
+                    onChange={(e) => {
+                      const m = Math.min(59, Math.max(0, parseInt(e.target.value) || 0))
                       const h = (time ?? '09:00').split(':')[0] ?? '09'
-                      const next = `${h}:${String(m).padStart(2, '0')}`
-                      onTimeChange(next)
+                      onTimeChange(`${h}:${String(m).padStart(2, '0')}`)
                       if (!hasTime) onHasTimeChange(true)
                     }}
+                    className="w-8 text-center bg-transparent outline-none text-sm font-medium"
+                    style={{ color: 'var(--text-primary)' }}
                   />
                 </div>
                 {/* Duration selector */}
@@ -770,7 +676,7 @@ export function DateTimePicker({
                     const val = e.target.value
                     onDurationChange(val === '' ? null : parseInt(val, 10))
                   }}
-                  className="w-full rounded-lg border px-2 py-1.5 text-xs outline-none appearance-none cursor-pointer"
+                  className="flex-1 rounded-lg border px-2 py-1.5 text-xs outline-none appearance-none cursor-pointer"
                   style={{
                     backgroundColor: 'var(--bg-secondary)',
                     borderColor: 'var(--border-primary)',
