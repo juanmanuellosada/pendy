@@ -380,7 +380,7 @@ export function Sidebar() {
 
   if (sidebarCollapsed) {
     return (
-      <div className="flex h-full flex-col items-center py-4">
+      <div className="flex h-full flex-col items-center py-4" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
         <img src={`${import.meta.env.BASE_URL}pendy-logo.png`} alt="Pendy" className="h-8 w-8 rounded-lg" />
         <div className="mt-4 flex flex-col gap-1">
           <button
@@ -438,7 +438,7 @@ export function Sidebar() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-4">
+      <div className="flex items-center gap-3 px-4 py-4" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
         <img src={`${import.meta.env.BASE_URL}pendy-logo.png`} alt="Pendy" className="h-8 w-8 rounded-lg" />
         <div className="flex-1 min-w-0">
           <p className="truncate text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>

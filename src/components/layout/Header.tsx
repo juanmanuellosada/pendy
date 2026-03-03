@@ -7,7 +7,11 @@ export function Header() {
   return (
     <header
       className="flex items-center gap-3 border-b px-4 py-3"
-      style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}
+      style={{
+        backgroundColor: 'var(--bg-primary)',
+        borderColor: 'var(--border-primary)',
+        paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))',
+      }}
     >
       {/* Mobile menu button */}
       <button
