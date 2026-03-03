@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { labelService } from './labelService'
-import { RRule, rrulestr } from 'rrule'
+import { rrulestr } from 'rrule'
 import type { Task } from '@/lib/types'
 
 export const taskService = {
