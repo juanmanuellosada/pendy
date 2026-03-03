@@ -702,7 +702,7 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
                 <TaskCheckbox
                   checked={task.is_completed}
                   priority={task.priority}
-                  onChange={(checked) => completeTask.mutate({ id: task.id, completed: checked })}
+                  onChange={(checked) => completeTask.mutate({ id: task.id, completed: checked, task })}
                 />
               </div>
             }
@@ -1252,7 +1252,7 @@ function SubtaskRow({ task, onOpen }: { task: Task; onOpen: () => void }) {
 
   const handleComplete = (checked: boolean) => {
     setCompleting(checked)
-    setTimeout(() => completeTask.mutate({ id: task.id, completed: checked }), 300)
+    setTimeout(() => completeTask.mutate({ id: task.id, completed: checked, task }), 300)
   }
 
   return (

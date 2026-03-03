@@ -190,18 +190,9 @@ export const taskService = {
     return data
   },
 
-  async completeTask(id: string, completed: boolean): Promise<Task> {
-    // Fetch current task to check recurrence
-    const { data: task, error: fetchError } = await supabase
-      .from('tasks')
-      .select('*')
-      .eq('id', id)
-      .single()
-
-    if (fetchError) throw fetchError
-
-    // Mark current task as completed/uncompleted
-    const { data, error } = await supabase
+  async completeTask(id: string, completed: boolean, task?: Task): Promise<Task> {
+    // Run completion update and next recurrence creation in parallel
+    const updatePromise = supabase
       .from('tasks')
       .update({
         is_completed: completed,
@@ -211,13 +202,14 @@ export const taskService = {
       .select()
       .single()
 
+    const recurrencePromise =
+      completed && task?.is_recurring && task?.recurrence_rule
+        ? this._createNextRecurrence(task)
+        : Promise.resolve()
+
+    const [{ data, error }] = await Promise.all([updatePromise, recurrencePromise])
+
     if (error) throw error
-
-    // If completing a recurring task, create the next occurrence
-    if (completed && task.is_recurring && task.recurrence_rule) {
-      await this._createNextRecurrence(task)
-    }
-
     return data
   },
 
@@ -240,44 +232,41 @@ export const taskService = {
 
       const nextDueDate = nextDate.toISOString().split('T')[0]
 
-      // Get labels from the original task
-      const { data: taskLabels } = await supabase
-        .from('task_labels')
-        .select('label_id')
-        .eq('task_id', task.id)
-
-      const labelIds = (taskLabels ?? []).map((tl) => tl.label_id as string)
-
-      // Create the next occurrence
-      const { data: newTask, error } = await supabase
-        .from('tasks')
-        .insert({
-          user_id: task.user_id,
-          project_id: task.project_id,
-          section_id: task.section_id,
-          parent_id: task.parent_id,
-          title: task.title,
-          description: task.description,
-          priority: task.priority,
-          due_date: nextDueDate,
-          due_datetime: task.has_time && task.due_datetime
-            ? new Date(nextDueDate + 'T' + task.due_datetime.split('T')[1]).toISOString()
-            : null,
-          has_time: task.has_time,
-          duration_minutes: task.duration_minutes,
-          is_recurring: true,
-          recurrence_rule: task.recurrence_rule,
-          recurrence_from: task.recurrence_from,
-          deadline: task.deadline,
-          sort_order: task.sort_order,
-          depth: task.depth,
-        })
-        .select()
-        .single()
+      // Fetch labels and create next task in parallel
+      const [{ data: taskLabels }, { data: newTask, error }] = await Promise.all([
+        supabase.from('task_labels').select('label_id').eq('task_id', task.id),
+        supabase
+          .from('tasks')
+          .insert({
+            user_id: task.user_id,
+            project_id: task.project_id,
+            section_id: task.section_id,
+            parent_id: task.parent_id,
+            title: task.title,
+            description: task.description,
+            priority: task.priority,
+            due_date: nextDueDate,
+            due_datetime:
+              task.has_time && task.due_datetime
+                ? new Date(nextDueDate + 'T' + task.due_datetime.split('T')[1]).toISOString()
+                : null,
+            has_time: task.has_time,
+            duration_minutes: task.duration_minutes,
+            is_recurring: true,
+            recurrence_rule: task.recurrence_rule,
+            recurrence_from: task.recurrence_from,
+            deadline: task.deadline,
+            sort_order: task.sort_order,
+            depth: task.depth,
+          })
+          .select()
+          .single(),
+      ])
 
       if (error) throw error
 
       // Copy labels to the new task
+      const labelIds = (taskLabels ?? []).map((tl) => tl.label_id as string)
       if (newTask && labelIds.length > 0) {
         await labelService.setTaskLabels(newTask.id, labelIds)
       }

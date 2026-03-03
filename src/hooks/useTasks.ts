@@ -139,8 +139,8 @@ export function useCompleteTask() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, completed }: { id: string; completed: boolean }) =>
-      taskService.completeTask(id, completed),
+    mutationFn: ({ id, completed, task }: { id: string; completed: boolean; task?: Task }) =>
+      taskService.completeTask(id, completed, task),
     onMutate: async ({ id, completed }) => {
       await queryClient.cancelQueries({ queryKey: taskKeys.all })
       const queries = queryClient.getQueriesData<Task[]>({ queryKey: taskKeys.all })

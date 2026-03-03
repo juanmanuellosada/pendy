@@ -51,7 +51,7 @@ export const TaskItem = memo(function TaskItem({
   const handleComplete = (checked: boolean) => {
     setCompleting(checked)
     setTimeout(() => {
-      completeTask.mutate({ id: task.id, completed: checked })
+      completeTask.mutate({ id: task.id, completed: checked, task })
     }, 300)
   }
 
