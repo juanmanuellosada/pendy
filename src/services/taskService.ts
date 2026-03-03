@@ -232,8 +232,8 @@ export const taskService = {
     }
 
     try {
-      const rule = rrulestr(task.recurrence_rule!)
-      // Get the next occurrence after the base date
+      const rule = rrulestr(task.recurrence_rule!, { dtstart: baseDate })
+      // Get the next occurrence strictly after the base date
       const nextDate = rule.after(baseDate, false)
 
       if (!nextDate) return // No more occurrences (e.g. UNTIL was reached)
