@@ -9,6 +9,7 @@ import { useAppStore } from '@/stores/appStore'
 import { useUIStore } from '@/stores/uiStore'
 import { useCalendarIntegrations } from '@/hooks/useCalendarIntegrations'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
+import { useAppBadge } from '@/hooks/useAppBadge'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { cn } from '@/lib/utils'
 import { useEffect } from 'react'
@@ -18,6 +19,7 @@ export function AppLayout() {
   const { getViewOptions } = useUIStore()
   const { data: integrations = [] } = useCalendarIntegrations()
   usePushNotifications() // registers SW and syncs subscription on login
+  useAppBadge() // syncs PWA badge with today's pending count
   const isCalendarConnected = integrations.length > 0
   const location = useLocation()
   const navigate = useNavigate()
