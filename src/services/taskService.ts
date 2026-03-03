@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { labelService } from './labelService'
+import { RRule, rrulestr } from 'rrule'
 import type { Task } from '@/lib/types'
 
 export const taskService = {
@@ -190,6 +191,16 @@ export const taskService = {
   },
 
   async completeTask(id: string, completed: boolean): Promise<Task> {
+    // Fetch current task to check recurrence
+    const { data: task, error: fetchError } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (fetchError) throw fetchError
+
+    // Mark current task as completed/uncompleted
     const { data, error } = await supabase
       .from('tasks')
       .update({
@@ -201,7 +212,79 @@ export const taskService = {
       .single()
 
     if (error) throw error
+
+    // If completing a recurring task, create the next occurrence
+    if (completed && task.is_recurring && task.recurrence_rule) {
+      await this._createNextRecurrence(task)
+    }
+
     return data
+  },
+
+  async _createNextRecurrence(task: Task): Promise<void> {
+    const now = new Date()
+    let baseDate: Date
+
+    if (task.recurrence_from === 'completion_date') {
+      baseDate = now
+    } else {
+      baseDate = task.due_date ? new Date(task.due_date + 'T12:00:00') : now
+    }
+
+    try {
+      const rule = rrulestr(task.recurrence_rule!)
+      // Get the next occurrence after the base date
+      const nextDate = rule.after(baseDate, false)
+
+      if (!nextDate) return // No more occurrences (e.g. UNTIL was reached)
+
+      const nextDueDate = nextDate.toISOString().split('T')[0]
+
+      // Get labels from the original task
+      const { data: taskLabels } = await supabase
+        .from('task_labels')
+        .select('label_id')
+        .eq('task_id', task.id)
+
+      const labelIds = (taskLabels ?? []).map((tl) => tl.label_id as string)
+
+      // Create the next occurrence
+      const { data: newTask, error } = await supabase
+        .from('tasks')
+        .insert({
+          user_id: task.user_id,
+          project_id: task.project_id,
+          section_id: task.section_id,
+          parent_id: task.parent_id,
+          title: task.title,
+          description: task.description,
+          priority: task.priority,
+          due_date: nextDueDate,
+          due_datetime: task.has_time && task.due_datetime
+            ? new Date(nextDueDate + 'T' + task.due_datetime.split('T')[1]).toISOString()
+            : null,
+          has_time: task.has_time,
+          duration_minutes: task.duration_minutes,
+          is_recurring: true,
+          recurrence_rule: task.recurrence_rule,
+          recurrence_from: task.recurrence_from,
+          deadline: task.deadline,
+          sort_order: task.sort_order,
+          depth: task.depth,
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Copy labels to the new task
+      if (newTask && labelIds.length > 0) {
+        await labelService.setTaskLabels(newTask.id, labelIds)
+      }
+    } catch {
+      // If rrule parsing fails, silently skip creating next occurrence
+      console.warn('Failed to create next recurrence for task', task.id)
+    }
   },
 
   async deleteTask(id: string): Promise<void> {
