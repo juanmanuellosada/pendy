@@ -64,7 +64,28 @@ self.addEventListener('push', (event) => {
     requireInteraction: false,
   }
 
-  event.waitUntil(self.registration.showNotification(title, options))
+  event.waitUntil(
+    self.registration.showNotification(title, options).then(() => {
+      // Set app badge from push data (works on iOS PWA)
+      if (data.badge_count != null && 'setAppBadge' in self.navigator) {
+        return self.navigator.setAppBadge(data.badge_count)
+      }
+    })
+  )
+})
+
+// ── Badge sync from main thread ────────────────────────────────────────────
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SET_BADGE') {
+    const count = event.data.count ?? 0
+    if ('setAppBadge' in self.navigator) {
+      if (count > 0) {
+        self.navigator.setAppBadge(count)
+      } else {
+        self.navigator.clearAppBadge()
+      }
+    }
+  }
 })
 
 // ── Notification click: open or focus the app ─────────────────────────────────

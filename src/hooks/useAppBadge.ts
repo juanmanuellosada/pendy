@@ -5,7 +5,8 @@ import { useUIStore } from '@/stores/uiStore'
 
 /**
  * Sincroniza el badge del ícono de la PWA con el conteo de tareas pendientes para hoy.
- * Usa la Badging API (navigator.setAppBadge / clearAppBadge).
+ * Usa la Badging API desde el main thread (desktop/Android) y envía un mensaje
+ * al Service Worker como fallback (iOS PWA).
  */
 export function useAppBadge() {
   const { data: todayTasks = [] } = useTodayTasks()
@@ -30,12 +31,19 @@ export function useAppBadge() {
     todayTasks.filter((t) => !t.is_completed).length + pendingHabitsCount
 
   useEffect(() => {
-    if (!('setAppBadge' in navigator)) return
-
-    if (todayCount > 0) {
-      navigator.setAppBadge(todayCount).catch(() => {})
-    } else {
-      navigator.clearAppBadge?.().catch(() => {})
+    // 1. Try Badging API from main thread (works on desktop + Android)
+    if ('setAppBadge' in navigator) {
+      if (todayCount > 0) {
+        navigator.setAppBadge(todayCount).catch(() => {})
+      } else {
+        navigator.clearAppBadge?.().catch(() => {})
+      }
     }
+
+    // 2. Also send to Service Worker (works on iOS PWA)
+    navigator.serviceWorker?.controller?.postMessage({
+      type: 'SET_BADGE',
+      count: todayCount,
+    })
   }, [todayCount])
 }
