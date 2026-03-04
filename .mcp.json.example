@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "supabase-pendy": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=ynytwbspmqgqwgquxnhf",
+      "headers": {
+        "Authorization": "Bearer YOUR_SUPABASE_PAT_HERE"
+      }
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@context7/mcp-server"],
+      "description": "Live documentation lookup for React, Supabase, Tailwind, date-fns, etc."
+    }
+  },
+  "disabledMcpServers": ["claude.ai Gmail", "claude.ai Google Calendar", "claude.ai Notion"]
+}

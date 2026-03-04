@@ -34,7 +34,9 @@ supabase/.env
 
 # Temporary files
 *.output
-.claude/
 
-# MCP config (contains API tokens)
+# Claude Code (keep commands and project settings, ignore local)
+.claude/settings.local.json
+
+# MCP config (contains API tokens — use .mcp.json.example as template)
 .mcp.json
