@@ -206,7 +206,7 @@ export function UpcomingView() {
           <button
             onClick={() => handleAddTask()}
             className="mt-4 flex items-center gap-2 mx-auto rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
-            style={{ backgroundColor: '#EC1E2A' }}
+            style={{ backgroundColor: 'var(--color-accent)' }}
           >
             <Plus size={15} />
             Agregar primera tarea

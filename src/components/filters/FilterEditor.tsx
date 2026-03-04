@@ -159,7 +159,7 @@ export function FilterEditor({ open, onClose, filter }: FilterEditorProps) {
               onClick={handleSubmit}
               disabled={!isValid || isPending}
               className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-40"
-              style={{ backgroundColor: '#283B56' }}
+              style={{ backgroundColor: 'var(--color-primary)' }}
             >
               {isEditing ? 'Guardar' : 'Crear filtro'}
             </button>

@@ -120,7 +120,7 @@ function DateColumn({
         <div className="flex items-center gap-2">
           <h3
             className={cn('text-sm font-semibold capitalize')}
-            style={{ color: isToday ? '#EC1E2A' : 'var(--text-primary)' }}
+            style={{ color: isToday ? 'var(--color-accent)' : 'var(--text-primary)' }}
           >
             {column.label}
           </h3>

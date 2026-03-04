@@ -277,7 +277,7 @@ function CustomSelect({
           backgroundColor: 'var(--bg-primary)',
         }}
         onMouseEnter={(e) => {
-          if (!disabled) e.currentTarget.style.borderColor = '#283B56'
+          if (!disabled) e.currentTarget.style.borderColor = 'var(--color-primary)'
         }}
         onMouseLeave={(e) => {
           if (!disabled) e.currentTarget.style.borderColor = 'var(--border-secondary)'
@@ -336,7 +336,9 @@ function CustomSelect({
                   />
                 )}
                 <span className="flex-1 truncate">{opt.label}</span>
-                {value === opt.value && <Check size={12} style={{ color: '#283B56' }} />}
+                {value === opt.value && (
+                  <Check size={12} style={{ color: 'var(--color-primary)' }} />
+                )}
               </button>
             ))}
           </div>,
@@ -441,12 +443,12 @@ function CustomDatePicker({
         onClick={() => (open ? setOpen(false) : openDrop())}
         className="flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm text-left transition-colors"
         style={{
-          borderColor: open ? '#283B56' : 'var(--border-secondary)',
+          borderColor: open ? 'var(--color-primary)' : 'var(--border-secondary)',
           color: parsed ? 'var(--text-primary)' : 'var(--text-muted)',
           backgroundColor: 'var(--bg-primary)',
         }}
         onMouseEnter={(e) => {
-          if (!open) e.currentTarget.style.borderColor = '#283B56'
+          if (!open) e.currentTarget.style.borderColor = 'var(--color-primary)'
         }}
         onMouseLeave={(e) => {
           if (!open) e.currentTarget.style.borderColor = 'var(--border-secondary)'
@@ -531,8 +533,12 @@ function CustomDatePicker({
                     onClick={() => selectDay(day)}
                     className="mx-auto flex h-7 w-7 items-center justify-center rounded-full text-xs transition-colors"
                     style={{
-                      backgroundColor: isSelected ? '#283B56' : 'transparent',
-                      color: isSelected ? '#fff' : isToday ? '#EC1E2A' : 'var(--text-primary)',
+                      backgroundColor: isSelected ? 'var(--color-primary)' : 'transparent',
+                      color: isSelected
+                        ? '#fff'
+                        : isToday
+                          ? 'var(--color-accent)'
+                          : 'var(--text-primary)',
                       fontWeight: isToday || isSelected ? 600 : 400,
                     }}
                     onMouseEnter={(e) => {
@@ -618,12 +624,12 @@ function CustomTimePicker({
         onClick={() => (open ? setOpen(false) : openDrop())}
         className="flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm text-left transition-colors"
         style={{
-          borderColor: open ? '#283B56' : 'var(--border-secondary)',
+          borderColor: open ? 'var(--color-primary)' : 'var(--border-secondary)',
           color: 'var(--text-primary)',
           backgroundColor: 'var(--bg-primary)',
         }}
         onMouseEnter={(e) => {
-          if (!open) e.currentTarget.style.borderColor = '#283B56'
+          if (!open) e.currentTarget.style.borderColor = 'var(--color-primary)'
         }}
         onMouseLeave={(e) => {
           if (!open) e.currentTarget.style.borderColor = 'var(--border-secondary)'
@@ -676,7 +682,7 @@ function CustomTimePicker({
                 }}
               >
                 <span>{t}</span>
-                {t === value && <Check size={12} style={{ color: '#283B56' }} />}
+                {t === value && <Check size={12} style={{ color: 'var(--color-primary)' }} />}
               </button>
             ))}
           </div>,
@@ -796,7 +802,9 @@ function RecurrenceSection({
                   onClick={() => toggleDay(day)}
                   className="h-7 w-7 rounded-full text-xs font-medium transition-colors"
                   style={{
-                    backgroundColor: custom.days.includes(day) ? '#283B56' : 'var(--bg-hover)',
+                    backgroundColor: custom.days.includes(day)
+                      ? 'var(--color-primary)'
+                      : 'var(--bg-hover)',
                     color: custom.days.includes(day) ? '#fff' : 'var(--text-secondary)',
                   }}
                 >
@@ -904,7 +912,7 @@ function RemindersSection({
           type="button"
           onClick={addReminder}
           className="ml-auto flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors"
-          style={{ color: '#283B56' }}
+          style={{ color: 'var(--color-primary)' }}
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
         >
@@ -1320,7 +1328,7 @@ export function CalendarEventEditor({
               borderColor: 'var(--border-primary)',
               color: 'var(--text-primary)',
             }}
-            onFocus={(e) => (e.currentTarget.style.borderColor = '#283B56')}
+            onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--color-primary)')}
             onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border-primary)')}
           />
         </div>
@@ -1335,7 +1343,7 @@ export function CalendarEventEditor({
             rows={2}
             className="w-full resize-none rounded-lg border bg-transparent px-3 py-2 text-sm outline-none transition-colors"
             style={{ borderColor: 'var(--border-secondary)', color: 'var(--text-primary)' }}
-            onFocus={(e) => (e.currentTarget.style.borderColor = '#283B56')}
+            onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--color-primary)')}
             onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border-secondary)')}
           />
         </div>
@@ -1355,7 +1363,7 @@ export function CalendarEventEditor({
             }}
             className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none transition-colors"
             style={{ borderColor: 'var(--border-secondary)', color: 'var(--text-primary)' }}
-            onFocus={(e) => (e.currentTarget.style.borderColor = '#283B56')}
+            onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--color-primary)')}
             autoComplete="off"
           />
         </div>
@@ -1420,8 +1428,8 @@ export function CalendarEventEditor({
             <span
               className="flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-all"
               style={{
-                borderColor: isAllDay ? '#283B56' : 'var(--border-primary)',
-                backgroundColor: isAllDay ? '#283B56' : 'transparent',
+                borderColor: isAllDay ? 'var(--color-primary)' : 'var(--border-primary)',
+                backgroundColor: isAllDay ? 'var(--color-primary)' : 'transparent',
               }}
             >
               {isAllDay && <Check size={10} className="text-white" strokeWidth={3} />}
@@ -1491,7 +1499,7 @@ export function CalendarEventEditor({
 
         {/* Error */}
         {error && (
-          <p className="text-xs font-medium" style={{ color: '#EC1E2A' }}>
+          <p className="text-xs font-medium" style={{ color: 'var(--color-accent)' }}>
             {error}
           </p>
         )}
@@ -1513,7 +1521,7 @@ export function CalendarEventEditor({
                   onClick={handleDelete}
                   disabled={isLoading}
                   className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
-                  style={{ backgroundColor: '#EC1E2A', color: '#fff' }}
+                  style={{ backgroundColor: 'var(--color-accent)', color: '#fff' }}
                 >
                   {deleteEvent.isPending ? (
                     <Loader2 size={12} className="animate-spin" />
@@ -1535,8 +1543,11 @@ export function CalendarEventEditor({
                 type="button"
                 onClick={() => setConfirmDelete(true)}
                 className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs transition-colors"
-                style={{ color: '#EC1E2A' }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#EC1E2A18')}
+                style={{ color: 'var(--color-accent)' }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor =
+                    'color-mix(in srgb, var(--color-accent) 10%, transparent)')
+                }
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
                 <Trash2 size={13} />
@@ -1569,7 +1580,7 @@ export function CalendarEventEditor({
                 'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all',
                 (isLoading || !title.trim()) && 'opacity-60 cursor-not-allowed',
               )}
-              style={{ backgroundColor: '#283B56', color: '#fff' }}
+              style={{ backgroundColor: 'var(--color-primary)', color: '#fff' }}
             >
               {(createEvent.isPending || updateEvent.isPending || moveEvent.isPending) && (
                 <Loader2 size={12} className="animate-spin" />

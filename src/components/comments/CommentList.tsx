@@ -79,7 +79,7 @@ export function CommentList({ taskId }: CommentListProps) {
                     {profile?.full_name || 'Usuario'} · {formatRelativeDate(comment.created_at)}
                     {comment.updated_at !== comment.created_at && ' (editado)'}
                   </span>
-                  <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                     <button
                       onClick={() => setEditingId(comment.id)}
                       className="rounded p-1 transition-colors hover:opacity-70"
@@ -91,7 +91,7 @@ export function CommentList({ taskId }: CommentListProps) {
                     <button
                       onClick={() => handleDelete(comment.id)}
                       className="rounded p-1 transition-colors hover:opacity-70"
-                      style={{ color: '#EC1E2A' }}
+                      style={{ color: 'var(--color-accent)' }}
                       title="Eliminar"
                     >
                       <Trash2 size={12} />

@@ -102,7 +102,7 @@ export function SectionEditor({ open, onClose, onSave, section, shortcutKey }: S
               type="submit"
               disabled={!name.trim()}
               className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: '#EC1E2A' }}
+              style={{ backgroundColor: 'var(--color-accent)' }}
             >
               <span>{section ? 'Guardar' : 'Crear'}</span>
               {!section && shortcutKey && (

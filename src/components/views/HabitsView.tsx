@@ -109,7 +109,7 @@ export function HabitsView() {
         <button
           onClick={() => setEditorOpen(true)}
           className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
-          style={{ backgroundColor: '#283B56' }}
+          style={{ backgroundColor: 'var(--color-primary)' }}
         >
           <Plus size={15} />
           Nuevo hábito
@@ -119,10 +119,10 @@ export function HabitsView() {
       {/* Stats */}
       <div className="mb-6 grid grid-cols-3 gap-3">
         <StatCard
-          icon={<Repeat size={18} style={{ color: '#283B56' }} />}
+          icon={<Repeat size={18} style={{ color: 'var(--color-primary)' }} />}
           label="Activos"
           value={activeHabits.length}
-          bg="#283B5610"
+          bg="color-mix(in srgb, var(--color-primary) 6%, transparent)"
         />
         <StatCard
           icon={<Trophy size={18} style={{ color: '#F59E0B' }} />}
@@ -150,7 +150,7 @@ export function HabitsView() {
           <button
             onClick={() => setEditorOpen(true)}
             className="mt-4 flex items-center gap-2 mx-auto rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
-            style={{ backgroundColor: '#EC1E2A' }}
+            style={{ backgroundColor: 'var(--color-accent)' }}
           >
             <Plus size={15} />
             Crear primer hábito
@@ -411,7 +411,10 @@ function HabitRow({
         ) : streak.current > 0 ? (
           <div
             className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
-            style={{ backgroundColor: '#F59E0B15', color: '#F59E0B' }}
+            style={{
+              backgroundColor: 'color-mix(in srgb, #F59E0B 8%, transparent)',
+              color: '#F59E0B',
+            }}
           >
             <Flame size={11} />
             {streak.current}
@@ -456,8 +459,9 @@ function HabitRow({
           className="rounded-lg p-1.5 transition-colors"
           style={{ color: 'var(--text-muted)' }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#EC1E2A15'
-            e.currentTarget.style.color = '#EC1E2A'
+            e.currentTarget.style.backgroundColor =
+              'color-mix(in srgb, var(--color-accent) 8%, transparent)'
+            e.currentTarget.style.color = 'var(--color-accent)'
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.backgroundColor = 'transparent'

@@ -117,7 +117,7 @@ export function DeadlinePicker({
           style={{
             backgroundColor: deadline ? 'rgba(59,130,246,0.1)' : 'var(--bg-secondary)',
             borderColor: deadline ? 'rgba(59,130,246,0.3)' : 'var(--border-primary)',
-            color: deadline ? '#3B82F6' : 'var(--text-primary)',
+            color: deadline ? 'var(--color-link)' : 'var(--text-primary)',
           }}
         >
           <AlarmClock size={14} />
@@ -193,10 +193,8 @@ export function DeadlinePicker({
                   onDeadlineChange(format(s.date, 'yyyy-MM-dd'))
                   if (!inline) setOpen(false)
                 }}
-                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm transition-colors"
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm transition-colors hover-bg-hover"
                 style={{ color: 'var(--text-primary)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
                 <CalendarDays size={14} style={{ color: 'var(--text-muted)' }} />
                 <span className="flex-1 text-left">{s.label}</span>
@@ -220,28 +218,22 @@ export function DeadlinePicker({
               <div className="flex gap-1">
                 <button
                   onClick={() => setViewMonth((prev) => subMonths(prev, 1))}
-                  className="rounded p-1 transition-colors"
+                  className="rounded p-1 transition-colors hover-bg-hover"
                   style={{ color: 'var(--text-muted)' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   <ChevronLeft size={14} />
                 </button>
                 <button
                   onClick={() => setViewMonth(new Date())}
-                  className="rounded px-1.5 py-0.5 text-xs transition-colors"
+                  className="rounded px-1.5 py-0.5 text-xs transition-colors hover-bg-hover"
                   style={{ color: 'var(--text-muted)' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   ○
                 </button>
                 <button
                   onClick={() => setViewMonth((prev) => addMonths(prev, 1))}
-                  className="rounded p-1 transition-colors"
+                  className="rounded p-1 transition-colors hover-bg-hover"
                   style={{ color: 'var(--text-muted)' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   <ChevronRight size={14} />
                 </button>
@@ -271,10 +263,10 @@ export function DeadlinePicker({
                   <button
                     key={i}
                     onClick={() => handleDayClick(day)}
-                    className="flex h-8 w-full items-center justify-center rounded-md text-xs transition-colors"
+                    className="flex h-9 w-full items-center justify-center rounded-md text-xs transition-colors"
                     style={{
                       backgroundColor: isSelected
-                        ? '#3B82F6'
+                        ? 'var(--color-link)'
                         : isToday
                           ? 'var(--bg-hover)'
                           : 'transparent',
@@ -283,7 +275,7 @@ export function DeadlinePicker({
                         : !inMonth
                           ? 'var(--text-muted)'
                           : isToday
-                            ? '#3B82F6'
+                            ? 'var(--color-link)'
                             : 'var(--text-primary)',
                       fontWeight: isToday || isSelected ? 700 : 400,
                     }}

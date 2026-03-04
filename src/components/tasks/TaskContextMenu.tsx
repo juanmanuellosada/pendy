@@ -138,7 +138,7 @@ export function TaskContextMenu({ task, x, y, onClose }: TaskContextMenuProps) {
     },
     {
       icon: Sofa,
-      color: '#3B82F6',
+      color: 'var(--color-link)',
       label: 'Fin de semana',
       hint: format(weekend, 'd MMM'),
       date: format(weekend, 'yyyy-MM-dd'),
@@ -527,8 +527,11 @@ export function TaskContextMenu({ task, x, y, onClose }: TaskContextMenuProps) {
           <button
             onClick={handleDelete}
             className="flex w-full items-center gap-3 px-3 py-2 text-sm transition-colors"
-            style={{ color: '#EC1E2A' }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(236,30,42,0.08)')}
+            style={{ color: 'var(--color-accent)' }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor =
+                'color-mix(in srgb, var(--color-accent) 8%, transparent)')
+            }
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
           >
             <Trash2 size={15} />
@@ -641,7 +644,9 @@ function MoveSubmenu({
               style={{ backgroundColor: project.color }}
             />
             <span className="flex-1 truncate text-left">{project.name}</span>
-            {task.project_id === project.id && <Check size={12} style={{ color: '#283B56' }} />}
+            {task.project_id === project.id && (
+              <Check size={12} style={{ color: 'var(--color-primary)' }} />
+            )}
             <SectionIndicator projectId={project.id} />
           </button>
           {showSectionSubmenu === project.id && (
@@ -704,7 +709,7 @@ function SectionSubmenu({
         <span className="flex-1 text-left" style={{ color: 'var(--text-muted)' }}>
           Sin sección
         </span>
-        {currentSectionId === null && <Check size={12} style={{ color: '#283B56' }} />}
+        {currentSectionId === null && <Check size={12} style={{ color: 'var(--color-primary)' }} />}
       </button>
       {sections.map((section) => (
         <button
@@ -722,7 +727,9 @@ function SectionSubmenu({
           }
         >
           <span className="flex-1 truncate text-left">{section.name}</span>
-          {currentSectionId === section.id && <Check size={12} style={{ color: '#283B56' }} />}
+          {currentSectionId === section.id && (
+            <Check size={12} style={{ color: 'var(--color-primary)' }} />
+          )}
         </button>
       ))}
     </div>

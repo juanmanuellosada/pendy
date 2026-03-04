@@ -120,7 +120,7 @@ export default function LabelsPage() {
             onClick={handleCreate}
             disabled={!newLabelName.trim() || createLabel.isPending}
             className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-40"
-            style={{ backgroundColor: '#283B56' }}
+            style={{ backgroundColor: 'var(--color-primary)' }}
           >
             <Plus size={14} />
             Crear
@@ -171,8 +171,8 @@ export default function LabelsPage() {
                   <div
                     className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors"
                     style={{
-                      borderColor: isSelected ? '#3B82F6' : 'var(--border-primary)',
-                      backgroundColor: isSelected ? '#3B82F6' : 'transparent',
+                      borderColor: isSelected ? 'var(--color-link)' : 'var(--border-primary)',
+                      backgroundColor: isSelected ? 'var(--color-link)' : 'transparent',
                     }}
                   >
                     {isSelected && <Check size={11} color="white" strokeWidth={3} />}
@@ -263,7 +263,9 @@ export default function LabelsPage() {
                           }}
                           className="rounded p-1 transition-colors"
                           style={{ color: 'var(--text-muted)' }}
-                          onMouseEnter={(e) => (e.currentTarget.style.color = '#283B56')}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.color = 'var(--color-primary)')
+                          }
                           onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
                           title="Editar nombre"
                         >
@@ -275,7 +277,7 @@ export default function LabelsPage() {
                             handleDelete(label.id, label.name)
                           }}
                           className="rounded p-1"
-                          style={{ color: '#EC1E2A' }}
+                          style={{ color: 'var(--color-accent)' }}
                           title="Eliminar etiqueta"
                         >
                           <Trash2 size={14} />

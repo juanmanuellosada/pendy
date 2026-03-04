@@ -123,7 +123,7 @@ export function ReminderPicker({
       },
       {
         icon: Sofa,
-        color: '#3B82F6',
+        color: 'var(--color-link)',
         label: 'Fin de semana',
         hint: format(weekend, 'd MMM'),
         date: weekend,
@@ -346,7 +346,7 @@ export function ReminderPicker({
                         onClick={() => handleDayClick(day)}
                         className="relative flex flex-col items-center justify-center rounded-md py-0.5 text-[11px] transition-colors"
                         style={{
-                          backgroundColor: isSelected ? '#283B56' : 'transparent',
+                          backgroundColor: isSelected ? 'var(--color-primary)' : 'transparent',
                           color: isSelected
                             ? '#fff'
                             : inMonth
@@ -365,7 +365,7 @@ export function ReminderPicker({
                         {isCurrent && (
                           <span
                             className="absolute bottom-0 left-1/2 h-0.5 w-0.5 -translate-x-1/2 rounded-full"
-                            style={{ backgroundColor: isSelected ? '#fff' : '#EC1E2A' }}
+                            style={{ backgroundColor: isSelected ? '#fff' : 'var(--color-accent)' }}
                           />
                         )}
                       </button>
@@ -398,7 +398,8 @@ export function ReminderPicker({
                           onClick={() => setSelectedHour(h)}
                           className="flex w-full items-center justify-center py-1 text-xs transition-colors"
                           style={{
-                            backgroundColor: selectedHour === h ? '#283B56' : 'transparent',
+                            backgroundColor:
+                              selectedHour === h ? 'var(--color-primary)' : 'transparent',
                             color: selectedHour === h ? '#fff' : 'var(--text-primary)',
                             fontWeight: selectedHour === h ? 700 : undefined,
                           }}
@@ -436,7 +437,8 @@ export function ReminderPicker({
                           onClick={() => setSelectedMinute(m)}
                           className="flex w-full items-center justify-center py-1 text-xs transition-colors"
                           style={{
-                            backgroundColor: selectedMinute === m ? '#283B56' : 'transparent',
+                            backgroundColor:
+                              selectedMinute === m ? 'var(--color-primary)' : 'transparent',
                             color: selectedMinute === m ? '#fff' : 'var(--text-primary)',
                             fontWeight: selectedMinute === m ? 700 : undefined,
                           }}
@@ -478,7 +480,7 @@ export function ReminderPicker({
                 <button
                   onClick={handleAddDatetime}
                   className="rounded-lg px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:opacity-90"
-                  style={{ backgroundColor: '#EC1E2A' }}
+                  style={{ backgroundColor: 'var(--color-accent)' }}
                 >
                   Añadir
                 </button>
@@ -555,7 +557,7 @@ export function ReminderPicker({
                               style={{
                                 backgroundColor:
                                   selectedBeforeMinutes === option.minutes
-                                    ? 'rgba(59,130,246,0.2)'
+                                    ? 'color-mix(in srgb, var(--color-link) 20%, transparent)'
                                     : 'transparent',
                                 color: 'var(--text-primary)',
                               }}
@@ -580,7 +582,7 @@ export function ReminderPicker({
                     <button
                       onClick={handleAddBefore}
                       className="rounded-lg px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:opacity-90"
-                      style={{ backgroundColor: '#EC1E2A' }}
+                      style={{ backgroundColor: 'var(--color-accent)' }}
                     >
                       Añadir recordatorio
                     </button>
@@ -614,7 +616,7 @@ export function ReminderPicker({
                       onClick={() => onRemove(i)}
                       className="rounded p-0.5 transition-colors"
                       style={{ color: 'var(--text-muted)' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = '#EC1E2A')}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-accent)')}
                       onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
                     >
                       <X size={12} />
@@ -635,9 +637,15 @@ export function ReminderPicker({
           onClick={() => setOpen(!open)}
           className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
           style={{
-            backgroundColor: reminders.length > 0 ? 'rgba(59,130,246,0.1)' : 'var(--bg-secondary)',
-            borderColor: reminders.length > 0 ? 'rgba(59,130,246,0.3)' : 'var(--border-primary)',
-            color: reminders.length > 0 ? '#3B82F6' : 'var(--text-primary)',
+            backgroundColor:
+              reminders.length > 0
+                ? 'color-mix(in srgb, var(--color-link) 10%, transparent)'
+                : 'var(--bg-secondary)',
+            borderColor:
+              reminders.length > 0
+                ? 'color-mix(in srgb, var(--color-link) 30%, transparent)'
+                : 'var(--border-primary)',
+            color: reminders.length > 0 ? 'var(--color-link)' : 'var(--text-primary)',
           }}
         >
           <Bell size={14} />
@@ -645,7 +653,7 @@ export function ReminderPicker({
           {reminders.length > 0 && (
             <span
               className="rounded-full px-1.5 py-0.5 text-xs font-bold text-white"
-              style={{ backgroundColor: '#3B82F6' }}
+              style={{ backgroundColor: 'var(--color-link)' }}
             >
               {reminders.length}
             </span>
@@ -655,7 +663,9 @@ export function ReminderPicker({
               className="rounded px-1 py-0.5 font-mono text-[9px] leading-none"
               style={{
                 backgroundColor:
-                  reminders.length > 0 ? 'rgba(59,130,246,0.15)' : 'var(--bg-primary)',
+                  reminders.length > 0
+                    ? 'color-mix(in srgb, var(--color-link) 15%, transparent)'
+                    : 'var(--bg-primary)',
                 color: 'var(--text-muted)',
               }}
             >

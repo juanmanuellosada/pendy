@@ -1123,7 +1123,7 @@ export function TaskEditor({
                 newSubtaskRef.current?.focus()
               }}
               className="flex-shrink-0 rounded px-1.5 py-0.5 text-xs font-medium text-white"
-              style={{ backgroundColor: '#283B56' }}
+              style={{ backgroundColor: 'var(--color-primary)' }}
             >
               ↵
             </button>
@@ -1214,7 +1214,11 @@ export function TaskEditor({
                   />
                   {PRIORITY_LABELS[p]}
                   {priority === p && (
-                    <Check size={12} className="ml-auto" style={{ color: '#283B56' }} />
+                    <Check
+                      size={12}
+                      className="ml-auto"
+                      style={{ color: 'var(--color-primary)' }}
+                    />
                   )}
                 </button>
               ))}
@@ -1235,7 +1239,7 @@ export function TaskEditor({
           >
             <span
               className="h-2.5 w-2.5 rounded-sm flex-shrink-0"
-              style={{ backgroundColor: selectedProject?.color ?? '#283B56' }}
+              style={{ backgroundColor: selectedProject?.color ?? 'var(--color-primary)' }}
             />
             <span className="truncate max-w-[140px]">
               {selectedProject?.name ?? 'Entrada'}
@@ -1413,9 +1417,13 @@ export function TaskEditor({
                                 })
                               }}
                               className="rounded p-1 transition-all"
-                              style={{ color: '#EC1E2A', backgroundColor: 'transparent' }}
+                              style={{
+                                color: 'var(--color-accent)',
+                                backgroundColor: 'transparent',
+                              }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = 'rgba(236,30,42,0.1)'
+                                e.currentTarget.style.backgroundColor =
+                                  'color-mix(in srgb, var(--color-accent) 10%, transparent)'
                               }}
                               onMouseLeave={(e) => {
                                 e.currentTarget.style.backgroundColor = 'transparent'
@@ -1544,7 +1552,7 @@ export function TaskEditor({
             {selectedLabelIds.length > 0 && (
               <span
                 className="rounded-full px-1.5 py-0.5 text-xs font-bold text-white"
-                style={{ backgroundColor: '#283B56' }}
+                style={{ backgroundColor: 'var(--color-primary)' }}
               >
                 {selectedLabelIds.length}
               </span>
@@ -1660,7 +1668,9 @@ export function TaskEditor({
                           style={{ backgroundColor: label.color }}
                         />
                         <span className="flex-1 text-left">{label.name}</span>
-                        {active && !hovered && <Check size={12} style={{ color: '#283B56' }} />}
+                        {active && !hovered && (
+                          <Check size={12} style={{ color: 'var(--color-primary)' }} />
+                        )}
                       </button>
                       {hovered && (
                         <>
@@ -1674,8 +1684,9 @@ export function TaskEditor({
                             className="rounded p-1 transition-all"
                             style={{ color: 'var(--text-muted)', backgroundColor: 'transparent' }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = 'rgba(40,59,86,0.12)'
-                              e.currentTarget.style.color = '#283B56'
+                              e.currentTarget.style.backgroundColor =
+                                'color-mix(in srgb, var(--color-primary) 12%, transparent)'
+                              e.currentTarget.style.color = 'var(--color-primary)'
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.backgroundColor = 'transparent'
@@ -1702,9 +1713,10 @@ export function TaskEditor({
                               })
                             }}
                             className="rounded p-1 transition-all"
-                            style={{ color: '#EC1E2A', backgroundColor: 'transparent' }}
+                            style={{ color: 'var(--color-accent)', backgroundColor: 'transparent' }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = 'rgba(236,30,42,0.1)'
+                              e.currentTarget.style.backgroundColor =
+                                'color-mix(in srgb, var(--color-accent) 10%, transparent)'
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.backgroundColor = 'transparent'
@@ -1795,7 +1807,7 @@ export function TaskEditor({
           onClick={handleSubmit}
           disabled={!stripHtmlTags(title) || createTask.isPending || updateTask.isPending}
           className="flex items-center gap-2 rounded-lg px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
-          style={{ backgroundColor: '#283B56' }}
+          style={{ backgroundColor: 'var(--color-primary)' }}
         >
           <span>{task ? 'Guardar' : 'Añadir tarea'}</span>
           {!task && !inline && (

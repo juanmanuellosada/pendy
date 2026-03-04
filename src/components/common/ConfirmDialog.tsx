@@ -41,9 +41,9 @@ export function ConfirmDialog() {
           {/* Icono */}
           <div
             className="mb-4 flex h-11 w-11 items-center justify-center rounded-full"
-            style={{ backgroundColor: '#EC1E2A1A' }}
+            style={{ backgroundColor: 'color-mix(in srgb, var(--color-accent) 10%, transparent)' }}
           >
-            <AlertTriangle size={20} style={{ color: '#EC1E2A' }} />
+            <AlertTriangle size={20} style={{ color: 'var(--color-accent)' }} />
           </div>
 
           {/* Título */}
@@ -60,17 +60,15 @@ export function ConfirmDialog() {
           <div className="flex items-center justify-end gap-2">
             <button
               onClick={hideConfirmDialog}
-              className="rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+              className="rounded-lg px-4 py-2 text-sm font-medium transition-colors hover-bg-active focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
               style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
             >
               Cancelar
             </button>
             <button
               onClick={handleConfirm}
-              className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: '#EC1E2A' }}
+              className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+              style={{ backgroundColor: 'var(--color-accent)' }}
             >
               {confirmDialogConfig.confirmLabel ?? 'Eliminar'}
             </button>

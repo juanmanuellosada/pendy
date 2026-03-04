@@ -110,7 +110,7 @@ function MiniCalendar({
               onClick={() => onSelect(format(day, 'yyyy-MM-dd'))}
               className="relative flex flex-col items-center justify-center rounded-md py-0.5 text-[11px] transition-colors"
               style={{
-                backgroundColor: isSelected ? '#283B56' : undefined,
+                backgroundColor: isSelected ? 'var(--color-primary)' : undefined,
                 color: isSelected
                   ? '#fff'
                   : isCurrentMonth
@@ -129,7 +129,7 @@ function MiniCalendar({
               {isTodayDay && (
                 <span
                   className="absolute bottom-0 left-1/2 h-0.5 w-0.5 -translate-x-1/2 rounded-full"
-                  style={{ backgroundColor: isSelected ? '#fff' : '#EC1E2A' }}
+                  style={{ backgroundColor: isSelected ? '#fff' : 'var(--color-accent)' }}
                 />
               )}
             </button>
@@ -383,7 +383,7 @@ export function DateTimePicker({
         icon: Sofa,
         label: 'Este fin de semana',
         hint: format(sat, 'd MMM', { locale: es }),
-        color: '#3B82F6',
+        color: 'var(--color-link)',
         action: handleThisWeekend,
       },
       {
@@ -741,7 +741,7 @@ export function DateTimePicker({
                     onClick={() => handleDayClick(day)}
                     className="relative flex flex-col items-center justify-center rounded-md py-1 text-xs transition-colors"
                     style={{
-                      backgroundColor: isSelected ? '#283B56' : undefined,
+                      backgroundColor: isSelected ? 'var(--color-primary)' : undefined,
                       color: isSelected
                         ? '#fff'
                         : isCurrentMonth
@@ -760,7 +760,7 @@ export function DateTimePicker({
                     {isToday && (
                       <span
                         className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full"
-                        style={{ backgroundColor: isSelected ? '#fff' : '#EC1E2A' }}
+                        style={{ backgroundColor: isSelected ? '#fff' : 'var(--color-accent)' }}
                       />
                     )}
                   </button>
@@ -886,7 +886,7 @@ export function DateTimePicker({
                       className="flex-1 rounded-lg border px-2 py-1.5 text-xs outline-none"
                       style={{
                         backgroundColor: 'var(--bg-secondary)',
-                        borderColor: '#283B56',
+                        borderColor: 'var(--color-primary)',
                         color: 'var(--text-primary)',
                       }}
                     />
@@ -982,14 +982,14 @@ export function DateTimePicker({
                       type="button"
                       onClick={() => handleRecurrencePreset(preset.rule)}
                       className="flex w-full items-center gap-3 rounded-lg px-6 py-1.5 text-xs transition-colors"
-                      style={{ color: isActive ? '#283B56' : 'var(--text-secondary)' }}
+                      style={{ color: isActive ? 'var(--color-primary)' : 'var(--text-secondary)' }}
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
                       }
                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
                       <span className="flex-1 text-left">{preset.label}</span>
-                      {isActive && <Check size={14} style={{ color: '#283B56' }} />}
+                      {isActive && <Check size={14} style={{ color: 'var(--color-primary)' }} />}
                     </button>
                   )
                 })}
@@ -1056,7 +1056,7 @@ export function DateTimePicker({
                   name="recurrence-from"
                   checked={customFrom === 'due_date'}
                   onChange={() => setCustomFrom('due_date')}
-                  className="accent-[#283B56]"
+                  className="accent-[var(--color-primary)]"
                 />
                 Fecha en la que se programe
               </label>
@@ -1069,7 +1069,7 @@ export function DateTimePicker({
                   name="recurrence-from"
                   checked={customFrom === 'completion_date'}
                   onChange={() => setCustomFrom('completion_date')}
-                  className="accent-[#283B56]"
+                  className="accent-[var(--color-primary)]"
                 />
                 Fecha en la que se complete
               </label>
@@ -1128,7 +1128,7 @@ export function DateTimePicker({
                   type="checkbox"
                   checked={customUseLastDay}
                   onChange={(e) => setCustomUseLastDay(e.target.checked)}
-                  className="accent-[#283B56]"
+                  className="accent-[var(--color-primary)]"
                 />
                 Siempre el último día del mes
               </label>
@@ -1163,9 +1163,9 @@ export function DateTimePicker({
                       }
                       className="flex-1 rounded-lg py-1.5 text-xs font-medium transition-colors"
                       style={{
-                        backgroundColor: isOn ? '#283B56' : 'var(--bg-secondary)',
+                        backgroundColor: isOn ? 'var(--color-primary)' : 'var(--bg-secondary)',
                         color: isOn ? '#fff' : 'var(--text-muted)',
-                        border: `1px solid ${isOn ? '#283B56' : 'var(--border-primary)'}`,
+                        border: `1px solid ${isOn ? 'var(--color-primary)' : 'var(--border-primary)'}`,
                       }}
                     >
                       {label}
@@ -1197,7 +1197,7 @@ export function DateTimePicker({
                     setCustomHasEnd(false)
                     setCustomEndDate(null)
                   }}
-                  className="accent-[#283B56]"
+                  className="accent-[var(--color-primary)]"
                 />
                 Nunca
               </label>
@@ -1210,7 +1210,7 @@ export function DateTimePicker({
                   name="recurrence-end"
                   checked={customHasEnd}
                   onChange={() => setCustomHasEnd(true)}
-                  className="accent-[#283B56]"
+                  className="accent-[var(--color-primary)]"
                 />
                 En la fecha
               </label>
@@ -1240,7 +1240,7 @@ export function DateTimePicker({
               type="button"
               onClick={handleSaveCustomRecurrence}
               className="rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-colors"
-              style={{ backgroundColor: '#283B56' }}
+              style={{ backgroundColor: 'var(--color-primary)' }}
               onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
               onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
             >

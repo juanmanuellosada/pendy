@@ -156,9 +156,9 @@ export default function FilterPage() {
         <div
           className="mb-4 rounded-lg border px-4 py-3 text-sm"
           style={{
-            borderColor: '#EC1E2A',
-            backgroundColor: 'rgba(236,30,42,0.08)',
-            color: '#EC1E2A',
+            borderColor: 'var(--color-accent)',
+            backgroundColor: 'color-mix(in srgb, var(--color-accent) 8%, transparent)',
+            color: 'var(--color-accent)',
           }}
         >
           Error en la consulta: {parseError}

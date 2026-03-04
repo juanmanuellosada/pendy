@@ -176,6 +176,7 @@ function ProjectTreeItem({
               toggleCollapsed(project.id)
             }}
             aria-label={isCollapsed ? 'Expandir proyecto' : 'Contraer proyecto'}
+            aria-expanded={!isCollapsed}
           >
             {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
           </button>
@@ -406,8 +407,8 @@ export function Sidebar() {
         <div className="mt-4 flex flex-col gap-1">
           <button
             onClick={() => setQuickAddOpen(true)}
-            className="rounded-lg p-2.5 transition-colors"
-            style={{ backgroundColor: '#EC1E2A', color: '#FFFFFF' }}
+            className="rounded-lg p-3 transition-colors"
+            style={{ backgroundColor: 'var(--color-accent)', color: '#FFFFFF' }}
             title="Añadir tarea (Q)"
           >
             <Plus size={20} />
@@ -415,9 +416,9 @@ export function Sidebar() {
           <button
             onClick={() => isCalendarConnected && setEventEditorOpen(true)}
             disabled={!isCalendarConnected}
-            className="rounded-lg p-2.5 transition-colors"
+            className="rounded-lg p-3 transition-colors"
             style={{
-              backgroundColor: '#283B56',
+              backgroundColor: 'var(--color-primary)',
               color: '#FFFFFF',
               opacity: isCalendarConnected ? 1 : 0.4,
               cursor: isCalendarConnected ? 'pointer' : 'not-allowed',
@@ -432,7 +433,7 @@ export function Sidebar() {
           </button>
           <button
             onClick={() => handleNav('/app/search')}
-            className="rounded-lg p-2.5 transition-colors"
+            className="rounded-lg p-3 transition-colors"
             style={{ color: 'var(--text-secondary)' }}
             title="Buscador (S)"
           >
@@ -444,9 +445,10 @@ export function Sidebar() {
             <button
               key={path}
               onClick={() => handleNav(path)}
-              className="rounded-lg p-2.5 transition-colors"
+              className="rounded-lg p-3 transition-colors"
               style={{
-                backgroundColor: location.pathname === path ? '#283B56' : 'transparent',
+                backgroundColor:
+                  location.pathname === path ? 'var(--color-primary)' : 'transparent',
                 color: location.pathname === path ? '#FFFFFF' : 'var(--text-secondary)',
               }}
             >
@@ -487,7 +489,7 @@ export function Sidebar() {
         <button
           onClick={() => setQuickAddOpen(true)}
           className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
-          style={{ backgroundColor: '#EC1E2A', color: '#FFFFFF' }}
+          style={{ backgroundColor: 'var(--color-accent)', color: '#FFFFFF' }}
         >
           <Plus size={18} />
           <span className="flex-1 text-left">Añadir tarea</span>
@@ -505,7 +507,7 @@ export function Sidebar() {
           disabled={!isCalendarConnected}
           className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-all"
           style={{
-            backgroundColor: '#283B56',
+            backgroundColor: 'var(--color-primary)',
             color: '#FFFFFF',
             opacity: isCalendarConnected ? 1 : 0.4,
             cursor: isCalendarConnected ? 'pointer' : 'not-allowed',
@@ -534,7 +536,8 @@ export function Sidebar() {
             location.pathname === '/app/search' ? 'text-white' : 'hover:opacity-80',
           )}
           style={{
-            backgroundColor: location.pathname === '/app/search' ? '#283B56' : 'transparent',
+            backgroundColor:
+              location.pathname === '/app/search' ? 'var(--color-primary)' : 'transparent',
             color: location.pathname === '/app/search' ? '#FFFFFF' : 'var(--text-primary)',
           }}
         >
@@ -568,7 +571,8 @@ export function Sidebar() {
                 location.pathname === path ? 'text-white' : 'hover:opacity-80',
               )}
               style={{
-                backgroundColor: location.pathname === path ? '#283B56' : 'transparent',
+                backgroundColor:
+                  location.pathname === path ? 'var(--color-primary)' : 'transparent',
                 color: location.pathname === path ? '#FFFFFF' : 'var(--text-primary)',
               }}
             >
@@ -764,7 +768,7 @@ export function Sidebar() {
                           style={{
                             color:
                               regularProjects.find((p) => p.id === dragActiveId)?.color ??
-                              '#283B56',
+                              'var(--color-primary)',
                           }}
                         />
                         <span className="truncate">

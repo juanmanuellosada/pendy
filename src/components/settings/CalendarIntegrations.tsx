@@ -211,8 +211,8 @@ export function CalendarIntegrations({
                     className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
                     style={{ borderColor: 'var(--border-primary)', color: 'var(--text-secondary)' }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#EC1E2A'
-                      e.currentTarget.style.color = '#EC1E2A'
+                      e.currentTarget.style.borderColor = 'var(--color-accent)'
+                      e.currentTarget.style.color = 'var(--color-accent)'
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.borderColor = 'var(--border-primary)'
@@ -511,8 +511,9 @@ export function CalendarIntegrations({
                                     style={{ color: 'var(--text-muted)' }}
                                     title="Eliminar calendario"
                                     onMouseEnter={(e) => {
-                                      e.currentTarget.style.backgroundColor = 'rgba(236,30,42,0.08)'
-                                      e.currentTarget.style.color = '#EC1E2A'
+                                      e.currentTarget.style.backgroundColor =
+                                        'color-mix(in srgb, var(--color-accent) 8%, transparent)'
+                                      e.currentTarget.style.color = 'var(--color-accent)'
                                     }}
                                     onMouseLeave={(e) => {
                                       e.currentTarget.style.backgroundColor = 'transparent'
@@ -594,10 +595,14 @@ export function CalendarIntegrations({
       {connectError && (
         <div
           className="mt-3 flex items-start gap-2 rounded-lg p-3"
-          style={{ backgroundColor: 'rgba(236,30,42,0.08)' }}
+          style={{ backgroundColor: 'color-mix(in srgb, var(--color-accent) 8%, transparent)' }}
         >
-          <AlertCircle size={14} className="mt-0.5 flex-shrink-0" style={{ color: '#EC1E2A' }} />
-          <p className="text-xs" style={{ color: '#EC1E2A' }}>
+          <AlertCircle
+            size={14}
+            className="mt-0.5 flex-shrink-0"
+            style={{ color: 'var(--color-accent)' }}
+          />
+          <p className="text-xs" style={{ color: 'var(--color-accent)' }}>
             {connectError}
           </p>
         </div>

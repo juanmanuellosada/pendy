@@ -29,16 +29,22 @@ export const TaskCheckbox = memo(function TaskCheckbox({
     <button
       onClick={handleClick}
       className={cn(
-        'checkbox-custom flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all',
-        checked && 'animate-task-complete',
+        'group flex shrink-0 items-center justify-center p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 rounded-full',
       )}
-      style={{
-        borderColor: color,
-        backgroundColor: checked ? color : 'transparent',
-      }}
       aria-label={checked ? 'Marcar como pendiente' : 'Marcar como completada'}
     >
-      {checked && <Check size={12} className="text-white" strokeWidth={3} />}
+      <span
+        className={cn(
+          'checkbox-custom flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all',
+          checked && 'animate-task-complete',
+        )}
+        style={{
+          borderColor: color,
+          backgroundColor: checked ? color : 'transparent',
+        }}
+      >
+        {checked && <Check size={12} className="text-white" strokeWidth={3} />}
+      </span>
     </button>
   )
 })

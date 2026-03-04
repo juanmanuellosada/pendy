@@ -1004,7 +1004,10 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
                 <div
                   key={r.id}
                   className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs"
-                  style={{ backgroundColor: 'rgba(59,130,246,0.1)', color: '#3B82F6' }}
+                  style={{
+                    backgroundColor: 'color-mix(in srgb, var(--color-link) 10%, transparent)',
+                    color: 'var(--color-link)',
+                  }}
                 >
                   <Bell size={10} />
                   <span>{format(new Date(r.remind_at), 'dd/MM HH:mm')}</span>
@@ -1152,7 +1155,7 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
               <button
                 onClick={handleAddSubtask}
                 className="rounded px-2 py-1 text-xs font-medium text-white"
-                style={{ backgroundColor: '#283B56' }}
+                style={{ backgroundColor: 'var(--color-primary)' }}
               >
                 Agregar
               </button>
@@ -1211,7 +1214,7 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
               disabled={!isDirty || saving}
               className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all"
               style={{
-                backgroundColor: isDirty ? '#283B56' : 'var(--bg-secondary)',
+                backgroundColor: isDirty ? 'var(--color-primary)' : 'var(--bg-secondary)',
                 color: isDirty ? '#ffffff' : 'var(--text-muted)',
                 cursor: isDirty ? 'pointer' : 'default',
               }}
@@ -1307,7 +1310,7 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
               disabled={!isDirty || saving}
               className="rounded-lg px-2.5 py-1 text-xs font-medium transition-all"
               style={{
-                backgroundColor: isDirty ? '#283B56' : 'var(--bg-secondary)',
+                backgroundColor: isDirty ? 'var(--color-primary)' : 'var(--bg-secondary)',
                 color: isDirty ? '#ffffff' : 'var(--text-muted)',
                 cursor: isDirty ? 'pointer' : 'default',
               }}
@@ -1491,7 +1494,9 @@ function DropdownItem({
       style={{ color: 'var(--text-primary)' }}
     >
       {children}
-      {active && <Check size={13} className="ml-auto shrink-0" style={{ color: '#283B56' }} />}
+      {active && (
+        <Check size={13} className="ml-auto shrink-0" style={{ color: 'var(--color-primary)' }} />
+      )}
     </button>
   )
 }
@@ -1589,7 +1594,7 @@ function LabelMenu({
             >
               <span className="h-3 w-3 rounded-full" style={{ backgroundColor: label.color }} />
               <span className="flex-1 text-left">{label.name}</span>
-              {active && <Check size={13} style={{ color: '#283B56' }} />}
+              {active && <Check size={13} style={{ color: 'var(--color-primary)' }} />}
             </button>
           )
         })

@@ -65,7 +65,7 @@ export function BoardView({ projectId, tasks, onAddTask, onEditSection }: BoardV
   }
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2">
+    <div className="flex flex-col gap-4 md:flex-row md:overflow-x-auto pb-4 -mx-2 px-2">
       {columns.map((col) => (
         <BoardColumn
           key={col.id ?? '__none__'}
@@ -82,21 +82,13 @@ export function BoardView({ projectId, tasks, onAddTask, onEditSection }: BoardV
       ))}
 
       {/* Add column button */}
-      <div className="flex-shrink-0 w-[300px]">
+      <div className="md:flex-shrink-0 md:w-[300px]">
         <button
           onClick={() => onAddTask(undefined)}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 text-sm font-medium transition-colors"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 text-sm font-medium transition-colors hover-bg-hover"
           style={{
             borderColor: 'var(--border-primary)',
             color: 'var(--text-muted)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'var(--text-muted)'
-            e.currentTarget.style.backgroundColor = 'var(--bg-hover)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'var(--border-primary)'
-            e.currentTarget.style.backgroundColor = 'transparent'
           }}
         >
           <Plus size={16} />
@@ -131,7 +123,9 @@ function BoardColumn({
 
   return (
     <div
-      className={cn('flex flex-shrink-0 flex-col rounded-xl transition-colors w-[300px]')}
+      className={cn(
+        'flex flex-col rounded-xl transition-colors w-full md:w-[300px] md:flex-shrink-0',
+      )}
       style={{
         backgroundColor: isOver ? 'var(--bg-active)' : 'var(--bg-secondary)',
       }}
@@ -159,10 +153,8 @@ function BoardColumn({
         <div className="flex items-center gap-0.5">
           <button
             onClick={onAddTask}
-            className="rounded-lg p-1 transition-colors"
+            className="rounded-lg p-1 transition-colors hover-bg-hover"
             style={{ color: 'var(--text-muted)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             title="Agregar tarea"
           >
             <Plus size={16} />
@@ -171,10 +163,8 @@ function BoardColumn({
             <div className="relative">
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="rounded-lg p-1 transition-colors"
+                className="rounded-lg p-1 transition-colors hover-bg-hover"
                 style={{ color: 'var(--text-muted)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
                 <MoreHorizontal size={16} />
               </button>
@@ -252,19 +242,15 @@ function SectionMenu({
       >
         <button
           onClick={onEdit}
-          className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors"
+          className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover-bg-hover"
           style={{ color: 'var(--text-primary)' }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
         >
           <Pencil size={14} />
           Renombrar
         </button>
         <button
           onClick={onDelete}
-          className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-500 transition-colors"
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-500 transition-colors hover-bg-hover"
         >
           <Trash2 size={14} />
           Eliminar

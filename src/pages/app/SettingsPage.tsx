@@ -217,7 +217,7 @@ function ProfileSection({
               onClick={handleChangePassword}
               disabled={passwordLoading || !newPassword || !confirmPassword}
               className="rounded-lg px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
-              style={{ backgroundColor: '#283B56' }}
+              style={{ backgroundColor: 'var(--color-primary)' }}
             >
               {passwordLoading ? 'Guardando...' : 'Guardar contraseña'}
             </button>
@@ -297,8 +297,8 @@ export default function SettingsPage() {
                 onClick={() => setTheme(value)}
                 className="flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition-colors"
                 style={{
-                  borderColor: mode === value ? '#283B56' : 'var(--border-primary)',
-                  backgroundColor: mode === value ? '#283B56' : 'transparent',
+                  borderColor: mode === value ? 'var(--color-primary)' : 'var(--border-primary)',
+                  backgroundColor: mode === value ? 'var(--color-primary)' : 'transparent',
                   color: mode === value ? '#FFFFFF' : 'var(--text-primary)',
                 }}
               >

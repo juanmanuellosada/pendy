@@ -50,7 +50,7 @@ export function CommentEditor({ taskId, comment, onDone }: CommentEditorProps) {
           onClick={handleSubmit}
           disabled={!content.trim() || content.trim() === '<p></p>' || isPending}
           className="rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:opacity-40"
-          style={{ backgroundColor: '#283B56' }}
+          style={{ backgroundColor: 'var(--color-primary)' }}
         >
           {isEditing ? 'Guardar' : 'Comentar'}
         </button>

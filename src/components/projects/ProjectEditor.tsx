@@ -145,7 +145,7 @@ export function ProjectEditor({ open, onClose, project, parentId }: ProjectEdito
             onClick={handleSubmit}
             disabled={!name.trim() || createProject.isPending || updateProject.isPending}
             className="rounded-lg px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
-            style={{ backgroundColor: '#283B56' }}
+            style={{ backgroundColor: 'var(--color-primary)' }}
           >
             {project ? 'Guardar' : parentId ? 'Crear subproyecto' : 'Crear proyecto'}
           </button>

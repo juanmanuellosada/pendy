@@ -70,8 +70,10 @@ export const TaskItem = memo(function TaskItem({
 
   const dueDateOverdue = task.due_date && isOverdue(task.due_date) && !task.is_completed
 
-  const rowBg = isSelected ? 'rgba(59,130,246,0.08)' : 'transparent'
-  const rowBgHover = isSelected ? 'rgba(59,130,246,0.14)' : 'var(--bg-hover)'
+  const rowBg = isSelected ? 'color-mix(in srgb, var(--color-link) 8%, transparent)' : 'transparent'
+  const rowBgHover = isSelected
+    ? 'color-mix(in srgb, var(--color-link) 14%, transparent)'
+    : 'var(--bg-hover)'
 
   const inner = (
     <div
@@ -94,8 +96,8 @@ export const TaskItem = memo(function TaskItem({
           <div
             className="h-4 w-4 rounded-full border-2 flex items-center justify-center transition-colors"
             style={{
-              borderColor: isSelected ? '#3B82F6' : 'var(--text-muted)',
-              backgroundColor: isSelected ? '#3B82F6' : 'transparent',
+              borderColor: isSelected ? 'var(--color-link)' : 'var(--text-muted)',
+              backgroundColor: isSelected ? 'var(--color-link)' : 'transparent',
             }}
           >
             {isSelected && <Check size={9} color="white" />}
@@ -131,7 +133,7 @@ export const TaskItem = memo(function TaskItem({
           {task.due_date && (
             <span
               className="flex items-center gap-1 text-xs"
-              style={{ color: dueDateOverdue ? '#EC1E2A' : 'var(--text-secondary)' }}
+              style={{ color: dueDateOverdue ? 'var(--color-accent)' : 'var(--text-secondary)' }}
             >
               <Calendar size={12} />
               {formatRelativeDate(task.due_date)}
@@ -149,7 +151,16 @@ export const TaskItem = memo(function TaskItem({
           )}
 
           {task.priority < 4 && (
-            <span className="flex items-center gap-1 text-xs">
+            <span
+              className="flex items-center gap-1 text-xs"
+              aria-label={
+                task.priority === 1
+                  ? 'Prioridad urgente'
+                  : task.priority === 2
+                    ? 'Prioridad alta'
+                    : 'Prioridad media'
+              }
+            >
               <Flag size={12} style={{ color: PRIORITY_COLORS[task.priority] }} />
             </span>
           )}
@@ -179,11 +190,11 @@ export const TaskItem = memo(function TaskItem({
           <button
             ref={moreButtonRef}
             onClick={handleMoreClick}
-            className="rounded p-2 md:p-1 transition-colors hover:opacity-70"
+            className="rounded p-2 md:p-1 transition-colors hover:opacity-70 min-w-[32px] min-h-[32px] flex items-center justify-center"
             style={{ color: 'var(--text-muted)' }}
             aria-label="Más opciones"
           >
-            <MoreHorizontal size={14} />
+            <MoreHorizontal size={16} />
           </button>
         </div>
       )}

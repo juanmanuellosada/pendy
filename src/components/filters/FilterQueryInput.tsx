@@ -69,14 +69,14 @@ export function FilterQueryInput({ value, onChange, error }: FilterQueryInputPro
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: '13px',
             backgroundColor: 'var(--bg-secondary)',
-            borderColor: displayError ? '#EC1E2A' : 'var(--border-primary)',
+            borderColor: displayError ? 'var(--color-accent)' : 'var(--border-primary)',
             color: 'var(--text-primary)',
           }}
         />
         <div className="absolute right-2 top-2 flex items-center gap-1">
           {value.trim() &&
             (displayError ? (
-              <AlertCircle size={16} style={{ color: '#EC1E2A' }} />
+              <AlertCircle size={16} style={{ color: 'var(--color-accent)' }} />
             ) : (
               <CheckCircle2 size={16} style={{ color: '#22C55E' }} />
             ))}
@@ -93,7 +93,7 @@ export function FilterQueryInput({ value, onChange, error }: FilterQueryInputPro
       </div>
 
       {displayError && (
-        <p className="mt-1 text-xs" style={{ color: '#EC1E2A' }}>
+        <p className="mt-1 text-xs" style={{ color: 'var(--color-accent)' }}>
           {displayError}
         </p>
       )}
@@ -101,7 +101,7 @@ export function FilterQueryInput({ value, onChange, error }: FilterQueryInputPro
       {showHelp && (
         <div
           ref={helpRef}
-          className="absolute right-0 top-full z-50 mt-1 w-80 rounded-lg border p-3 shadow-lg"
+          className="absolute right-0 top-full z-50 mt-1 w-full max-w-80 rounded-lg border p-3 shadow-lg"
           style={{
             backgroundColor: 'var(--bg-primary)',
             borderColor: 'var(--border-primary)',

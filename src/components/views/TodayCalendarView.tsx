@@ -349,13 +349,16 @@ export function TodayCalendarView({
               <div className="flex">
                 <div
                   className="w-14 shrink-0 pr-2 pt-1 text-right text-xs font-medium"
-                  style={{ color: '#EC1E2A' }}
+                  style={{ color: 'var(--color-accent)' }}
                 >
                   Vencidas
                 </div>
                 <div
                   className="flex-1 rounded-lg border-l-2 py-1 pl-2"
-                  style={{ borderColor: '#EC1E2A44', backgroundColor: 'rgba(236,30,42,0.04)' }}
+                  style={{
+                    borderColor: 'color-mix(in srgb, var(--color-accent) 27%, transparent)',
+                    backgroundColor: 'color-mix(in srgb, var(--color-accent) 4%, transparent)',
+                  }}
                 >
                   {overdueTasks.map((task) => (
                     <TaskTooltip key={task.id} task={task}>
@@ -454,8 +457,8 @@ export function TodayCalendarView({
                       height:
                         Math.max(MIN_DURATION / 60, createDrag.currentHour - createDrag.startHour) *
                         hourHeight,
-                      backgroundColor: 'rgba(40,59,86,0.25)',
-                      border: '2px dashed #283B56',
+                      backgroundColor: 'color-mix(in srgb, var(--color-primary) 25%, transparent)',
+                      border: '2px dashed var(--color-primary)',
                     }}
                   />
                 )}
@@ -477,10 +480,16 @@ export function TodayCalendarView({
                 >
                   <div
                     className="h-2.5 w-2.5 -ml-[5px] rounded-full"
-                    style={{ backgroundColor: '#EC1E2A' }}
+                    style={{ backgroundColor: 'var(--color-accent)' }}
                   />
-                  <div className="flex-1 border-t-2" style={{ borderColor: '#EC1E2A' }} />
-                  <span className="ml-1 text-[10px] font-semibold" style={{ color: '#EC1E2A' }}>
+                  <div
+                    className="flex-1 border-t-2"
+                    style={{ borderColor: 'var(--color-accent)' }}
+                  />
+                  <span
+                    className="ml-1 text-[10px] font-semibold"
+                    style={{ color: 'var(--color-accent)' }}
+                  >
                     {nowLabel}
                   </span>
                 </div>
@@ -730,7 +739,7 @@ function CreationTypePicker({
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
         >
-          <Calendar size={14} style={{ color: '#3B82F6' }} />
+          <Calendar size={14} style={{ color: 'var(--color-link)' }} />
           Nuevo evento
         </button>
         <button
@@ -1352,7 +1361,7 @@ function OverdueTaskCard({ task }: { task: Task }) {
         'mb-1 flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-colors',
         task.is_completed && 'opacity-50',
       )}
-      style={{ backgroundColor: 'rgba(236,30,42,0.06)' }}
+      style={{ backgroundColor: 'color-mix(in srgb, var(--color-accent) 6%, transparent)' }}
       onClick={() => setSelectedTaskId(task.id)}
     >
       <TaskCheckbox
@@ -1372,7 +1381,10 @@ function OverdueTaskCard({ task }: { task: Task }) {
             {timeLabel}
           </span>
         )}
-        <span className="flex items-center gap-0.5 text-[10px]" style={{ color: '#EC1E2A' }}>
+        <span
+          className="flex items-center gap-0.5 text-[10px]"
+          style={{ color: 'var(--color-accent)' }}
+        >
           <AlertCircle size={10} />
           {dateLabel}
         </span>

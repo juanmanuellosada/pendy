@@ -152,7 +152,10 @@ export function ViewOptionsBar({
           open && 'ring-1',
         )}
         style={{
-          backgroundColor: activeCount > 0 ? '#283B5612' : 'transparent',
+          backgroundColor:
+            activeCount > 0
+              ? 'color-mix(in srgb, var(--color-primary) 7%, transparent)'
+              : 'transparent',
           color: activeCount > 0 ? 'var(--text-primary)' : 'var(--text-secondary)',
         }}
         onMouseEnter={(e) => {
@@ -160,7 +163,9 @@ export function ViewOptionsBar({
         }}
         onMouseLeave={(e) => {
           if (!open && activeCount === 0) e.currentTarget.style.backgroundColor = 'transparent'
-          else if (!open && activeCount > 0) e.currentTarget.style.backgroundColor = '#283B5612'
+          else if (!open && activeCount > 0)
+            e.currentTarget.style.backgroundColor =
+              'color-mix(in srgb, var(--color-primary) 7%, transparent)'
         }}
       >
         <SlidersHorizontal size={15} />
@@ -184,7 +189,10 @@ export function ViewOptionsBar({
                   Vista
                 </span>
                 {activeCount > 0 && (
-                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: '#EC1E2A' }} />
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: 'var(--color-accent)' }}
+                  />
                 )}
               </div>
               <div
@@ -233,7 +241,8 @@ export function ViewOptionsBar({
                         onClick={() => set('calendarMode', mode)}
                         className="rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
                         style={{
-                          backgroundColor: opts.calendarMode === mode ? '#283B56' : 'transparent',
+                          backgroundColor:
+                            opts.calendarMode === mode ? 'var(--color-primary)' : 'transparent',
                           color: opts.calendarMode === mode ? '#fff' : 'var(--text-secondary)',
                         }}
                       >
@@ -403,7 +412,7 @@ export function ViewOptionsBar({
               <button
                 onClick={resetAll}
                 className="w-full pt-1 text-center text-sm font-medium transition-opacity hover:opacity-80"
-                style={{ color: '#EC1E2A' }}
+                style={{ color: 'var(--color-accent)' }}
               >
                 Restablecer todo
               </button>
@@ -435,7 +444,7 @@ function ToggleSwitch({
       onClick={() => onChange(!checked)}
       className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-200"
       style={{
-        backgroundColor: checked ? '#EC1E2A' : 'var(--bg-tertiary, #6B728050)',
+        backgroundColor: checked ? 'var(--color-accent)' : 'var(--bg-tertiary, #6B728050)',
       }}
     >
       <span
@@ -541,7 +550,7 @@ function SelectRow({
               >
                 {opt.label}
                 {opt.active && (
-                  <span style={{ color: '#283B56' }}>
+                  <span style={{ color: 'var(--color-primary)' }}>
                     <svg
                       width="13"
                       height="13"

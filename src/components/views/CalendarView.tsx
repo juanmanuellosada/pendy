@@ -1207,7 +1207,7 @@ function TimelineGrid({
             <div
               className="mx-auto mt-0.5 flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold"
               style={{
-                backgroundColor: isToday(day) ? '#283B56' : 'transparent',
+                backgroundColor: isToday(day) ? 'var(--color-primary)' : 'transparent',
                 color: isToday(day) ? '#fff' : 'var(--text-primary)',
               }}
             >
@@ -1342,8 +1342,8 @@ function TimelineGrid({
                     height:
                       Math.max(MIN_DURATION / 60, createDrag.currentHour - createDrag.startHour) *
                       HOUR_HEIGHT,
-                    backgroundColor: 'rgba(40,59,86,0.25)',
-                    border: '2px dashed #283B56',
+                    backgroundColor: 'color-mix(in srgb, var(--color-primary) 25%, transparent)',
+                    border: '2px dashed var(--color-primary)',
                   }}
                 />
               )}
@@ -1502,9 +1502,12 @@ function TimelineGrid({
                 >
                   <div
                     className="h-2.5 w-2.5 -ml-[5px] rounded-full"
-                    style={{ backgroundColor: '#EC1E2A' }}
+                    style={{ backgroundColor: 'var(--color-accent)' }}
                   />
-                  <div className="flex-1 border-t-2" style={{ borderColor: '#EC1E2A' }} />
+                  <div
+                    className="flex-1 border-t-2"
+                    style={{ borderColor: 'var(--color-accent)' }}
+                  />
                 </div>
               )}
             </div>
@@ -1517,7 +1520,7 @@ function TimelineGrid({
             >
               <span
                 className="block text-right pr-2 text-[10px] font-semibold"
-                style={{ color: '#EC1E2A' }}
+                style={{ color: 'var(--color-accent)' }}
               >
                 {nowLabel}
               </span>
@@ -1669,7 +1672,7 @@ function CalendarCreationTypePicker({
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
         >
-          <Calendar size={14} style={{ color: '#3B82F6' }} />
+          <Calendar size={14} style={{ color: 'var(--color-link)' }} />
           Nuevo evento
         </button>
         <button
@@ -2503,7 +2506,7 @@ function MonthDayCell({
         <div
           className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold"
           style={{
-            backgroundColor: isTodayDate ? '#283B56' : 'transparent',
+            backgroundColor: isTodayDate ? 'var(--color-primary)' : 'transparent',
             color: isTodayDate
               ? '#fff'
               : inCurrentMonth

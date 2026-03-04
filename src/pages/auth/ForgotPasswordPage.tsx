@@ -140,7 +140,7 @@ export default function ForgotPasswordPage() {
         <div className="flex items-center gap-2.5">
           <div
             className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: '#283B56' }}
+            style={{ backgroundColor: 'var(--color-primary)' }}
           >
             <div className="w-3 h-3 rounded-sm border border-white/60" />
           </div>
@@ -231,7 +231,7 @@ export default function ForgotPasswordPage() {
               disabled={isSubmitting}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.02] disabled:opacity-50 disabled:scale-100"
               style={{
-                backgroundColor: '#EC1E2A',
+                backgroundColor: 'var(--color-accent)',
                 fontFamily: '"DM Sans", system-ui',
                 boxShadow: '0 0 32px rgba(236,30,42,0.25)',
               }}

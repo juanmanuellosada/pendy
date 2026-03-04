@@ -12,7 +12,7 @@ export default function NotFoundPage() {
         alt="Pendy"
         className="h-20 w-20 rounded-xl"
       />
-      <h1 className="mt-6 text-6xl font-bold" style={{ color: '#283B56' }}>
+      <h1 className="mt-6 text-6xl font-bold" style={{ color: 'var(--color-primary)' }}>
         404
       </h1>
       <p className="mt-2 text-lg" style={{ color: 'var(--text-secondary)' }}>
@@ -21,7 +21,7 @@ export default function NotFoundPage() {
       <Link
         to="/"
         className="mt-6 inline-flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:opacity-90"
-        style={{ backgroundColor: '#283B56' }}
+        style={{ backgroundColor: 'var(--color-primary)' }}
       >
         <Home size={18} />
         Ir al Inicio

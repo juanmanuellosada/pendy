@@ -836,7 +836,7 @@ function InlineSectionAdder({
           type="submit"
           disabled={!name.trim()}
           className="rounded-lg px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-40"
-          style={{ backgroundColor: '#EC1E2A' }}
+          style={{ backgroundColor: 'var(--color-accent)' }}
         >
           Añadir sección
         </button>

@@ -149,7 +149,7 @@ function MiniDatePicker({ onSelect }: { onSelect: (date: string | null) => void 
               {isToday && (
                 <span
                   className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full"
-                  style={{ backgroundColor: '#EC1E2A' }}
+                  style={{ backgroundColor: 'var(--color-accent)' }}
                 />
               )}
             </button>
@@ -237,13 +237,16 @@ export function BulkActionBar({
         <div
           className="h-4 w-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors"
           style={{
-            borderColor: allSelected ? '#283B56' : 'var(--text-muted)',
-            backgroundColor: allSelected ? '#283B56' : 'transparent',
+            borderColor: allSelected ? 'var(--color-primary)' : 'var(--text-muted)',
+            backgroundColor: allSelected ? 'var(--color-primary)' : 'transparent',
           }}
         >
           {allSelected && <Check size={10} color="white" />}
           {!allSelected && selectedCount > 0 && selectedCount < totalCount && (
-            <div className="h-1.5 w-1.5 rounded-sm" style={{ backgroundColor: '#283B56' }} />
+            <div
+              className="h-1.5 w-1.5 rounded-sm"
+              style={{ backgroundColor: 'var(--color-primary)' }}
+            />
           )}
         </div>
         <span
@@ -266,7 +269,8 @@ export function BulkActionBar({
                 onClick={() => toggleMenu('project')}
                 className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors"
                 style={{
-                  color: activeMenu === 'project' ? '#283B56' : 'var(--text-secondary)',
+                  color:
+                    activeMenu === 'project' ? 'var(--color-primary)' : 'var(--text-secondary)',
                   backgroundColor: activeMenu === 'project' ? 'var(--bg-secondary)' : 'transparent',
                 }}
                 onMouseEnter={(e) => {
@@ -351,7 +355,8 @@ export function BulkActionBar({
                 onClick={() => toggleMenu('priority')}
                 className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors"
                 style={{
-                  color: activeMenu === 'priority' ? '#283B56' : 'var(--text-secondary)',
+                  color:
+                    activeMenu === 'priority' ? 'var(--color-primary)' : 'var(--text-secondary)',
                   backgroundColor:
                     activeMenu === 'priority' ? 'var(--bg-secondary)' : 'transparent',
                 }}
@@ -401,7 +406,7 @@ export function BulkActionBar({
                 onClick={() => toggleMenu('date')}
                 className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors"
                 style={{
-                  color: activeMenu === 'date' ? '#283B56' : 'var(--text-secondary)',
+                  color: activeMenu === 'date' ? 'var(--color-primary)' : 'var(--text-secondary)',
                   backgroundColor: activeMenu === 'date' ? 'var(--bg-secondary)' : 'transparent',
                 }}
                 onMouseEnter={(e) => {
@@ -442,8 +447,11 @@ export function BulkActionBar({
       <button
         onClick={onDelete}
         className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors"
-        style={{ color: '#EC1E2A' }}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(236,30,42,0.08)')}
+        style={{ color: 'var(--color-accent)' }}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.backgroundColor =
+            'color-mix(in srgb, var(--color-accent) 8%, transparent)')
+        }
         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
       >
         <Trash2 size={14} />

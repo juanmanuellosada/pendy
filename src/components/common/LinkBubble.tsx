@@ -131,7 +131,7 @@ export function LinkBubble({ editor, onEdit }: LinkBubbleProps) {
         {/* URL display */}
         <span
           className="max-w-[200px] truncate text-xs"
-          style={{ color: '#3B82F6' }}
+          style={{ color: 'var(--color-link)' }}
           title={bubble.url}
         >
           {bubble.url}
@@ -174,7 +174,7 @@ export function LinkBubble({ editor, onEdit }: LinkBubbleProps) {
           style={{ color: 'var(--text-muted)' }}
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = 'var(--bg-hover)'
-            e.currentTarget.style.color = '#EC1E2A'
+            e.currentTarget.style.color = 'var(--color-accent)'
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.backgroundColor = 'transparent'

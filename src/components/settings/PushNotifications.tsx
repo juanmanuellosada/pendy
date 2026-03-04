@@ -20,7 +20,7 @@ export function PushNotifications() {
               : 'Activa las notificaciones para recibir recordatorios de tus tareas.'}
           </p>
           {permission === 'denied' && !enabled && (
-            <p className="mt-1 text-xs" style={{ color: '#EC1E2A' }}>
+            <p className="mt-1 text-xs" style={{ color: 'var(--color-accent)' }}>
               Los permisos están bloqueados. Habilítalos desde la configuración del navegador.
             </p>
           )}
@@ -31,7 +31,7 @@ export function PushNotifications() {
           disabled={permission === 'denied' && !enabled}
           className="ml-4 flex flex-shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-40"
           style={{
-            backgroundColor: enabled ? 'var(--bg-secondary)' : '#283B56',
+            backgroundColor: enabled ? 'var(--bg-secondary)' : 'var(--color-primary)',
             color: enabled ? 'var(--text-primary)' : '#FFFFFF',
             border: enabled ? '1px solid var(--border-primary)' : 'none',
           }}

@@ -82,7 +82,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <button
                 onClick={this.handleReload}
                 className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors"
-                style={{ backgroundColor: '#283B56' }}
+                style={{ backgroundColor: 'var(--color-primary)' }}
               >
                 <RefreshCw className="h-4 w-4" />
                 Recargar página

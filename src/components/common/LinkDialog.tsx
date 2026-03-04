@@ -108,7 +108,7 @@ export function LinkDialog({ open, initialUrl, initialText, onSubmit, onClose }:
                 type="button"
                 onClick={() => onSubmit('', undefined)}
                 className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
-                style={{ color: '#EC1E2A' }}
+                style={{ color: 'var(--color-accent)' }}
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
@@ -128,7 +128,7 @@ export function LinkDialog({ open, initialUrl, initialText, onSubmit, onClose }:
             <button
               type="submit"
               className="rounded-lg px-4 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90"
-              style={{ backgroundColor: '#283B56' }}
+              style={{ backgroundColor: 'var(--color-primary)' }}
             >
               Guardar
             </button>

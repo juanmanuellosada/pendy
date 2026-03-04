@@ -648,9 +648,18 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
           <button
             onClick={handleDelete}
             className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
-            style={{ color: '#EC1E2A', backgroundColor: '#EC1E2A10' }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#EC1E2A20')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#EC1E2A10')}
+            style={{
+              color: 'var(--color-accent)',
+              backgroundColor: 'color-mix(in srgb, var(--color-accent) 6%, transparent)',
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor =
+                'color-mix(in srgb, var(--color-accent) 13%, transparent)')
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor =
+                'color-mix(in srgb, var(--color-accent) 6%, transparent)')
+            }
           >
             <Trash2 size={14} />
             Eliminar

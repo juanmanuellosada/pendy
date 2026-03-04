@@ -161,8 +161,8 @@ export default function FiltersPage() {
                   <div
                     className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors"
                     style={{
-                      borderColor: isSelected ? '#3B82F6' : 'var(--border-primary)',
-                      backgroundColor: isSelected ? '#3B82F6' : 'transparent',
+                      borderColor: isSelected ? 'var(--color-link)' : 'var(--border-primary)',
+                      backgroundColor: isSelected ? 'var(--color-link)' : 'transparent',
                     }}
                   >
                     {isSelected && <Check size={11} color="white" strokeWidth={3} />}
@@ -225,7 +225,7 @@ export default function FiltersPage() {
                         }}
                         className="rounded p-1 transition-colors"
                         style={{ color: 'var(--text-muted)' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = '#283B56')}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-primary)')}
                         onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
                         title="Editar filtro"
                       >
@@ -237,7 +237,7 @@ export default function FiltersPage() {
                           handleDelete(filter.id, filter.name)
                         }}
                         className="rounded p-1"
-                        style={{ color: '#EC1E2A' }}
+                        style={{ color: 'var(--color-accent)' }}
                         title="Eliminar filtro"
                       >
                         <Trash2 size={14} />

@@ -167,7 +167,7 @@ export function TodayView() {
             <button
               onClick={() => setEditorOpen(true)}
               className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors hover:opacity-80"
-              style={{ backgroundColor: '#283B56', color: '#FFFFFF' }}
+              style={{ backgroundColor: 'var(--color-primary)', color: '#FFFFFF' }}
             >
               <Plus size={14} />
               Agregar tarea
