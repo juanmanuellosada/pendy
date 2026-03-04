@@ -9,6 +9,7 @@ import { useAppStore } from '@/stores/appStore'
 import { useUIStore } from '@/stores/uiStore'
 import { useCalendarIntegrations } from '@/hooks/useCalendarIntegrations'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
+import { useRealtimeSync } from '@/hooks/useRealtimeSync'
 import { useAppBadge } from '@/hooks/useAppBadge'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { cn } from '@/lib/utils'
@@ -29,6 +30,7 @@ export function AppLayout() {
   const { data: integrations = [] } = useCalendarIntegrations()
   usePushNotifications() // registers SW and syncs subscription on login
   useAppBadge() // syncs PWA badge with today's pending count
+  useRealtimeSync() // live sync across tabs/devices via Supabase Realtime
   const isCalendarConnected = integrations.length > 0
   const location = useLocation()
   const navigate = useNavigate()

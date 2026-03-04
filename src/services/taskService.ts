@@ -75,24 +75,11 @@ export const taskService = {
     return data ?? []
   },
 
-  async getInboxTasks(userId: string, inboxProjectId?: string): Promise<Task[]> {
-    let projectId = inboxProjectId
-    if (!projectId) {
-      const { data: inboxProject } = await supabase
-        .from('projects')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('is_inbox', true)
-        .single()
-      projectId = inboxProject?.id
-    }
-
-    if (!projectId) return []
-
+  async getInboxTasks(inboxProjectId: string): Promise<Task[]> {
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
-      .eq('project_id', projectId)
+      .eq('project_id', inboxProjectId)
       .is('parent_id', null)
       .order('sort_order', { ascending: true })
 

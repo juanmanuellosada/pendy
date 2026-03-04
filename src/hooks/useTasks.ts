@@ -33,8 +33,8 @@ export function useInboxTasks() {
   const { data: inboxProject } = useInboxProject()
   return useQuery({
     queryKey: taskKeys.inbox(user?.id ?? ''),
-    queryFn: () => taskService.getInboxTasks(user!.id, inboxProject?.id),
-    enabled: !!user,
+    queryFn: () => taskService.getInboxTasks(inboxProject!.id),
+    enabled: !!user && !!inboxProject,
   })
 }
 
@@ -147,8 +147,12 @@ export function useUpdateTask() {
         queryClient.setQueryData(key, data)
       })
     },
-    onSettled: (_data, _err, { id }) => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.all })
+    onSettled: (_data, _err, { id }, context) => {
+      // Only invalidate queries that actually contained this task
+      context?.snapshots.forEach(([key]) => {
+        queryClient.invalidateQueries({ queryKey: key })
+      })
+      queryClient.invalidateQueries({ queryKey: taskKeys.detail(id) })
       queryClient.invalidateQueries({ queryKey: labelKeys.taskLabels(id) })
       queryClient.invalidateQueries({ queryKey: labelKeys.allTaskLabels(user?.id ?? '') })
     },
@@ -191,8 +195,11 @@ export function useCompleteTask() {
         queryClient.setQueryData(key, data)
       })
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.all })
+    onSettled: (_data, _err, _vars, context) => {
+      // Only invalidate queries that actually contained this task
+      context?.snapshots.forEach(([key]) => {
+        queryClient.invalidateQueries({ queryKey: key })
+      })
     },
   })
 }
