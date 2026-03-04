@@ -75,20 +75,24 @@ export const taskService = {
     return data ?? []
   },
 
-  async getInboxTasks(userId: string): Promise<Task[]> {
-    const { data: inboxProject } = await supabase
-      .from('projects')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('is_inbox', true)
-      .single()
+  async getInboxTasks(userId: string, inboxProjectId?: string): Promise<Task[]> {
+    let projectId = inboxProjectId
+    if (!projectId) {
+      const { data: inboxProject } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('is_inbox', true)
+        .single()
+      projectId = inboxProject?.id
+    }
 
-    if (!inboxProject) return []
+    if (!projectId) return []
 
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
-      .eq('project_id', inboxProject.id)
+      .eq('project_id', projectId)
       .is('parent_id', null)
       .order('sort_order', { ascending: true })
 
@@ -305,26 +309,17 @@ export const taskService = {
   },
 
   async getTasksByLabel(userId: string, labelId: string): Promise<Task[]> {
-    const { data: rows, error: rowsError } = await supabase
-      .from('task_labels')
-      .select('task_id')
-      .eq('label_id', labelId)
-
-    if (rowsError) throw rowsError
-    const taskIds = (rows ?? []).map((r) => r.task_id as string)
-    if (taskIds.length === 0) return []
-
     const { data, error } = await supabase
       .from('tasks')
-      .select('*')
-      .in('id', taskIds)
+      .select('*, task_labels!inner(label_id)')
+      .eq('task_labels.label_id', labelId)
       .eq('user_id', userId)
       .is('parent_id', null)
       .order('due_date', { ascending: true, nullsFirst: false })
       .order('sort_order', { ascending: true })
 
     if (error) throw error
-    return data ?? []
+    return (data ?? []).map(({ task_labels: _, ...task }) => task) as Task[]
   },
 
   async getTaskCountsByProject(userId: string): Promise<Record<string, number>> {
@@ -344,12 +339,10 @@ export const taskService = {
   },
 
   async reorderTasks(updates: { id: string; sort_order: number }[]): Promise<void> {
-    const results = await Promise.all(
-      updates.map(({ id, sort_order }) =>
-        supabase.from('tasks').update({ sort_order }).eq('id', id),
-      ),
-    )
-    const error = results.find((r) => r.error)?.error
+    const { error } = await supabase.rpc('batch_reorder_tasks', {
+      task_ids: updates.map((u) => u.id),
+      sort_orders: updates.map((u) => u.sort_order),
+    })
     if (error) throw error
   },
 

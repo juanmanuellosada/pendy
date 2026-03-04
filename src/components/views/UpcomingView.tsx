@@ -35,7 +35,7 @@ export function UpcomingView() {
   const opts = getViewOptions(VIEW_ID)
   const upcomingDays = opts.upcomingDays ?? 30
 
-  const { data: tasks = [], isLoading } = useUpcomingTasks(upcomingDays)
+  const { data: tasks = [], isLoading, isError } = useUpcomingTasks(upcomingDays)
   const { data: labelsMap } = useAllTaskLabelsMap()
   const { data: calendarEvents = [] } = useUpcomingCalendarEvents(upcomingDays)
   const { data: habits = [] } = useHabits()
@@ -152,6 +152,23 @@ export function UpcomingView() {
             style={{ backgroundColor: 'var(--bg-secondary)' }}
           />
         ))}
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-3">
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          Error al cargar las tareas. Intentá de nuevo.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="text-sm font-medium px-4 py-2 rounded-lg"
+          style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+        >
+          Recargar
+        </button>
       </div>
     )
   }

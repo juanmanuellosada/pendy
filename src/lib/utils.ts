@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { format, isToday, isTomorrow, isYesterday, isBefore, startOfDay } from 'date-fns'
 import { es } from 'date-fns/locale'
+import DOMPurify from 'dompurify'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -72,8 +73,9 @@ export function stripLabelTokensFromText(text: string): string {
 
 export function stripLabelTokensFromHtml(html: string): string {
   if (!html) return ''
+  const sanitized = DOMPurify.sanitize(html)
   const div = document.createElement('div')
-  div.innerHTML = html
+  div.innerHTML = sanitized
   const walker = document.createTreeWalker(div, NodeFilter.SHOW_TEXT)
   let node: Text | null
   while ((node = walker.nextNode() as Text | null)) {

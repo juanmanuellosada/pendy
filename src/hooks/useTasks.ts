@@ -3,6 +3,7 @@ import { taskService } from '@/services/taskService'
 import { labelKeys } from './useLabels'
 import type { Task } from '@/lib/types'
 import { useAuth } from './useAuth'
+import { useInboxProject } from './useProjects'
 
 export const taskKeys = {
   all: ['tasks'] as const,
@@ -18,9 +19,10 @@ export const taskKeys = {
 
 export function useInboxTasks() {
   const { user } = useAuth()
+  const { data: inboxProject } = useInboxProject()
   return useQuery({
     queryKey: taskKeys.inbox(user?.id ?? ''),
-    queryFn: () => taskService.getInboxTasks(user!.id),
+    queryFn: () => taskService.getInboxTasks(user!.id, inboxProject?.id),
     enabled: !!user,
   })
 }
@@ -113,22 +115,24 @@ export function useUpdateTask() {
       updates: Partial<Task> & { label_ids?: string[] }
     }) => taskService.updateTask(id, updates),
     onMutate: async ({ id, updates }) => {
-      await queryClient.cancelQueries({ queryKey: taskKeys.all })
       const queries = queryClient.getQueriesData<Task[]>({ queryKey: taskKeys.all })
+      const snapshots: [readonly unknown[], Task[]][] = []
 
-      queries.forEach(([key, data]) => {
-        if (Array.isArray(data)) {
+      for (const [key, data] of queries) {
+        if (Array.isArray(data) && data.some((t) => t.id === id)) {
+          await queryClient.cancelQueries({ queryKey: key })
+          snapshots.push([key, data])
           queryClient.setQueryData(
             key,
             data.map((t) => (t.id === id ? { ...t, ...updates } : t)),
           )
         }
-      })
+      }
 
-      return { queries }
+      return { snapshots }
     },
     onError: (_err, _vars, context) => {
-      context?.queries.forEach(([key, data]) => {
+      context?.snapshots.forEach(([key, data]) => {
         queryClient.setQueryData(key, data)
       })
     },
@@ -147,11 +151,13 @@ export function useCompleteTask() {
     mutationFn: ({ id, completed, task }: { id: string; completed: boolean; task?: Task }) =>
       taskService.completeTask(id, completed, task),
     onMutate: async ({ id, completed }) => {
-      await queryClient.cancelQueries({ queryKey: taskKeys.all })
       const queries = queryClient.getQueriesData<Task[]>({ queryKey: taskKeys.all })
+      const snapshots: [readonly unknown[], Task[]][] = []
 
-      queries.forEach(([key, data]) => {
-        if (Array.isArray(data)) {
+      for (const [key, data] of queries) {
+        if (Array.isArray(data) && data.some((t) => t.id === id)) {
+          await queryClient.cancelQueries({ queryKey: key })
+          snapshots.push([key, data])
           queryClient.setQueryData(
             key,
             data.map((t) =>
@@ -165,12 +171,12 @@ export function useCompleteTask() {
             ),
           )
         }
-      })
+      }
 
-      return { queries }
+      return { snapshots }
     },
     onError: (_err, _vars, context) => {
-      context?.queries.forEach(([key, data]) => {
+      context?.snapshots.forEach(([key, data]) => {
         queryClient.setQueryData(key, data)
       })
     },

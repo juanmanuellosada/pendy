@@ -83,11 +83,11 @@ export const projectService = {
   },
 
   async reorderProjects(items: { id: string; sort_order: number }[]): Promise<void> {
-    await Promise.all(
-      items.map(({ id, sort_order }) =>
-        supabase.from('projects').update({ sort_order }).eq('id', id),
-      ),
-    )
+    const { error } = await supabase.rpc('batch_reorder_projects', {
+      project_ids: items.map((u) => u.id),
+      sort_orders: items.map((u) => u.sort_order),
+    })
+    if (error) throw error
   },
 
   async toggleFavorite(id: string, isFavorite: boolean): Promise<void> {

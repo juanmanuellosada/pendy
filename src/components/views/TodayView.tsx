@@ -29,7 +29,7 @@ import type { Task } from '@/lib/types'
 const VIEW_ID = 'today'
 
 export function TodayView() {
-  const { data: tasks = [], isLoading } = useTodayTasks()
+  const { data: tasks = [], isLoading, isError } = useTodayTasks()
   const { data: labelsMap } = useAllTaskLabelsMap()
   const { data: calendarEvents = [] } = useTodayCalendarEvents()
   const { data: todayHabits = [] } = useTodayHabits()
@@ -126,6 +126,23 @@ export function TodayView() {
             style={{ backgroundColor: 'var(--bg-secondary)' }}
           />
         ))}
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-3">
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          Error al cargar las tareas. Intentá de nuevo.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="text-sm font-medium px-4 py-2 rounded-lg"
+          style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+        >
+          Recargar
+        </button>
       </div>
     )
   }
