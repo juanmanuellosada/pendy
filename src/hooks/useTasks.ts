@@ -7,6 +7,7 @@ import { useInboxProject } from './useProjects'
 
 export const taskKeys = {
   all: ['tasks'] as const,
+  allUser: (userId: string) => [...taskKeys.all, 'allUser', userId] as const,
   inbox: (userId: string) => [...taskKeys.all, 'inbox', userId] as const,
   today: (userId: string) => [...taskKeys.all, 'today', userId] as const,
   upcoming: (userId: string, days?: number) => [...taskKeys.all, 'upcoming', userId, days] as const,
@@ -15,6 +16,16 @@ export const taskKeys = {
   project: (projectId: string) => [...taskKeys.all, 'project', projectId] as const,
   detail: (id: string) => [...taskKeys.all, 'detail', id] as const,
   subtasks: (parentId: string) => [...taskKeys.all, 'subtasks', parentId] as const,
+}
+
+export function useAllUserTasks() {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: taskKeys.allUser(user?.id ?? ''),
+    queryFn: () => taskService.getAllUserTasks(user!.id),
+    enabled: !!user,
+    staleTime: 30_000,
+  })
 }
 
 export function useInboxTasks() {

@@ -346,6 +346,19 @@ export const taskService = {
     if (error) throw error
   },
 
+  async getAllUserTasks(userId: string): Promise<Task[]> {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('user_id', userId)
+      .is('parent_id', null)
+      .order('due_date', { ascending: true, nullsFirst: false })
+      .order('priority', { ascending: true })
+
+    if (error) throw error
+    return data ?? []
+  },
+
   async moveTask(id: string, projectId: string, sectionId: string | null): Promise<Task> {
     const { data, error } = await supabase
       .from('tasks')

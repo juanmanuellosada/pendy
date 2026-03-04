@@ -40,7 +40,9 @@ import { useCalendarIntegrations } from '@/hooks/useCalendarIntegrations'
 import { useTodayTasks, useTaskCountsByProject } from '@/hooks/useTasks'
 import { useTodayHabits, useHabitCompletions } from '@/hooks/useHabits'
 import { useLabels } from '@/hooks/useLabels'
+import { useFilters } from '@/hooks/useFilters'
 import { cn } from '@/lib/utils'
+import { Filter as FilterIcon } from 'lucide-react'
 import type { Project } from '@/lib/types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -250,6 +252,7 @@ export function Sidebar() {
   const isCalendarConnected = integrations.length > 0
   const [projectsExpanded, setProjectsExpanded] = useState(true)
   const [labelsExpanded, setLabelsExpanded] = useState(true)
+  const [filtersExpanded, setFiltersExpanded] = useState(true)
 
   const { data: todayTasks = [] } = useTodayTasks()
   const { data: projectCounts = {} } = useTaskCountsByProject()
@@ -267,7 +270,9 @@ export function Sidebar() {
   const todayCount = todayTasks.filter((t) => !t.is_completed).length + pendingHabitsCount
 
   const { data: labels = [] } = useLabels()
+  const { data: filters = [] } = useFilters()
   const favoriteLabels = labels.filter((l) => l.is_favorite)
+  const favoriteFilters = filters.filter((f) => f.is_favorite)
 
   const regularProjects = projects.filter((p) => !p.is_inbox && !p.is_archived)
   const favoriteProjects = projects.filter((p) => p.is_favorite && !p.is_archived)
@@ -596,7 +601,9 @@ export function Sidebar() {
       {/* Scrollable: Favoritos + Proyectos */}
       <div className="mt-2 flex-1 overflow-y-auto px-2 pb-2">
         {/* Favoritos: proyectos + etiquetas */}
-        {(favoriteProjects.length > 0 || favoriteLabels.length > 0) && (
+        {(favoriteProjects.length > 0 ||
+          favoriteLabels.length > 0 ||
+          favoriteFilters.length > 0) && (
           <div className="mt-4">
             <div className="flex items-center px-3 py-1">
               <span
@@ -651,6 +658,28 @@ export function Sidebar() {
                   style={{ backgroundColor: label.color }}
                 />
                 <span className="truncate">{label.name}</span>
+              </button>
+            ))}
+
+            {/* Filtros favoritos */}
+            {favoriteFilters.map((filter) => (
+              <button
+                key={filter.id}
+                onClick={() => handleNav(`/app/filter/${filter.id}`)}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+                  location.pathname === `/app/filter/${filter.id}` ? 'font-medium' : '',
+                )}
+                style={{
+                  backgroundColor:
+                    location.pathname === `/app/filter/${filter.id}`
+                      ? 'var(--bg-active)'
+                      : 'transparent',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                <FilterIcon size={14} style={{ color: filter.color }} />
+                <span className="truncate">{filter.name}</span>
               </button>
             ))}
           </div>
@@ -804,6 +833,69 @@ export function Sidebar() {
                       style={{ backgroundColor: label.color }}
                     />
                     <span className="flex-1 truncate text-left">{label.name}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Filtros */}
+        <div className="mt-4">
+          <div className="flex items-center justify-between px-3 py-1">
+            <button
+              onClick={() => setFiltersExpanded(!filtersExpanded)}
+              className="flex items-center gap-1"
+            >
+              {filtersExpanded ? (
+                <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />
+              ) : (
+                <ChevronRight size={14} style={{ color: 'var(--text-muted)' }} />
+              )}
+              <span
+                className="text-xs font-semibold uppercase tracking-wider"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                Filtros
+              </span>
+            </button>
+            <button
+              onClick={() => handleNav('/app/filters')}
+              className="rounded p-1 transition-colors hover:opacity-70"
+              style={{ color: 'var(--text-muted)' }}
+              title="Gestionar filtros"
+            >
+              <Settings size={14} />
+            </button>
+          </div>
+
+          {filtersExpanded && (
+            <div className="mt-1 flex flex-col gap-0.5">
+              {filters.length === 0 ? (
+                <p className="px-3 py-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                  Sin filtros
+                </p>
+              ) : (
+                filters.map((filter) => (
+                  <button
+                    key={filter.id}
+                    onClick={() => handleNav(`/app/filter/${filter.id}`)}
+                    className={cn(
+                      'flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition-colors',
+                      location.pathname === `/app/filter/${filter.id}`
+                        ? 'font-medium'
+                        : 'hover:opacity-80',
+                    )}
+                    style={{
+                      backgroundColor:
+                        location.pathname === `/app/filter/${filter.id}`
+                          ? 'var(--bg-active)'
+                          : 'transparent',
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    <FilterIcon size={13} style={{ color: filter.color, flexShrink: 0 }} />
+                    <span className="flex-1 truncate text-left">{filter.name}</span>
                   </button>
                 ))
               )}

@@ -25,6 +25,8 @@ const TaskPage = lazy(() => import('@/pages/app/TaskPage'))
 const LabelsPage = lazy(() => import('@/pages/app/LabelsPage'))
 const LabelPage = lazy(() => import('@/pages/app/LabelPage'))
 const HabitsPage = lazy(() => import('@/pages/app/HabitsPage'))
+const FiltersPage = lazy(() => import('@/pages/app/FiltersPage'))
+const FilterPage = lazy(() => import('@/pages/app/FilterPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 function LoadingScreen() {
@@ -127,6 +129,8 @@ export default function App() {
             <Route path="labels" element={<LabelsPage />} />
             <Route path="label/:labelId" element={<LabelPage />} />
             <Route path="habits" element={<HabitsPage />} />
+            <Route path="filters" element={<FiltersPage />} />
+            <Route path="filter/:filterId" element={<FilterPage />} />
           </Route>
 
           {/* 404 */}
