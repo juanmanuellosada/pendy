@@ -1,4 +1,4 @@
-import { PartyPopper, CalendarDays, ListChecks, Repeat } from 'lucide-react'
+import { PartyPopper, CalendarDays, ListChecks, Repeat, Plus } from 'lucide-react'
 import { useTodayTasks, useDeleteTask, useUpdateTask } from '@/hooks/useTasks'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { useTodayCalendarEvents } from '@/hooks/useCalendarEvents'
@@ -21,6 +21,7 @@ import { useState, useMemo } from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { isOverdue } from '@/lib/utils'
+import { useProjects } from '@/hooks/useProjects'
 import { useUIStore } from '@/stores/uiStore'
 import { useAppStore } from '@/stores/appStore'
 import { applyViewFilters, applyViewSort, groupTasks } from '@/lib/viewUtils'
@@ -42,6 +43,7 @@ export function TodayView() {
   const { getViewOptions, showConfirmDialog } = useUIStore()
   const { setSelectedHabit } = useAppStore()
   const opts = getViewOptions(VIEW_ID)
+  const { data: projects = [] } = useProjects()
   const deleteTask = useDeleteTask()
   const updateTask = useUpdateTask()
 
@@ -63,8 +65,8 @@ export function TodayView() {
   }, [tasks, opts, labelsMap])
 
   const groups = useMemo(
-    () => groupTasks(visibleTasks, opts.groupBy, labelsMap),
-    [visibleTasks, opts.groupBy, labelsMap],
+    () => groupTasks(visibleTasks, opts.groupBy, labelsMap, projects),
+    [visibleTasks, opts.groupBy, labelsMap, projects],
   )
 
   const overdueTasks = visibleTasks.filter(
@@ -161,13 +163,21 @@ export function TodayView() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {opts.viewStyle !== 'calendar' && !isSelectMode && (
+            <button
+              onClick={() => setEditorOpen(true)}
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors hover:opacity-80"
+              style={{ backgroundColor: '#283B56', color: '#FFFFFF' }}
+            >
+              <Plus size={14} />
+              Agregar tarea
+            </button>
+          )}
           {opts.viewStyle !== 'calendar' && !isSelectMode && visibleTasks.length > 0 && (
             <button
               onClick={enter}
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors hover-bg-hover"
               style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
             >
               <ListChecks size={14} />
               Seleccionar

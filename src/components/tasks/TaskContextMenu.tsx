@@ -313,9 +313,7 @@ export function TaskContextMenu({ task, x, y, onClose }: TaskContextMenuProps) {
         >
           <button
             onClick={() => setActivePanel(null)}
-            className="rounded p-1 transition-colors"
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            className="rounded p-1 transition-colors hover-bg-hover"
           >
             <ChevronLeft size={14} style={{ color: 'var(--text-muted)' }} />
           </button>
@@ -407,12 +405,8 @@ export function TaskContextMenu({ task, x, y, onClose }: TaskContextMenuProps) {
               <button
                 onClick={() => setActivePanel('date')}
                 title="Más opciones de fecha"
-                className="flex flex-1 items-center justify-center rounded-lg p-2 transition-colors"
+                className="flex flex-1 items-center justify-center rounded-lg p-2 transition-colors hover-bg-hover"
                 style={{ backgroundColor: 'var(--bg-secondary)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')
-                }
               >
                 <MoreHorizontal size={15} style={{ color: 'var(--text-muted)' }} />
               </button>

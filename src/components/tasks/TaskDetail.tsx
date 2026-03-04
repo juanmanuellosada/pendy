@@ -1023,9 +1023,7 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
           <div className="relative">
             <button
               onClick={() => setShowProjectMenu(!showProjectMenu)}
-              className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm transition-colors"
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm transition-colors hover-bg-hover"
             >
               <Folder size={15} style={{ color: selectedProject?.color ?? 'var(--text-muted)' }} />
               <span style={{ color: 'var(--text-primary)' }}>
@@ -1067,9 +1065,7 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
           <div className="relative">
             <button
               onClick={() => setShowLabelMenu(!showLabelMenu)}
-              className="flex w-full items-start gap-3 rounded-lg px-2 py-2 text-sm transition-colors"
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              className="flex w-full items-start gap-3 rounded-lg px-2 py-2 text-sm transition-colors hover-bg-hover"
             >
               <Tag size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--text-muted)' }} />
               <div className="flex flex-1 flex-wrap gap-1">
@@ -1377,11 +1373,7 @@ function SubtaskRow({ task, onOpen }: { task: Task; onOpen: () => void }) {
   }
 
   return (
-    <div
-      className="group flex items-center gap-2 rounded-lg py-1 px-1 transition-colors"
-      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-    >
+    <div className="group flex items-center gap-2 rounded-lg py-1 px-1 transition-colors hover-bg-hover">
       <TaskCheckbox
         checked={task.is_completed || completing}
         priority={task.priority}
@@ -1495,10 +1487,8 @@ function DropdownItem({
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center gap-2 px-3 py-1.5 text-sm transition-colors"
+      className="flex w-full items-center gap-2 px-3 py-1.5 text-sm transition-colors hover-bg-hover"
       style={{ color: 'var(--text-primary)' }}
-      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
     >
       {children}
       {active && <Check size={13} className="ml-auto shrink-0" style={{ color: '#283B56' }} />}
@@ -1594,10 +1584,8 @@ function LabelMenu({
             <button
               key={label.id}
               onClick={() => onToggle(label.id)}
-              className="flex w-full items-center gap-2 px-3 py-1.5 text-sm transition-colors"
+              className="flex w-full items-center gap-2 px-3 py-1.5 text-sm transition-colors hover-bg-hover"
               style={{ color: 'var(--text-primary)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
               <span className="h-3 w-3 rounded-full" style={{ backgroundColor: label.color }} />
               <span className="flex-1 text-left">{label.name}</span>

@@ -115,13 +115,11 @@ export function CommentList({ taskId }: CommentListProps) {
       {editingId !== 'new' ? (
         <button
           onClick={() => setEditingId('new')}
-          className="flex w-full items-center gap-2 rounded-lg border border-dashed px-3 py-2 text-sm transition-colors"
+          className="flex w-full items-center gap-2 rounded-lg border border-dashed px-3 py-2 text-sm transition-colors hover-bg-hover"
           style={{
             borderColor: 'var(--border-primary)',
             color: 'var(--text-muted)',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
         >
           <MessageSquare size={14} />
           Agregar comentario

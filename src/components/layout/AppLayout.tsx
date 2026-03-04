@@ -164,11 +164,11 @@ export function AppLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: 'var(--bg-primary)' }}>
-      {/* Sidebar overlay for mobile */}
+      {/* Sidebar overlay for mobile (onPointerUp for iOS Safari) */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-20 bg-black/50 md:hidden"
-          onClick={() => useAppStore.getState().setSidebarOpen(false)}
+          className="fixed inset-0 z-20 cursor-pointer bg-black/50 md:hidden"
+          onPointerUp={() => useAppStore.getState().setSidebarOpen(false)}
         />
       )}
 

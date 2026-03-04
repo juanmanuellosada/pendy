@@ -31,9 +31,7 @@ export function TaskGroup({
     <div className="mb-4">
       <button
         onClick={() => setOpen(!open)}
-        className="mb-1.5 flex w-full items-center gap-2 rounded-lg px-1 py-1 text-left transition-colors"
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+        className="mb-1.5 flex w-full items-center gap-2 rounded-lg px-1 py-1 text-left transition-colors hover-bg-hover"
       >
         {open ? (
           <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />

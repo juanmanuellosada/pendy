@@ -129,10 +129,8 @@ export default function FilterPage() {
         </div>
         <button
           onClick={() => setEditorOpen(true)}
-          className="rounded-lg p-2 transition-colors"
+          className="rounded-lg p-2 transition-colors hover-bg-hover"
           style={{ color: 'var(--text-secondary)' }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
           title="Editar filtro"
         >
           <Pencil size={16} />
@@ -140,10 +138,8 @@ export default function FilterPage() {
         {!isSelectMode && filteredTasks.length > 0 && (
           <button
             onClick={enter}
-            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors hover-bg-hover"
             style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
           >
             <ListChecks size={14} />
             Seleccionar

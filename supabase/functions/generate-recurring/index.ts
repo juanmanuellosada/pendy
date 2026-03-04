@@ -41,7 +41,9 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_ANON_KEY') ?? '',
         { global: { headers: { Authorization: authHeader } } },
       )
-      const { data: { user } } = await supabaseUser.auth.getUser()
+      const {
+        data: { user },
+      } = await supabaseUser.auth.getUser()
       if (!user) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), {
           status: 401,
@@ -69,11 +71,7 @@ serve(async (req) => {
     let generated = 0
 
     for (const taskId of taskIds) {
-      const { data: task } = await supabaseAdmin
-        .from('tasks')
-        .select('*')
-        .eq('id', taskId)
-        .single()
+      const { data: task } = await supabaseAdmin.from('tasks').select('*').eq('id', taskId).single()
 
       if (!task || !task.is_recurring || !task.recurrence_rule || !task.is_completed) continue
 
@@ -94,9 +92,12 @@ serve(async (req) => {
         description: task.description,
         priority: task.priority,
         due_date: nextDate,
-        due_datetime: task.has_time && task.due_datetime
-          ? new Date(`${nextDate}T${new Date(task.due_datetime).toISOString().slice(11)}`).toISOString()
-          : null,
+        due_datetime:
+          task.has_time && task.due_datetime
+            ? new Date(
+                `${nextDate}T${new Date(task.due_datetime).toISOString().slice(11)}`,
+              ).toISOString()
+            : null,
         has_time: task.has_time,
         duration_minutes: task.duration_minutes,
         is_completed: false,
@@ -111,10 +112,9 @@ serve(async (req) => {
       if (!error) generated++
     }
 
-    return new Response(
-      JSON.stringify({ success: true, generated, processed: taskIds.length }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-    )
+    return new Response(JSON.stringify({ success: true, generated, processed: taskIds.length }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   } catch (err) {
     return new Response(JSON.stringify({ error: (err as Error).message }), {
       status: 500,
@@ -149,7 +149,13 @@ function computeNextOccurrence(rrule: string, fromDateStr: string | null): strin
       if (byDay && byDay.length > 0) {
         // Find next matching day of week
         const dayMap: Record<string, number> = {
-          SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6,
+          SU: 0,
+          MO: 1,
+          TU: 2,
+          WE: 3,
+          TH: 4,
+          FR: 5,
+          SA: 6,
         }
         const targetDays = byDay.map((d) => dayMap[d]).filter((d) => d !== undefined)
         if (targetDays.length > 0) {

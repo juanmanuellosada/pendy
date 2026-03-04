@@ -10,7 +10,7 @@ import { ViewOptionsBar } from './ViewOptionsBar'
 import { BoardView } from './BoardView'
 import { CalendarView } from './CalendarView'
 import { SectionEditor } from '@/components/projects/SectionEditor'
-import { useInboxProject } from '@/hooks/useProjects'
+import { useInboxProject, useProjects } from '@/hooks/useProjects'
 import { useUIStore } from '@/stores/uiStore'
 import { useBulkSelection } from '@/hooks/useBulkSelection'
 import { applyViewFilters, applyViewSort, groupTasks } from '@/lib/viewUtils'
@@ -23,6 +23,7 @@ export function InboxView() {
   const { data: tasks = [], isLoading, isError } = useInboxTasks()
   const { data: labelsMap } = useAllTaskLabelsMap()
   const { data: inboxProject } = useInboxProject()
+  const { data: projects = [] } = useProjects()
   const createSection = useCreateSection()
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
@@ -79,8 +80,8 @@ export function InboxView() {
   }, [tasks, opts, labelsMap])
 
   const groups = useMemo(
-    () => groupTasks(visibleTasks, opts.groupBy, labelsMap),
-    [visibleTasks, opts.groupBy, labelsMap],
+    () => groupTasks(visibleTasks, opts.groupBy, labelsMap, projects),
+    [visibleTasks, opts.groupBy, labelsMap, projects],
   )
 
   // Bulk selection
@@ -231,12 +232,8 @@ export function InboxView() {
             visibleTasks.length > 0 && (
               <button
                 onClick={enter}
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors hover-bg-hover"
                 style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')
-                }
               >
                 <ListChecks size={14} />
                 Seleccionar

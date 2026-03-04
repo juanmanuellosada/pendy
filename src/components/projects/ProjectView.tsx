@@ -30,7 +30,12 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useProjectTasks, useReorderTasks, useUpdateTask, useDeleteTask } from '@/hooks/useTasks'
-import { useArchiveProject, useDeleteProject, useToggleProjectFavorite } from '@/hooks/useProjects'
+import {
+  useArchiveProject,
+  useDeleteProject,
+  useToggleProjectFavorite,
+  useProjects,
+} from '@/hooks/useProjects'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import {
   useProjectSections,
@@ -62,6 +67,7 @@ export function ProjectView({ project }: ProjectViewProps) {
   const { data: tasks = [], isLoading } = useProjectTasks(project.id)
   const { data: labelsMap } = useAllTaskLabelsMap()
   const { data: sections = [] } = useProjectSections(project.id)
+  const { data: allProjects = [] } = useProjects()
   const archiveProject = useArchiveProject()
   const deleteProject = useDeleteProject()
   const toggleFavorite = useToggleProjectFavorite()
@@ -180,8 +186,8 @@ export function ProjectView({ project }: ProjectViewProps) {
   }, [tasks, opts, labelsMap])
 
   const groups = useMemo(
-    () => groupTasks(visibleTasks, opts.groupBy, labelsMap),
-    [visibleTasks, opts.groupBy, labelsMap],
+    () => groupTasks(visibleTasks, opts.groupBy, labelsMap, allProjects),
+    [visibleTasks, opts.groupBy, labelsMap, allProjects],
   )
 
   // Group tasks by section for list view
@@ -556,12 +562,8 @@ export function ProjectView({ project }: ProjectViewProps) {
             visibleTasks.length > 0 && (
               <button
                 onClick={enter}
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors hover-bg-hover"
                 style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')
-                }
               >
                 <ListChecks size={14} />
                 Seleccionar
@@ -1001,10 +1003,8 @@ function SortableSectionBlock({
         <div className="ml-auto flex items-center gap-0.5 opacity-0 transition-opacity group-hover/section:opacity-100">
           <button
             onClick={onStartAddTask}
-            className="rounded p-1 transition-colors"
+            className="rounded p-1 transition-colors hover-bg-hover"
             style={{ color: 'var(--text-muted)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             title="Agregar tarea en esta sección"
           >
             <Plus size={14} />
@@ -1012,10 +1012,8 @@ function SortableSectionBlock({
           <div className="relative">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="rounded p-1 transition-colors"
+              className="rounded p-1 transition-colors hover-bg-hover"
               style={{ color: 'var(--text-muted)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
               <MoreHorizontal size={14} />
             </button>
@@ -1192,10 +1190,8 @@ function StaticSectionBlock({
         <div className="ml-auto flex items-center gap-0.5 opacity-0 transition-opacity group-hover/section:opacity-100">
           <button
             onClick={onStartAddTask}
-            className="rounded p-1 transition-colors"
+            className="rounded p-1 transition-colors hover-bg-hover"
             style={{ color: 'var(--text-muted)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             title="Agregar tarea en esta sección"
           >
             <Plus size={14} />
@@ -1203,10 +1199,8 @@ function StaticSectionBlock({
           <div className="relative">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="rounded p-1 transition-colors"
+              className="rounded p-1 transition-colors hover-bg-hover"
               style={{ color: 'var(--text-muted)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
               <MoreHorizontal size={14} />
             </button>

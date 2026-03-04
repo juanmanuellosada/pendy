@@ -463,10 +463,8 @@ function CollapsibleSection({
     <div>
       <button
         onClick={onToggle}
-        className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold transition-colors"
+        className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold transition-colors hover-bg-hover"
         style={{ color: 'var(--text-primary)' }}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
       >
         {title}
         {open ? (
@@ -513,13 +511,11 @@ function SelectRow({
       <div className="relative">
         <button
           onClick={() => setDropdownOpen(!dropdownOpen)}
-          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-sm font-medium transition-colors"
+          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-sm font-medium transition-colors hover-bg-hover"
           style={{
             backgroundColor: 'var(--bg-secondary)',
             color: 'var(--text-primary)',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
         >
           {displayValue}
           <ChevronDown size={13} style={{ color: 'var(--text-muted)' }} />
@@ -540,10 +536,8 @@ function SelectRow({
                   onChange(opt.value)
                   setDropdownOpen(false)
                 }}
-                className="flex w-full items-center justify-between px-3 py-1.5 text-sm transition-colors"
+                className="flex w-full items-center justify-between px-3 py-1.5 text-sm transition-colors hover-bg-hover"
                 style={{ color: 'var(--text-primary)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
                 {opt.label}
                 {opt.active && (

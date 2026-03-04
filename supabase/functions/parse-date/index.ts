@@ -34,7 +34,9 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { global: { headers: { Authorization: authHeader } } },
     )
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (!user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
@@ -114,8 +116,15 @@ function parseNaturalDate(text: string, _timezone: string): ParseResult {
 
   // Day names (Spanish)
   const dayNamesEs: Record<string, number> = {
-    domingo: 0, lunes: 1, martes: 2, miércoles: 3, miercoles: 3,
-    jueves: 4, viernes: 5, sábado: 6, sabado: 6,
+    domingo: 0,
+    lunes: 1,
+    martes: 2,
+    miércoles: 3,
+    miercoles: 3,
+    jueves: 4,
+    viernes: 5,
+    sábado: 6,
+    sabado: 6,
   }
   if (dayNamesEs[text] !== undefined) {
     return { date: nextDayOfWeek(now, dayNamesEs[text]), has_time: false }
@@ -123,8 +132,13 @@ function parseNaturalDate(text: string, _timezone: string): ParseResult {
 
   // Day names (English)
   const dayNamesEn: Record<string, number> = {
-    sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
-    thursday: 4, friday: 5, saturday: 6,
+    sunday: 0,
+    monday: 1,
+    tuesday: 2,
+    wednesday: 3,
+    thursday: 4,
+    friday: 5,
+    saturday: 6,
   }
   const nextMatch = text.match(/^next\s+(\w+)$/)
   if (nextMatch && dayNamesEn[nextMatch[1]!] !== undefined) {
@@ -133,7 +147,11 @@ function parseNaturalDate(text: string, _timezone: string): ParseResult {
 
   // Recurrence patterns
   if (text.match(/^todos los lunes$/)) {
-    return { date: nextDayOfWeek(now, 1), has_time: false, recurrence_rule: 'RRULE:FREQ=WEEKLY;BYDAY=MO' }
+    return {
+      date: nextDayOfWeek(now, 1),
+      has_time: false,
+      recurrence_rule: 'RRULE:FREQ=WEEKLY;BYDAY=MO',
+    }
   }
   if (text.match(/^cada (\d+) semanas?$/)) {
     const interval = parseInt(text.match(/(\d+)/)![1])
@@ -156,7 +174,11 @@ function parseNaturalDate(text: string, _timezone: string): ParseResult {
   if (ddmm) {
     const day = parseInt(ddmm[1])
     const month = parseInt(ddmm[2]) - 1
-    const year = ddmm[3] ? (ddmm[3].length === 2 ? 2000 + parseInt(ddmm[3]) : parseInt(ddmm[3])) : now.getFullYear()
+    const year = ddmm[3]
+      ? ddmm[3].length === 2
+        ? 2000 + parseInt(ddmm[3])
+        : parseInt(ddmm[3])
+      : now.getFullYear()
     const d = new Date(year, month, day)
     if (!isNaN(d.getTime())) return { date: formatDate(d), has_time: false }
   }

@@ -83,10 +83,8 @@ function MiniDatePicker({ onSelect }: { onSelect: (date: string | null) => void 
         <button
           key={label}
           onClick={action}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors hover-bg-hover"
           style={{ color: 'var(--text-primary)' }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
         >
           <Icon size={14} style={{ color }} />
           <span className="flex-1 text-left text-xs">{label}</span>
@@ -104,9 +102,7 @@ function MiniDatePicker({ onSelect }: { onSelect: (date: string | null) => void 
       <div className="flex items-center justify-between px-2 pb-1">
         <button
           onClick={() => setViewMonth((m) => subMonths(m, 1))}
-          className="rounded p-1 transition-colors"
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          className="rounded p-1 transition-colors hover-bg-hover"
         >
           <ChevronLeft size={13} style={{ color: 'var(--text-primary)' }} />
         </button>
@@ -115,9 +111,7 @@ function MiniDatePicker({ onSelect }: { onSelect: (date: string | null) => void 
         </span>
         <button
           onClick={() => setViewMonth((m) => addMonths(m, 1))}
-          className="rounded p-1 transition-colors"
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          className="rounded p-1 transition-colors hover-bg-hover"
         >
           <ChevronRight size={13} style={{ color: 'var(--text-primary)' }} />
         </button>
@@ -145,13 +139,11 @@ function MiniDatePicker({ onSelect }: { onSelect: (date: string | null) => void 
             <button
               key={day.toISOString()}
               onClick={() => handleDay(day)}
-              className="relative flex flex-col items-center justify-center rounded-md py-1 text-xs transition-colors"
+              className="relative flex flex-col items-center justify-center rounded-md py-1 text-xs transition-colors hover-bg-hover"
               style={{
                 color: isCurrentMonth ? 'var(--text-primary)' : 'var(--text-muted)',
                 fontWeight: isToday ? 700 : undefined,
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '')}
             >
               {format(day, 'd')}
               {isToday && (
@@ -239,10 +231,8 @@ export function BulkActionBar({
       {/* Select all checkbox + count */}
       <button
         onClick={allSelected ? onClearAll : onSelectAll}
-        className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors"
+        className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover-bg-hover"
         title={allSelected ? 'Deseleccionar todas' : 'Seleccionar todas'}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
       >
         <div
           className="h-4 w-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors"
@@ -313,17 +303,11 @@ export function BulkActionBar({
                               onMoveToProject(project.id, null)
                               setActiveMenu(null)
                             }}
-                            className="flex w-full items-center gap-2.5 py-1.5 pr-3 text-sm transition-colors"
+                            className="flex w-full items-center gap-2.5 py-1.5 pr-3 text-sm transition-colors hover-bg-hover"
                             style={{
                               paddingLeft: 12 + project.depth * 12,
                               color: 'var(--text-primary)',
                             }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.backgroundColor = 'transparent')
-                            }
                           >
                             <span
                               className="h-2.5 w-2.5 flex-shrink-0 rounded-sm"
@@ -338,17 +322,11 @@ export function BulkActionBar({
                                 onMoveToProject(project.id, s.id)
                                 setActiveMenu(null)
                               }}
-                              className="flex w-full items-center gap-2 py-1 pr-3 text-xs transition-colors"
+                              className="flex w-full items-center gap-2 py-1 pr-3 text-xs transition-colors hover-bg-hover"
                               style={{
                                 paddingLeft: 28 + project.depth * 12,
                                 color: 'var(--text-secondary)',
                               }}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.backgroundColor = 'transparent')
-                              }
                             >
                               <span
                                 className="h-1.5 w-1.5 flex-shrink-0 rounded-full"
@@ -404,12 +382,8 @@ export function BulkActionBar({
                         onChangePriority(p)
                         setActiveMenu(null)
                       }}
-                      className="flex w-full items-center gap-2.5 px-3 py-2 text-sm transition-colors"
+                      className="flex w-full items-center gap-2.5 px-3 py-2 text-sm transition-colors hover-bg-hover"
                       style={{ color: 'var(--text-primary)' }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
-                      }
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
                       <Flag size={14} style={{ color: PRIORITY_COLORS[p] }} />P{p} ·{' '}
                       {PRIORITY_LABELS[p]}
@@ -481,11 +455,9 @@ export function BulkActionBar({
       {/* Exit */}
       <button
         onClick={onExit}
-        className="rounded-lg p-1.5 transition-colors"
+        className="rounded-lg p-1.5 transition-colors hover-bg-hover"
         style={{ color: 'var(--text-muted)' }}
         title="Cancelar selección"
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
       >
         <X size={15} />
       </button>

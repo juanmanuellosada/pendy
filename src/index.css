@@ -381,3 +381,16 @@ body {
   opacity: 0.5;
   transition: all 0.3s ease;
 }
+
+/* Hover utilities using CSS custom properties */
+.hover-bg-hover:hover {
+  background-color: var(--bg-hover) !important;
+}
+
+.hover-bg-secondary:hover {
+  background-color: var(--bg-secondary) !important;
+}
+
+.hover-bg-active:hover {
+  background-color: var(--bg-active) !important;
+}

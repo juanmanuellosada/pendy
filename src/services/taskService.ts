@@ -281,11 +281,13 @@ export const taskService = {
 
   async searchTasks(userId: string, query: string): Promise<Task[]> {
     if (!query.trim()) return []
+    const term = query.trim()
+    const pattern = `%${term}%`
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
       .eq('user_id', userId)
-      .ilike('title', `%${query.trim()}%`)
+      .or(`title.ilike.${pattern},description.ilike.${pattern}`)
       .is('parent_id', null)
       .order('is_completed', { ascending: true })
       .order('due_date', { ascending: true })

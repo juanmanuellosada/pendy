@@ -1092,11 +1092,7 @@ export function TaskEditor({
         )}
 
         {/* Add subtask input */}
-        <div
-          className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors"
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-        >
+        <div className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover-bg-hover">
           <Plus size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           <input
             ref={newSubtaskRef}
@@ -1208,11 +1204,9 @@ export function TaskEditor({
                     setShowPriorityMenu(false)
                   }}
                   className={cn(
-                    'flex w-full items-center gap-2 px-3 py-1.5 text-sm transition-colors',
+                    'flex w-full items-center gap-2 px-3 py-1.5 text-sm transition-colors hover-bg-hover',
                   )}
                   style={{ color: 'var(--text-primary)' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   <span
                     className="h-3 w-3 rounded-sm"
@@ -1782,11 +1776,9 @@ export function TaskEditor({
           <button
             type="button"
             onClick={() => setFullscreen((f) => !f)}
-            className="rounded-lg p-1.5 transition-colors"
+            className="rounded-lg p-1.5 transition-colors hover-bg-hover"
             style={{ color: 'var(--text-muted)' }}
             title={fullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
           >
             {fullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
           </button>

@@ -1,4 +1,4 @@
-import type { Task, Label } from './types'
+import type { Task, Label, Project } from './types'
 import type { ViewOptions } from '@/stores/uiStore'
 import { isOverdue, parseLocalDate } from './utils'
 import { startOfWeek, endOfWeek, isWithinInterval } from 'date-fns'
@@ -79,6 +79,7 @@ export function groupTasks(
   tasks: Task[],
   groupBy: ViewOptions['groupBy'],
   labelsMap?: Map<string, Label[]>,
+  projects?: Project[],
 ): { key: string; label: string; color?: string; tasks: Task[] }[] {
   if (groupBy === 'none') {
     return [{ key: 'all', label: 'Todas', tasks }]
@@ -139,6 +140,34 @@ export function groupTasks(
     }
 
     return result
+  }
+
+  if (groupBy === 'project') {
+    const projectMap = new Map<string, Project>()
+    if (projects) {
+      for (const p of projects) projectMap.set(p.id, p)
+    }
+
+    const grouped: Record<string, { label: string; color: string; tasks: Task[] }> = {}
+    tasks.forEach((task) => {
+      const pid = task.project_id
+      if (!grouped[pid]) {
+        const proj = projectMap.get(pid)
+        grouped[pid] = {
+          label: proj?.name ?? 'Sin proyecto',
+          color: proj?.color ?? '#6B7280',
+          tasks: [],
+        }
+      }
+      grouped[pid]!.tasks.push(task)
+    })
+
+    return Object.entries(grouped).map(([key, { label, color, tasks: t }]) => ({
+      key,
+      label,
+      color,
+      tasks: t,
+    }))
   }
 
   return [{ key: 'all', label: 'Todas', tasks }]

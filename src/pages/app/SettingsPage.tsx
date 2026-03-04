@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -9,7 +9,7 @@ import { useExchangeCalendarCode } from '@/hooks/useCalendarIntegrations'
 import { CalendarIntegrations } from '@/components/settings/CalendarIntegrations'
 import { PushNotifications } from '@/components/settings/PushNotifications'
 import { supabase } from '@/lib/supabase'
-import { Moon, Sun, Monitor } from 'lucide-react'
+import { Moon, Sun, Monitor, Pencil, Check, X } from 'lucide-react'
 import type { ThemeMode } from '@/styles/themes'
 import type { Profile } from '@/lib/types'
 
@@ -67,6 +67,167 @@ function SettingSelect({
   )
 }
 
+function ProfileSection({
+  profile,
+  onUpdateName,
+}: {
+  profile: Profile | null
+  onUpdateName: (name: string) => void
+}) {
+  const [editingName, setEditingName] = useState(false)
+  const [name, setName] = useState(profile?.full_name ?? '')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const nameInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (editingName) nameInputRef.current?.focus()
+  }, [editingName])
+
+  const handleSaveName = () => {
+    if (name.trim()) {
+      onUpdateName(name.trim())
+    }
+    setEditingName(false)
+  }
+
+  const handleChangePassword = async () => {
+    if (newPassword.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('Las contraseñas no coinciden')
+      return
+    }
+    setPasswordLoading(true)
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    setPasswordLoading(false)
+    if (error) {
+      toast.error('No se pudo cambiar la contraseña')
+    } else {
+      toast.success('Contraseña actualizada')
+      setNewPassword('')
+      setConfirmPassword('')
+    }
+  }
+
+  return (
+    <section className="rounded-xl border p-4" style={{ borderColor: 'var(--border-primary)' }}>
+      <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+        Perfil
+      </h2>
+      <div className="mt-3 space-y-3">
+        {/* Name */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+            Nombre:
+          </span>
+          {editingName ? (
+            <div className="flex items-center gap-1.5">
+              <input
+                ref={nameInputRef}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveName()
+                  if (e.key === 'Escape') setEditingName(false)
+                }}
+                className="rounded-md border px-2 py-1 text-sm"
+                style={{
+                  backgroundColor: 'var(--bg-primary)',
+                  borderColor: 'var(--border-primary)',
+                  color: 'var(--text-primary)',
+                }}
+              />
+              <button onClick={handleSaveName} className="p-1 text-green-500">
+                <Check size={14} />
+              </button>
+              <button
+                onClick={() => setEditingName(false)}
+                className="p-1"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                {profile?.full_name || 'Sin nombre'}
+              </span>
+              <button
+                onClick={() => {
+                  setName(profile?.full_name ?? '')
+                  setEditingName(true)
+                }}
+                className="p-1 rounded transition-colors"
+                style={{ color: 'var(--text-muted)' }}
+                aria-label="Editar nombre"
+              >
+                <Pencil size={12} />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Email (read-only) */}
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
+            Email:
+          </span>{' '}
+          {profile?.email}
+        </p>
+
+        {/* Change password */}
+        <details className="group">
+          <summary
+            className="cursor-pointer text-sm font-medium"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            Cambiar contraseña
+          </summary>
+          <div className="mt-2 space-y-2 pl-1">
+            <input
+              type="password"
+              placeholder="Nueva contraseña"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full max-w-xs rounded-md border px-3 py-1.5 text-sm"
+              style={{
+                backgroundColor: 'var(--bg-primary)',
+                borderColor: 'var(--border-primary)',
+                color: 'var(--text-primary)',
+              }}
+            />
+            <input
+              type="password"
+              placeholder="Confirmar contraseña"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full max-w-xs rounded-md border px-3 py-1.5 text-sm"
+              style={{
+                backgroundColor: 'var(--bg-primary)',
+                borderColor: 'var(--border-primary)',
+                color: 'var(--text-primary)',
+              }}
+            />
+            <button
+              onClick={handleChangePassword}
+              disabled={passwordLoading || !newPassword || !confirmPassword}
+              className="rounded-lg px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+              style={{ backgroundColor: '#283B56' }}
+            >
+              {passwordLoading ? 'Guardando...' : 'Guardar contraseña'}
+            </button>
+          </div>
+        </details>
+      </div>
+    </section>
+  )
+}
+
 export default function SettingsPage() {
   const { profile, session } = useAuth()
   const { mode, setTheme } = useTheme()
@@ -119,25 +280,10 @@ export default function SettingsPage() {
 
       <div className="space-y-6">
         {/* Profile section */}
-        <section className="rounded-xl border p-4" style={{ borderColor: 'var(--border-primary)' }}>
-          <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-            Perfil
-          </h2>
-          <div className="mt-3 space-y-2">
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
-                Nombre:
-              </span>{' '}
-              {profile?.full_name || 'Sin nombre'}
-            </p>
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
-                Email:
-              </span>{' '}
-              {profile?.email}
-            </p>
-          </div>
-        </section>
+        <ProfileSection
+          profile={profile}
+          onUpdateName={(name) => handleUpdate('full_name', name)}
+        />
 
         {/* Theme section */}
         <section className="rounded-xl border p-4" style={{ borderColor: 'var(--border-primary)' }}>

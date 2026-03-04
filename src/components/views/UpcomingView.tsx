@@ -254,12 +254,8 @@ export function UpcomingView() {
                 {!isSelectMode && (
                   <button
                     onClick={() => handleAddTask(format(date, 'yyyy-MM-dd'))}
-                    className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-all opacity-0 group-hover:opacity-100"
+                    className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-all opacity-0 group-hover:opacity-100 hover-bg-hover"
                     style={{ color: 'var(--text-muted)' }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
-                    }
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                     title={`Agregar tarea para ${label}`}
                   >
                     <Plus size={13} />
@@ -319,10 +315,8 @@ export function UpcomingView() {
           {opts.viewStyle === 'list' && !isSelectMode && visibleTasks.length > 0 && (
             <button
               onClick={enter}
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors hover-bg-hover"
               style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
             >
               <ListChecks size={14} />
               Seleccionar
