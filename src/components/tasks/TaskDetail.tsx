@@ -47,6 +47,7 @@ import { cn, stripHtmlTags, formatRelativeDate, stripLabelTokensFromHtml } from 
 import { buildProjectTree, flattenProjectTree } from '@/lib/projectTree'
 import { PRIORITY_COLORS, PRIORITY_LABELS } from '@/lib/constants'
 import { format } from 'date-fns'
+import { CommentList } from '@/components/comments/CommentList'
 import type { Task } from '@/lib/types'
 import { parseNLPTokens, stripNLPTokens } from '@/services/dateParser'
 
@@ -1169,6 +1170,16 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
             )}
           </div>
         </div>
+
+        {/* Divider */}
+        <div className="mx-4" style={{ borderTop: '1px solid var(--border-primary)' }} />
+
+        {/* Comments */}
+        {task && (
+          <div className={cn('p-4', fullScreen && 'px-0')}>
+            <CommentList taskId={task.id} />
+          </div>
+        )}
       </>
     )
 
