@@ -124,10 +124,7 @@ function DateColumn({
           >
             {column.label}
           </h3>
-          <span
-            className="text-xs font-medium"
-            style={{ color: 'var(--text-muted)' }}
-          >
+          <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
             {column.tasks.length}
           </span>
         </div>

@@ -29,10 +29,19 @@ const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 function LoadingScreen() {
   return (
-    <div className="flex h-screen items-center justify-center" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div
+      className="flex h-screen items-center justify-center"
+      style={{ backgroundColor: 'var(--bg-primary)' }}
+    >
       <div className="flex flex-col items-center gap-4">
-        <img src={`${import.meta.env.BASE_URL}pendy-logo.png`} alt="Pendy" className="h-16 w-16 rounded-xl animate-pulse" />
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Cargando...</p>
+        <img
+          src={`${import.meta.env.BASE_URL}pendy-logo.png`}
+          alt="Pendy"
+          className="h-16 w-16 rounded-xl animate-pulse"
+        />
+        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+          Cargando...
+        </p>
       </div>
     </div>
   )
@@ -60,7 +69,8 @@ export default function App() {
   // Initialize theme
   useTheme()
 
-  const { projectEditorOpen, setProjectEditorOpen, newProjectParentId, setNewProjectParentId } = useUIStore()
+  const { projectEditorOpen, setProjectEditorOpen, newProjectParentId, setNewProjectParentId } =
+    useUIStore()
   const { quickAddOpen, setQuickAddOpen } = useAppStore()
 
   return (
@@ -127,13 +137,13 @@ export default function App() {
       {/* Global modals */}
       <ProjectEditor
         open={projectEditorOpen}
-        onClose={() => { setProjectEditorOpen(false); setNewProjectParentId(null) }}
+        onClose={() => {
+          setProjectEditorOpen(false)
+          setNewProjectParentId(null)
+        }}
         parentId={newProjectParentId}
       />
-      <TaskEditor
-        open={quickAddOpen}
-        onClose={() => setQuickAddOpen(false)}
-      />
+      <TaskEditor open={quickAddOpen} onClose={() => setQuickAddOpen(false)} />
       <ConfirmDialog />
     </>
   )

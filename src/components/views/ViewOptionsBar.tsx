@@ -160,14 +160,11 @@ export function ViewOptionsBar({
         }}
         onMouseLeave={(e) => {
           if (!open && activeCount === 0) e.currentTarget.style.backgroundColor = 'transparent'
-          else if (!open && activeCount > 0)
-            e.currentTarget.style.backgroundColor = '#283B5612'
+          else if (!open && activeCount > 0) e.currentTarget.style.backgroundColor = '#283B5612'
         }}
       >
         <SlidersHorizontal size={15} />
-        <span>
-          Formato{activeCount > 0 ? `: ${activeCount}` : ''}
-        </span>
+        <span>Formato{activeCount > 0 ? `: ${activeCount}` : ''}</span>
       </button>
 
       {/* Popover */}
@@ -183,17 +180,11 @@ export function ViewOptionsBar({
           <div className="p-4 pb-3 space-y-4">
             <div>
               <div className="mb-3 flex items-center gap-2">
-                <span
-                  className="text-sm font-semibold"
-                  style={{ color: 'var(--text-primary)' }}
-                >
+                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                   Vista
                 </span>
                 {activeCount > 0 && (
-                  <span
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: '#EC1E2A' }}
-                  />
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: '#EC1E2A' }} />
                 )}
               </div>
               <div
@@ -203,37 +194,29 @@ export function ViewOptionsBar({
                 {viewStyles
                   .filter((v) => !availableStyles || availableStyles.includes(v.style))
                   .map(({ style, icon: Icon, label }) => (
-                  <button
-                    key={style}
-                    onClick={() => set('viewStyle', style)}
-                    className="flex flex-1 flex-col items-center gap-1 rounded-lg py-2.5 text-xs font-medium transition-all"
-                    style={{
-                      backgroundColor:
-                        opts.viewStyle === style ? 'var(--bg-primary)' : 'transparent',
-                      color:
-                        opts.viewStyle === style
-                          ? 'var(--text-primary)'
-                          : 'var(--text-muted)',
-                      boxShadow:
-                        opts.viewStyle === style
-                          ? '0 1px 3px rgba(0,0,0,0.12)'
-                          : 'none',
-                    }}
-                  >
-                    <Icon size={18} />
-                    {label}
-                  </button>
-                ))}
+                    <button
+                      key={style}
+                      onClick={() => set('viewStyle', style)}
+                      className="flex flex-1 flex-col items-center gap-1 rounded-lg py-2.5 text-xs font-medium transition-all"
+                      style={{
+                        backgroundColor:
+                          opts.viewStyle === style ? 'var(--bg-primary)' : 'transparent',
+                        color:
+                          opts.viewStyle === style ? 'var(--text-primary)' : 'var(--text-muted)',
+                        boxShadow: opts.viewStyle === style ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
+                      }}
+                    >
+                      <Icon size={18} />
+                      {label}
+                    </button>
+                  ))}
               </div>
             </div>
 
             {/* Calendar mode */}
             {opts.viewStyle === 'calendar' && !hideCalendarMode && (
               <div className="flex items-center justify-between">
-                <span
-                  className="text-sm"
-                  style={{ color: 'var(--text-primary)' }}
-                >
+                <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
                   Formato
                 </span>
                 <div
@@ -241,28 +224,31 @@ export function ViewOptionsBar({
                   style={{ backgroundColor: 'var(--bg-secondary)' }}
                 >
                   {calendarModes
-                    .filter((m) => !availableCalendarModes || availableCalendarModes.includes(m.mode))
+                    .filter(
+                      (m) => !availableCalendarModes || availableCalendarModes.includes(m.mode),
+                    )
                     .map(({ mode, label }) => (
-                    <button
-                      key={mode}
-                      onClick={() => set('calendarMode', mode)}
-                      className="rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
-                      style={{
-                        backgroundColor:
-                          opts.calendarMode === mode ? '#283B56' : 'transparent',
-                        color:
-                          opts.calendarMode === mode ? '#fff' : 'var(--text-secondary)',
-                      }}
-                    >
-                      {label}
-                    </button>
-                  ))}
+                      <button
+                        key={mode}
+                        onClick={() => set('calendarMode', mode)}
+                        className="rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
+                        style={{
+                          backgroundColor: opts.calendarMode === mode ? '#283B56' : 'transparent',
+                          color: opts.calendarMode === mode ? '#fff' : 'var(--text-secondary)',
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
                 </div>
               </div>
             )}
 
             {/* Completados */}
-            <div className="flex items-center justify-between" title="Mostrar tareas y hábitos completados">
+            <div
+              className="flex items-center justify-between"
+              title="Mostrar tareas y hábitos completados"
+            >
               <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
                 Completados
               </span>
@@ -287,7 +273,10 @@ export function ViewOptionsBar({
 
             {/* Futuras recurrencias (solo en calendario) */}
             {opts.viewStyle === 'calendar' && (
-              <div className="flex items-center justify-between" title="Mostrar futuras recurrencias de tareas periódicas">
+              <div
+                className="flex items-center justify-between"
+                title="Mostrar futuras recurrencias de tareas periódicas"
+              >
                 <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
                   Futuras recurrencias
                 </span>
@@ -370,8 +359,7 @@ export function ViewOptionsBar({
                   label="Fecha límite"
                   value={opts.filterDueDate}
                   displayValue={
-                    dueDateOptions.find((o) => o.value === opts.filterDueDate)?.label ??
-                    'Todas'
+                    dueDateOptions.find((o) => o.value === opts.filterDueDate)?.label ?? 'Todas'
                   }
                   options={dueDateOptions.map((o) => ({
                     value: o.value,
@@ -384,11 +372,7 @@ export function ViewOptionsBar({
               <SelectRow
                 label="Prioridad"
                 value={opts.filterPriority === null ? 'all' : String(opts.filterPriority)}
-                displayValue={
-                  opts.filterPriority === null
-                    ? 'Todas'
-                    : `P${opts.filterPriority}`
-                }
+                displayValue={opts.filterPriority === null ? 'Todas' : `P${opts.filterPriority}`}
                 options={priorityOptions.map((o) => ({
                   value: o.value,
                   label: o.label,
@@ -396,9 +380,7 @@ export function ViewOptionsBar({
                     (o.value === 'all' && opts.filterPriority === null) ||
                     String(opts.filterPriority) === o.value,
                 }))}
-                onChange={(v) =>
-                  set('filterPriority', v === 'all' ? null : Number(v))
-                }
+                onChange={(v) => set('filterPriority', v === 'all' ? null : Number(v))}
               />
               <SelectRow
                 label="Etiqueta"
@@ -436,12 +418,7 @@ export function ViewOptionsBar({
 /* ── Sub-components ───────────────────────────────────── */
 
 function Divider() {
-  return (
-    <div
-      className="mx-4 border-t"
-      style={{ borderColor: 'var(--border-primary)' }}
-    />
-  )
+  return <div className="mx-4 border-t" style={{ borderColor: 'var(--border-primary)' }} />
 }
 
 function ToggleSwitch({
@@ -488,12 +465,8 @@ function CollapsibleSection({
         onClick={onToggle}
         className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold transition-colors"
         style={{ color: 'var(--text-primary)' }}
-        onMouseEnter={(e) =>
-          (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
-        }
-        onMouseLeave={(e) =>
-          (e.currentTarget.style.backgroundColor = 'transparent')
-        }
+        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
       >
         {title}
         {open ? (
@@ -545,12 +518,8 @@ function SelectRow({
             backgroundColor: 'var(--bg-secondary)',
             color: 'var(--text-primary)',
           }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')
-          }
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
         >
           {displayValue}
           <ChevronDown size={13} style={{ color: 'var(--text-muted)' }} />
@@ -573,17 +542,22 @@ function SelectRow({
                 }}
                 className="flex w-full items-center justify-between px-3 py-1.5 text-sm transition-colors"
                 style={{ color: 'var(--text-primary)' }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = 'transparent')
-                }
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
                 {opt.label}
                 {opt.active && (
                   <span style={{ color: '#283B56' }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   </span>

@@ -17,7 +17,11 @@ export function MobileNav() {
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-10 border-t md:hidden"
-      style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+      style={{
+        backgroundColor: 'var(--bg-primary)',
+        borderColor: 'var(--border-primary)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}
     >
       <div className="flex items-center justify-around py-2">
         {items.map(({ icon: Icon, label, path }) => (

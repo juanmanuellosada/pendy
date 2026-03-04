@@ -136,7 +136,9 @@ export function MarkdownEditor({
     if (!editor) return
     const onSelectionUpdate = () => setTick((n) => n + 1)
     editor.on('selectionUpdate', onSelectionUpdate)
-    return () => { editor.off('selectionUpdate', onSelectionUpdate) }
+    return () => {
+      editor.off('selectionUpdate', onSelectionUpdate)
+    }
   }, [editor])
 
   useEffect(() => {
@@ -201,11 +203,7 @@ export function MarkdownEditor({
         } else {
           const linkMark = editor.schema.marks.link!.create({ href: url })
           const newText = text && text !== '' ? text : editor.state.doc.textBetween(from, to)
-          const tr = editor.state.tr.replaceWith(
-            from,
-            to,
-            editor.schema.text(newText, [linkMark]),
-          )
+          const tr = editor.state.tr.replaceWith(from, to, editor.schema.text(newText, [linkMark]))
           editor.view.dispatch(tr)
         }
 
@@ -366,11 +364,7 @@ export function MarkdownEditor({
             <Minus size={14} />
           </ToolbarButton>
 
-          <ToolbarButton
-            onClick={openLinkDialog}
-            isActive={editor.isActive('link')}
-            label="Enlace"
-          >
+          <ToolbarButton onClick={openLinkDialog} isActive={editor.isActive('link')} label="Enlace">
             <LinkIcon size={14} />
           </ToolbarButton>
 

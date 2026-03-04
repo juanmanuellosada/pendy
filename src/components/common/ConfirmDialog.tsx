@@ -47,10 +47,7 @@ export function ConfirmDialog() {
           </div>
 
           {/* Título */}
-          <h2
-            className="mb-1.5 text-base font-semibold"
-            style={{ color: 'var(--text-primary)' }}
-          >
+          <h2 className="mb-1.5 text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
             {confirmDialogConfig.title}
           </h2>
 

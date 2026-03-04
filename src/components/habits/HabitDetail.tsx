@@ -26,9 +26,16 @@ import { TitleEditor } from '@/components/tasks/TitleEditor'
 import type { Habit } from '@/lib/types'
 
 const PRESET_COLORS = [
-  '#283B56', '#EC1E2A', '#22C55E', '#3B82F6',
-  '#F59E0B', '#8B5CF6', '#EC4899', '#14B8A6',
-  '#F97316', '#6B7280',
+  '#283B56',
+  '#EC1E2A',
+  '#22C55E',
+  '#3B82F6',
+  '#F59E0B',
+  '#8B5CF6',
+  '#EC4899',
+  '#14B8A6',
+  '#F97316',
+  '#6B7280',
 ]
 
 const DAY_LABELS = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
@@ -82,8 +89,13 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
 
   // Form state — all edits live here until "Guardar"
   const [form, setForm] = useState<FormState>({
-    name: '', icon: '', color: '#283B56', duration_minutes: 30,
-    recurrence_type: 'daily', times_per_week: 3, specific_days: [],
+    name: '',
+    icon: '',
+    color: '#283B56',
+    duration_minutes: 30,
+    recurrence_type: 'daily',
+    times_per_week: 3,
+    specific_days: [],
   })
   const [customDuration, setCustomDuration] = useState('')
   const [localTime, setLocalTime] = useState(scheduledTime ? scheduledTime.slice(0, 5) : '')
@@ -189,7 +201,8 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
   const handleDelete = () => {
     showConfirmDialog({
       title: `¿Eliminar "${stripHtmlTags(habit.name)}"?`,
-      message: 'Se eliminarán también todas las marcaciones de este hábito. Esta acción no se puede deshacer.',
+      message:
+        'Se eliminarán también todas las marcaciones de este hábito. Esta acción no se puede deshacer.',
       confirmLabel: 'Eliminar',
       onConfirm: async () => {
         await deleteHabit.mutateAsync(habit.id)
@@ -230,7 +243,10 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
           className="flex items-center justify-between border-b px-4 py-3"
           style={{ borderColor: 'var(--border-primary)' }}
         >
-          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+          <span
+            className="text-xs font-semibold uppercase tracking-wider"
+            style={{ color: 'var(--text-muted)' }}
+          >
             Hábito
           </span>
           <button
@@ -249,7 +265,6 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
 
         {/* Scrollable body */}
         <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-4">
-
           {/* ── Completion + name ── */}
           <div className="flex items-start gap-3">
             <div className="mt-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -283,7 +298,9 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
                     opacity: completed ? 0.7 : 1,
                   }}
                   onFocus={(e) => ((e.currentTarget as HTMLElement).style.borderColor = form.color)}
-                  onBlur={(e) => ((e.currentTarget as HTMLElement).style.borderColor = 'transparent')}
+                  onBlur={(e) =>
+                    ((e.currentTarget as HTMLElement).style.borderColor = 'transparent')
+                  }
                 >
                   <TitleEditor
                     content={form.name}
@@ -302,11 +319,17 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
                   className="h-2 w-2 flex-shrink-0 rounded-full"
                   style={{ backgroundColor: completed ? '#22C55E' : 'var(--text-muted)' }}
                 />
-                <span className="text-xs font-medium" style={{ color: completed ? '#22C55E' : 'var(--text-muted)' }}>
+                <span
+                  className="text-xs font-medium"
+                  style={{ color: completed ? '#22C55E' : 'var(--text-muted)' }}
+                >
                   {completed ? 'Completado' : 'Pendiente'}
                 </span>
                 {streak.current > 0 && (
-                  <span className="ml-1 flex items-center gap-1 text-xs font-medium" style={{ color: '#F59E0B' }}>
+                  <span
+                    className="ml-1 flex items-center gap-1 text-xs font-medium"
+                    style={{ color: '#F59E0B' }}
+                  >
                     <Flame size={11} />
                     {streak.current}
                   </span>
@@ -319,12 +342,18 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
 
           {/* ── Horario ── */}
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+            <p
+              className="mb-2 text-xs font-semibold uppercase tracking-wider"
+              style={{ color: 'var(--text-muted)' }}
+            >
               Horario
             </p>
             <div className="flex items-end gap-3">
               <div className="flex-1">
-                <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                <label
+                  className="mb-1 block text-xs font-medium"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
                   Inicio
                 </label>
                 <input
@@ -341,7 +370,10 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
               </div>
               {endTime && (
                 <div className="flex-1">
-                  <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                  <label
+                    className="mb-1 block text-xs font-medium"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
                     Fin (estimado)
                   </label>
                   <div
@@ -401,7 +433,10 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
 
           {/* ── Color ── */}
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+            <p
+              className="mb-2 text-xs font-semibold uppercase tracking-wider"
+              style={{ color: 'var(--text-muted)' }}
+            >
               Color
             </p>
             <div className="flex flex-wrap gap-2">
@@ -425,18 +460,26 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
 
           {/* ── Duración ── */}
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+            <p
+              className="mb-2 text-xs font-semibold uppercase tracking-wider"
+              style={{ color: 'var(--text-muted)' }}
+            >
               Duración
             </p>
             <div className="mb-2 flex flex-wrap gap-1.5">
               {DURATION_PRESETS.map((min) => (
                 <button
                   key={min}
-                  onClick={() => { set('duration_minutes', min); setCustomDuration('') }}
+                  onClick={() => {
+                    set('duration_minutes', min)
+                    setCustomDuration('')
+                  }}
                   className="rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
                   style={{
-                    borderColor: form.duration_minutes === min ? form.color : 'var(--border-primary)',
-                    backgroundColor: form.duration_minutes === min ? `${form.color}18` : 'var(--bg-secondary)',
+                    borderColor:
+                      form.duration_minutes === min ? form.color : 'var(--border-primary)',
+                    backgroundColor:
+                      form.duration_minutes === min ? `${form.color}18` : 'var(--bg-secondary)',
                     color: form.duration_minutes === min ? form.color : 'var(--text-secondary)',
                   }}
                 >
@@ -464,7 +507,9 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
                   color: 'var(--text-primary)',
                 }}
               />
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>min</span>
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                min
+              </span>
             </div>
           </div>
 
@@ -472,7 +517,10 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
 
           {/* ── Recurrencia ── */}
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+            <p
+              className="mb-2 text-xs font-semibold uppercase tracking-wider"
+              style={{ color: 'var(--text-muted)' }}
+            >
               Recurrencia
             </p>
             <div className="space-y-1.5">
@@ -514,7 +562,10 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
                 >
                   <Minus size={14} />
                 </button>
-                <span className="w-8 text-center text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                <span
+                  className="w-8 text-center text-sm font-semibold"
+                  style={{ color: 'var(--text-primary)' }}
+                >
                   {form.times_per_week}
                 </span>
                 <button
@@ -538,7 +589,9 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
                     onClick={() => toggleDay(day)}
                     className="flex h-9 w-9 items-center justify-center rounded-lg text-xs font-semibold transition-colors"
                     style={{
-                      backgroundColor: form.specific_days.includes(day) ? form.color : 'var(--bg-secondary)',
+                      backgroundColor: form.specific_days.includes(day)
+                        ? form.color
+                        : 'var(--bg-secondary)',
                       color: form.specific_days.includes(day) ? '#FFFFFF' : 'var(--text-secondary)',
                       border: `1px solid ${form.specific_days.includes(day) ? form.color : 'var(--border-primary)'}`,
                     }}

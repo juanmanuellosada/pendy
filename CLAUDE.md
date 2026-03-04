@@ -11,6 +11,7 @@
 ## 🎨 Brand Identity
 
 ### Colors
+
 ```
 Primary (Dark Blue):  #283B56
 Accent (Red):         #EC1E2A
@@ -32,11 +33,13 @@ Priority 4 (Low):     #6B7280
 ```
 
 ### Logo
+
 - File: `pendy-logo.png` (with white background)
 - File: `pendy-logo-transparent.png` (transparent background)
 - The logo is a dark blue rounded square with a white checkbox inside and a red checkmark
 
 ### Typography
+
 - Primary Font: `Inter` (UI, body text)
 - Monospace: `JetBrains Mono` (code, filters)
 
@@ -45,6 +48,7 @@ Priority 4 (Low):     #6B7280
 ## 🛠 Tech Stack
 
 ### Frontend
+
 - **Framework:** React 18+ with Vite
 - **Language:** TypeScript (strict mode)
 - **Styling:** Tailwind CSS v4
@@ -58,6 +62,7 @@ Priority 4 (Low):     #6B7280
 - **Rich Text:** Tiptap (for comments)
 
 ### Backend
+
 - **Platform:** Supabase
 - **Database:** PostgreSQL (via Supabase)
 - **Auth:** Supabase Auth (email + Google OAuth)
@@ -70,10 +75,12 @@ Priority 4 (Low):     #6B7280
   - Reminders processing
 
 ### Multi-platform
+
 - **Mobile:** Capacitor (iOS + Android wrapper over web app)
 - **Desktop:** Tauri v2 (lightweight native desktop wrapper)
 
 ### Development
+
 - **Package Manager:** pnpm
 - **Linting:** ESLint + Prettier
 - **Testing:** Vitest + Testing Library
@@ -239,6 +246,7 @@ CREATE TABLE activity_log (
 ```
 
 ### Indexes
+
 ```sql
 CREATE INDEX idx_tasks_user_id ON tasks(user_id);
 CREATE INDEX idx_tasks_project_id ON tasks(project_id);
@@ -258,7 +266,9 @@ CREATE INDEX idx_activity_log_entity ON activity_log(entity_type, entity_id);
 ```
 
 ### Row Level Security (RLS)
+
 Every table MUST have RLS enabled. All policies follow the same pattern:
+
 ```sql
 -- Users can only access their own data
 ALTER TABLE [table] ENABLE ROW LEVEL SECURITY;
@@ -269,6 +279,7 @@ CREATE POLICY "[table]_delete" ON [table] FOR DELETE USING (user_id = auth.uid()
 ```
 
 ### Database Functions
+
 ```sql
 -- Auto-create inbox project for new users
 CREATE OR REPLACE FUNCTION create_default_project()
@@ -519,12 +530,12 @@ pendy/
 
 ### 5. Priorities (P1-P4)
 
-| Priority | Label   | Color   | Flag |
-|----------|---------|---------|------|
-| P1       | Urgent  | #EC1E2A | 🔴   |
-| P2       | High    | #F59E0B | 🟡   |
-| P3       | Medium  | #3B82F6 | 🔵   |
-| P4       | Low     | #6B7280 | ⚪   |
+| Priority | Label  | Color   | Flag |
+| -------- | ------ | ------- | ---- |
+| P1       | Urgent | #EC1E2A | 🔴   |
+| P2       | High   | #F59E0B | 🟡   |
+| P3       | Medium | #3B82F6 | 🔵   |
+| P4       | Low    | #6B7280 | ⚪   |
 
 Default priority for new tasks: P4.
 
@@ -540,6 +551,7 @@ Default priority for new tasks: P4.
 ### 7. Natural Language Date Parsing
 
 Parse strings like:
+
 - "hoy", "mañana", "pasado mañana", "ayer"
 - "lunes", "martes", ... (next occurrence)
 - "en 3 días", "en 2 semanas", "en 1 mes"
@@ -552,12 +564,14 @@ Implementation: Client-side parser first, with Edge Function fallback for comple
 ### 8. Recurring Tasks
 
 Use RRULE format (RFC 5545) stored in `recurrence_rule`:
+
 - Daily: `RRULE:FREQ=DAILY;INTERVAL=1`
 - Weekly on Monday: `RRULE:FREQ=WEEKLY;BYDAY=MO`
 - Monthly on the 15th: `RRULE:FREQ=MONTHLY;BYMONTHDAY=15`
 - Every 2 weeks: `RRULE:FREQ=WEEKLY;INTERVAL=2`
 
 Two modes:
+
 - **From due date:** Next occurrence calculated from original due_date
 - **From completion date:** Next occurrence calculated from when task was completed
 
@@ -575,11 +589,13 @@ When a recurring task is completed, automatically create the next occurrence.
 ### 10. Comments & Attachments
 
 **Comments:**
+
 - Rich text (via Tiptap editor): bold, italic, links, bullet lists, code
 - Threaded on each task
 - Timestamp + edit/delete
 
 **Attachments:**
+
 - Upload files to Supabase Storage
 - Attach to task or comment
 - Image preview for image files
@@ -637,6 +653,7 @@ label:trabajo & !completed:true
 ### 13. Quick Add
 
 Global quick add triggered by keyboard shortcut (`Q` or `Ctrl+K`):
+
 - Input field with NLP parsing
 - Type: "Comprar leche mañana p1 #compras" →
   - Title: "Comprar leche"
@@ -653,6 +670,7 @@ Global quick add triggered by keyboard shortcut (`Q` or `Ctrl+K`):
 ### 14. Drag & Drop
 
 Using @dnd-kit:
+
 - Reorder tasks within a section/project
 - Move tasks between sections
 - Move tasks between projects (sidebar drop)
@@ -686,29 +704,31 @@ Using @dnd-kit:
 
 ### 18. Keyboard Shortcuts
 
-| Shortcut       | Action                    |
-|----------------|---------------------------|
-| `Q`            | Quick add task            |
-| `Ctrl+K` / `/` | Search                    |
-| `Ctrl+Z`      | Undo last action          |
-| `1`-`4`        | Set priority (in editor)  |
-| `E`            | Edit selected task        |
-| `Delete`       | Delete selected task      |
-| `Space`        | Complete/uncomplete task  |
-| `↑` / `↓`     | Navigate tasks            |
-| `→`            | Open task detail          |
-| `←`            | Close task detail         |
-| `G then I`     | Go to Inbox               |
-| `G then T`     | Go to Today               |
-| `G then U`     | Go to Upcoming            |
+| Shortcut       | Action                   |
+| -------------- | ------------------------ |
+| `Q`            | Quick add task           |
+| `Ctrl+K` / `/` | Search                   |
+| `Ctrl+Z`       | Undo last action         |
+| `1`-`4`        | Set priority (in editor) |
+| `E`            | Edit selected task       |
+| `Delete`       | Delete selected task     |
+| `Space`        | Complete/uncomplete task |
+| `↑` / `↓`      | Navigate tasks           |
+| `→`            | Open task detail         |
+| `←`            | Close task detail        |
+| `G then I`     | Go to Inbox              |
+| `G then T`     | Go to Today              |
+| `G then U`     | Go to Upcoming           |
 
 ---
 
 ## 🤖 Agents & Skills
 
 ### Agent: Database Architect (`@db`)
+
 **Responsibility:** Supabase schema, migrations, RLS policies, functions, triggers, indexes.
 **Skills:**
+
 - Write PostgreSQL migrations in `supabase/migrations/`
 - Ensure ALL tables have RLS enabled with proper policies
 - Create optimized indexes for query patterns
@@ -717,6 +737,7 @@ Using @dnd-kit:
 - Configure Supabase Auth settings
 
 **Rules:**
+
 - Always use UUIDs as primary keys with `gen_random_uuid()`
 - Always include `created_at` and `updated_at` on every table
 - Always use `ON DELETE CASCADE` for user_id references
@@ -725,8 +746,10 @@ Using @dnd-kit:
 - Name migrations with sequential numbering: `001_`, `002_`, etc.
 
 ### Agent: UI Builder (`@ui`)
+
 **Responsibility:** React components, pages, layouts, styling, animations, responsive design.
 **Skills:**
+
 - Build components using shadcn/ui base + Tailwind CSS
 - Follow the brand colors defined in Brand Identity section
 - Implement responsive design (mobile-first)
@@ -735,6 +758,7 @@ Using @dnd-kit:
 - Implement dark/light theme with CSS variables
 
 **Rules:**
+
 - All components in TypeScript with proper types
 - Use `cn()` utility for conditional class merging
 - Mobile-first responsive: design for 375px, then scale up
@@ -747,8 +771,10 @@ Using @dnd-kit:
 - Task detail as right panel on desktop, full page on mobile
 
 ### Agent: Business Logic (`@logic`)
+
 **Responsibility:** Services, state management, NLP parsing, filter engine, recurrence handling.
 **Skills:**
+
 - Implement Zustand stores with proper selectors
 - Build TanStack Query hooks for server state
 - Write the natural language date parser (Spanish + English)
@@ -759,6 +785,7 @@ Using @dnd-kit:
 - Implement undo/redo via activity log
 
 **Rules:**
+
 - All service functions are pure when possible
 - Zustand stores: minimal state, computed values as selectors
 - TanStack Query: use `queryKey` factories for consistency
@@ -768,8 +795,10 @@ Using @dnd-kit:
 - RRULE: use `rrule` npm package for RFC 5545 compliance
 
 ### Agent: Sync & Infrastructure (`@sync`)
+
 **Responsibility:** Realtime sync, offline support, auth flow, Edge Functions.
 **Skills:**
+
 - Configure Supabase Realtime channels
 - Implement offline queue with IndexedDB
 - Build auth flow (login, register, OAuth, forgot password)
@@ -778,6 +807,7 @@ Using @dnd-kit:
 - Configure Tauri for desktop builds
 
 **Rules:**
+
 - Realtime: subscribe to user-specific channels only
 - Offline: use IndexedDB to queue mutations, replay on reconnect
 - Auth: always redirect to login if session expired
@@ -786,8 +816,10 @@ Using @dnd-kit:
 - Desktop: Tauri commands for native features (notifications, system tray)
 
 ### Agent: Testing (`@test`)
+
 **Responsibility:** Unit tests, integration tests, component tests.
 **Skills:**
+
 - Write Vitest unit tests for services and utilities
 - Write Testing Library tests for components
 - Test filter parser with edge cases
@@ -795,6 +827,7 @@ Using @dnd-kit:
 - Test recurrence logic
 
 **Rules:**
+
 - Test file naming: `*.test.ts` or `*.test.tsx`
 - Test directory mirrors `src/` structure
 - Minimum: test all services, parsers, and core components
@@ -806,6 +839,7 @@ Using @dnd-kit:
 ## 🚀 Implementation Phases
 
 ### Phase 1 — MVP Foundation (Week 1-2)
+
 **Goal:** Usable task manager with basic features.
 
 1. Project setup (Vite + React + Tailwind + shadcn/ui + Supabase)
@@ -822,6 +856,7 @@ Using @dnd-kit:
 12. Responsive design (mobile + desktop)
 
 ### Phase 2 — Power Features (Week 3-4)
+
 **Goal:** Advanced task management features.
 
 1. Subtasks (unlimited nesting)
@@ -836,6 +871,7 @@ Using @dnd-kit:
 10. Keyboard shortcuts
 
 ### Phase 3 — Premium Features (Week 5-6)
+
 **Goal:** Differentiate with premium-level features.
 
 1. Natural language date parsing (Spanish + English)
@@ -850,6 +886,7 @@ Using @dnd-kit:
 10. Activity log + undo
 
 ### Phase 4 — Multi-platform (Week 7-8)
+
 **Goal:** Ship on all platforms.
 
 1. Capacitor setup + mobile build (iOS + Android)
@@ -862,6 +899,7 @@ Using @dnd-kit:
 8. Real-time sync (Supabase Realtime)
 
 ### Phase 5 — Polish & Optimization (Week 9-10)
+
 **Goal:** Production-ready quality.
 
 1. Onboarding flow for new users
@@ -880,6 +918,7 @@ Using @dnd-kit:
 ## 📝 Coding Conventions
 
 ### General
+
 - Language: TypeScript strict mode, no `any`
 - Formatting: Prettier (2 spaces, single quotes, trailing commas)
 - Naming: camelCase for variables/functions, PascalCase for components/types
@@ -887,6 +926,7 @@ Using @dnd-kit:
 - Exports: named exports preferred, default export only for pages
 
 ### React
+
 - Functional components only
 - Custom hooks for all data fetching and business logic
 - Props interfaces named `{ComponentName}Props`
@@ -895,12 +935,14 @@ Using @dnd-kit:
 - Use `useCallback` and `useMemo` where performance matters
 
 ### State Management
+
 - Server state: TanStack Query (fetch, cache, sync)
 - Client state: Zustand (UI state, app state)
 - Form state: React Hook Form
 - URL state: React Router search params
 
 ### CSS/Tailwind
+
 - Use Tailwind classes directly in JSX
 - Use `cn()` utility for conditional classes
 - Extract repeated patterns into components, not CSS classes
@@ -908,6 +950,7 @@ Using @dnd-kit:
 - Mobile-first breakpoints: `sm:` `md:` `lg:` `xl:`
 
 ### Git
+
 - Conventional commits: `feat:`, `fix:`, `refactor:`, `style:`, `docs:`, `test:`
 - Branch naming: `feat/task-crud`, `fix/date-parser`, `refactor/sidebar`
 - Commit messages in English

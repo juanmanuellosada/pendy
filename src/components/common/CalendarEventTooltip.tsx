@@ -126,10 +126,7 @@ export function CalendarEventTooltip({ event, children, disabled }: CalendarEven
               >
                 <CalendarDays size={12} />
               </div>
-              <span
-                className="text-[10px] font-bold uppercase tracking-widest"
-                style={{ color }}
-              >
+              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color }}>
                 Evento de calendario
               </span>
             </div>
@@ -220,10 +217,7 @@ export function CalendarEventTooltip({ event, children, disabled }: CalendarEven
                 className="mt-3 border-t pt-2.5"
                 style={{ borderColor: 'var(--border-secondary)' }}
               >
-                <span
-                  className="flex items-center gap-1.5 text-xs font-medium"
-                  style={{ color }}
-                >
+                <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color }}>
                   <ExternalLink size={12} />
                   Abrir en Google Calendar
                 </span>

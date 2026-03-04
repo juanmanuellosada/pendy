@@ -47,9 +47,7 @@ export function useCreateSection() {
       await queryClient.cancelQueries({
         queryKey: sectionKeys.project(variables.project_id),
       })
-      const prev = queryClient.getQueryData<Section[]>(
-        sectionKeys.project(variables.project_id),
-      )
+      const prev = queryClient.getQueryData<Section[]>(sectionKeys.project(variables.project_id))
       const maxOrder = prev?.reduce((max, s) => Math.max(max, s.sort_order), -1) ?? -1
       const optimistic: Section = {
         id: `temp-${Date.now()}`,
@@ -61,18 +59,15 @@ export function useCreateSection() {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
-      queryClient.setQueryData(
-        sectionKeys.project(variables.project_id),
-        [...(prev ?? []), optimistic],
-      )
+      queryClient.setQueryData(sectionKeys.project(variables.project_id), [
+        ...(prev ?? []),
+        optimistic,
+      ])
       return { prev }
     },
     onError: (_err, variables, context) => {
       if (context?.prev) {
-        queryClient.setQueryData(
-          sectionKeys.project(variables.project_id),
-          context.prev,
-        )
+        queryClient.setQueryData(sectionKeys.project(variables.project_id), context.prev)
       }
     },
     onSettled: (_data, _err, variables) => {
@@ -107,8 +102,12 @@ export function useReorderSections() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ updates }: { projectId: string; updates: { id: string; sort_order: number }[] }) =>
-      sectionService.reorderSections(updates),
+    mutationFn: ({
+      updates,
+    }: {
+      projectId: string
+      updates: { id: string; sort_order: number }[]
+    }) => sectionService.reorderSections(updates),
     onMutate: async ({ projectId, updates }) => {
       await queryClient.cancelQueries({ queryKey: sectionKeys.project(projectId) })
       const prev = queryClient.getQueryData<Section[]>(sectionKeys.project(projectId))
@@ -136,8 +135,7 @@ export function useDeleteSection() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id }: { id: string; projectId: string }) =>
-      sectionService.deleteSection(id),
+    mutationFn: ({ id }: { id: string; projectId: string }) => sectionService.deleteSection(id),
     onSuccess: (_data, { projectId }) => {
       queryClient.invalidateQueries({
         queryKey: sectionKeys.project(projectId),

@@ -6,11 +6,11 @@ const DAY_MAP: Record<string, number> = {
   domingo: 0,
   lunes: 1,
   martes: 2,
-  'miércoles': 3,
+  miércoles: 3,
   miercoles: 3,
   jueves: 4,
   viernes: 5,
-  'sábado': 6,
+  sábado: 6,
   sabado: 6,
 }
 
@@ -18,18 +18,30 @@ const DAY_NAMES_PATTERN = 'domingo|lunes|martes|mi[eé]rcoles|jueves|viernes|s[a
 
 // ── Meses para fechas explícitas ──────────────────────────────────────────────
 const MONTH_MAP: Record<string, number> = {
-  enero: 1, ene: 1,
-  febrero: 2, feb: 2,
-  marzo: 3, mar: 3,
-  abril: 4, abr: 4,
+  enero: 1,
+  ene: 1,
+  febrero: 2,
+  feb: 2,
+  marzo: 3,
+  mar: 3,
+  abril: 4,
+  abr: 4,
   mayo: 5,
-  junio: 6, jun: 6,
-  julio: 7, jul: 7,
-  agosto: 8, ago: 8,
-  septiembre: 9, sep: 9, sept: 9,
-  octubre: 10, oct: 10,
-  noviembre: 11, nov: 11,
-  diciembre: 12, dic: 12,
+  junio: 6,
+  jun: 6,
+  julio: 7,
+  jul: 7,
+  agosto: 8,
+  ago: 8,
+  septiembre: 9,
+  sep: 9,
+  sept: 9,
+  octubre: 10,
+  oct: 10,
+  noviembre: 11,
+  nov: 11,
+  diciembre: 12,
+  dic: 12,
 }
 
 const MONTH_NAMES_PATTERN =
@@ -238,7 +250,7 @@ export function parseNLPTokens(text: string): NLPResult {
   if (!result.date && /\beste fin de semana\b/.test(working)) {
     // Next Saturday
     const dayOfWeek = getDay(today)
-    const daysToSat = dayOfWeek <= 6 ? (6 - dayOfWeek) || 7 : 7
+    const daysToSat = dayOfWeek <= 6 ? 6 - dayOfWeek || 7 : 7
     result.date = format(addDays(today, daysToSat), 'yyyy-MM-dd')
     result.patterns.push(/\beste fin de semana\b/i)
     working = working.replace(/\beste fin de semana\b/, ' ')
@@ -304,7 +316,10 @@ export function parseNLPTokens(text: string): NLPResult {
     const m = working.match(re)
     if (m) {
       const day = parseInt(m[1]!)
-      const monthKey = m[2]!.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      const monthKey = m[2]!
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
       const month = MONTH_MAP[monthKey] ?? MONTH_MAP[m[2]!.toLowerCase()]
       const year = m[3] ? parseInt(m[3]) : today.getFullYear()
       if (month && day >= 1 && day <= 31) {

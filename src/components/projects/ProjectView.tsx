@@ -244,9 +244,7 @@ export function ProjectView({ project }: ProjectViewProps) {
   }
 
   // DnD
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-  )
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
   const activeDragItem = useMemo(() => {
     if (!activeDragId) return null
@@ -338,12 +336,7 @@ export function ProjectView({ project }: ProjectViewProps) {
 
     // Calendar view
     if (opts.viewStyle === 'calendar') {
-      return (
-        <CalendarView
-          calendarMode={opts.calendarMode}
-          onAddTask={handleAddTask}
-        />
-      )
+      return <CalendarView calendarMode={opts.calendarMode} onAddTask={handleAddTask} />
     }
 
     // List view with grouping (priority/label) — no DnD, no sections
@@ -533,10 +526,7 @@ export function ProjectView({ project }: ProjectViewProps) {
                 }}
               >
                 <GripVertical size={14} style={{ color: 'var(--text-muted)' }} />
-                <span
-                  className="text-sm font-semibold"
-                  style={{ color: 'var(--text-primary)' }}
-                >
+                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                   {(activeDragItem.item as Section).name}
                 </span>
               </div>
@@ -560,18 +550,23 @@ export function ProjectView({ project }: ProjectViewProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          {opts.viewStyle !== 'panel' && opts.viewStyle !== 'calendar' && !isSelectMode && visibleTasks.length > 0 && (
-            <button
-              onClick={enter}
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
-              style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
-            >
-              <ListChecks size={14} />
-              Seleccionar
-            </button>
-          )}
+          {opts.viewStyle !== 'panel' &&
+            opts.viewStyle !== 'calendar' &&
+            !isSelectMode &&
+            visibleTasks.length > 0 && (
+              <button
+                onClick={enter}
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
+                style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')
+                }
+              >
+                <ListChecks size={14} />
+                Seleccionar
+              </button>
+            )}
           <ViewOptionsBar viewId={VIEW_ID} />
 
           {!project.is_inbox && (
@@ -604,9 +599,7 @@ export function ProjectView({ project }: ProjectViewProps) {
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
                       }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.backgroundColor = 'transparent')
-                      }
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
                       <Pencil size={14} />
                       Editar proyecto
@@ -624,9 +617,7 @@ export function ProjectView({ project }: ProjectViewProps) {
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
                       }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.backgroundColor = 'transparent')
-                      }
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
                       <Star size={14} />
                       {project.is_favorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
@@ -641,9 +632,7 @@ export function ProjectView({ project }: ProjectViewProps) {
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
                       }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.backgroundColor = 'transparent')
-                      }
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
                       <span className="flex items-center gap-2">
                         <LayoutList size={14} />
@@ -673,9 +662,7 @@ export function ProjectView({ project }: ProjectViewProps) {
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
                       }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.backgroundColor = 'transparent')
-                      }
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
                       <Archive size={14} />
                       Archivar
@@ -740,7 +727,9 @@ export function ProjectView({ project }: ProjectViewProps) {
                 <Plus size={14} />
                 Agregar tarea
               </button>
-              <span className="text-xs" style={{ color: 'var(--border-primary)' }}>|</span>
+              <span className="text-xs" style={{ color: 'var(--border-primary)' }}>
+                |
+              </span>
               <button
                 onClick={() => setAddingSectionInline(true)}
                 className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
@@ -1049,9 +1038,7 @@ function SortableSectionBlock({
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
                     }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = 'transparent')
-                    }
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
                     <Pencil size={14} />
                     Renombrar
@@ -1065,9 +1052,7 @@ function SortableSectionBlock({
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
                     }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = 'transparent')
-                    }
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
                     <Trash2 size={14} />
                     Eliminar
@@ -1244,9 +1229,7 @@ function StaticSectionBlock({
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
                     }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = 'transparent')
-                    }
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
                     <Pencil size={14} />
                     Renombrar
@@ -1260,9 +1243,7 @@ function StaticSectionBlock({
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
                     }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = 'transparent')
-                    }
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
                     <Trash2 size={14} />
                     Eliminar

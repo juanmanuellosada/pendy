@@ -41,9 +41,7 @@ async function fetchGoogleEventsWithRefresh(
   }
 
   const calendarIds =
-    integration.selected_calendar_ids?.length > 0
-      ? integration.selected_calendar_ids
-      : ['primary']
+    integration.selected_calendar_ids?.length > 0 ? integration.selected_calendar_ids : ['primary']
 
   const fetchAll = async (token: string) => {
     let calendarList: GoogleCalendarListEntry[] = []
@@ -184,7 +182,12 @@ export function useCalendarEventsByRange(from: Date | null, to: Date | null) {
       }
 
       if (!googleIntegration) return []
-      const events = await fetchGoogleEventsWithRefresh(googleIntegration, from!, to!, makeRefreshFn)
+      const events = await fetchGoogleEventsWithRefresh(
+        googleIntegration,
+        from!,
+        to!,
+        makeRefreshFn,
+      )
       return events.sort((a, b) => a.start.getTime() - b.start.getTime())
     },
   })
@@ -251,7 +254,9 @@ export function useCalendarEventMutations() {
     },
     onMutate: async (data) => {
       await queryClient.cancelQueries({ queryKey: ['calendarEvents'] })
-      const snapshots = queryClient.getQueriesData<CalendarEvent[]>({ queryKey: ['calendarEvents'] })
+      const snapshots = queryClient.getQueriesData<CalendarEvent[]>({
+        queryKey: ['calendarEvents'],
+      })
       queryClient.setQueriesData<CalendarEvent[]>({ queryKey: ['calendarEvents'] }, (old) => {
         if (!old) return old
         return old.map((ev) => {
@@ -284,11 +289,7 @@ export function useCalendarEventMutations() {
   })
 
   const moveEvent = useMutation({
-    mutationFn: async (data: {
-      eventId: string
-      fromCalendarId: string
-      toCalendarId: string
-    }) => {
+    mutationFn: async (data: { eventId: string; fromCalendarId: string; toCalendarId: string }) => {
       const rawId = data.eventId.replace(/^google:/, '')
       const token = await getValidToken()
       return moveGoogleEvent(token, data.fromCalendarId, rawId, data.toCalendarId)

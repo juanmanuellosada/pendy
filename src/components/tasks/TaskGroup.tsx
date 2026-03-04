@@ -41,7 +41,10 @@ export function TaskGroup({
           <ChevronRight size={14} style={{ color: 'var(--text-muted)' }} />
         )}
         {color && (
-          <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+          <span
+            className="h-2.5 w-2.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: color }}
+          />
         )}
         <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
           {label}

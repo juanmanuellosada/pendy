@@ -30,7 +30,7 @@ async function buildVapidHeaders(
   endpoint: string,
   privateKeyB64: string,
   publicKeyB64: string,
-  email: string
+  email: string,
 ): Promise<{ Authorization: string; 'Crypto-Key': string }> {
   const url = new URL(endpoint)
   const audience = `${url.protocol}//${url.host}`
@@ -38,10 +38,10 @@ async function buildVapidHeaders(
   const exp = Math.floor(Date.now() / 1000) + 12 * 60 * 60 // 12h
 
   const header = uint8ArrayToBase64url(
-    new TextEncoder().encode(JSON.stringify({ typ: 'JWT', alg: 'ES256' }))
+    new TextEncoder().encode(JSON.stringify({ typ: 'JWT', alg: 'ES256' })),
   )
   const payload = uint8ArrayToBase64url(
-    new TextEncoder().encode(JSON.stringify({ aud: audience, exp, sub: email }))
+    new TextEncoder().encode(JSON.stringify({ aud: audience, exp, sub: email })),
   )
   const sigInput = `${header}.${payload}`
 
@@ -50,15 +50,41 @@ async function buildVapidHeaders(
 
   // Build PKCS8 DER for P-256 private key from raw scalar
   const pkcs8Header = new Uint8Array([
-    0x30, 0x41, // SEQUENCE
-    0x02, 0x01, 0x00, // INTEGER version=0
-    0x30, 0x13, // SEQUENCE
-    0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01, // OID ecPublicKey
-    0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, // OID P-256
-    0x04, 0x27, // OCTET STRING
-    0x30, 0x25, // SEQUENCE
-    0x02, 0x01, 0x01, // INTEGER version=1
-    0x04, 0x20, // OCTET STRING (32 bytes key)
+    0x30,
+    0x41, // SEQUENCE
+    0x02,
+    0x01,
+    0x00, // INTEGER version=0
+    0x30,
+    0x13, // SEQUENCE
+    0x06,
+    0x07,
+    0x2a,
+    0x86,
+    0x48,
+    0xce,
+    0x3d,
+    0x02,
+    0x01, // OID ecPublicKey
+    0x06,
+    0x08,
+    0x2a,
+    0x86,
+    0x48,
+    0xce,
+    0x3d,
+    0x03,
+    0x01,
+    0x07, // OID P-256
+    0x04,
+    0x27, // OCTET STRING
+    0x30,
+    0x25, // SEQUENCE
+    0x02,
+    0x01,
+    0x01, // INTEGER version=1
+    0x04,
+    0x20, // OCTET STRING (32 bytes key)
   ])
   const pkcs8 = new Uint8Array(pkcs8Header.length + rawPriv.length)
   pkcs8.set(pkcs8Header)
@@ -69,13 +95,13 @@ async function buildVapidHeaders(
     pkcs8,
     { name: 'ECDSA', namedCurve: 'P-256' },
     false,
-    ['sign']
+    ['sign'],
   )
 
   const sigBytes = await crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },
     privateKey,
-    new TextEncoder().encode(sigInput)
+    new TextEncoder().encode(sigInput),
   )
 
   const sig = uint8ArrayToBase64url(new Uint8Array(sigBytes))
@@ -91,7 +117,7 @@ async function buildVapidHeaders(
 
 async function sendPush(
   sub: { endpoint: string; p256dh: string; auth: string },
-  payload: string
+  payload: string,
 ): Promise<{ ok: boolean; status?: number }> {
   // Encrypt payload using ECDH + AES-128-GCM (RFC 8291)
   const encrypted = await encryptPayload(sub.p256dh, sub.auth, payload)
@@ -100,7 +126,7 @@ async function sendPush(
     sub.endpoint,
     vapidPrivateKey,
     vapidPublicKey,
-    vapidEmail
+    vapidEmail,
   )
 
   const res = await fetch(sub.endpoint, {
@@ -122,31 +148,27 @@ async function sendPush(
 async function encryptPayload(
   p256dhB64: string,
   authB64: string,
-  plaintext: string
+  plaintext: string,
 ): Promise<Uint8Array> {
-  const serverKeys = await crypto.subtle.generateKey(
-    { name: 'ECDH', namedCurve: 'P-256' },
-    true,
-    ['deriveBits']
-  )
-  const serverPublicRaw = new Uint8Array(
-    await crypto.subtle.exportKey('raw', serverKeys.publicKey)
-  )
+  const serverKeys = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, [
+    'deriveBits',
+  ])
+  const serverPublicRaw = new Uint8Array(await crypto.subtle.exportKey('raw', serverKeys.publicKey))
 
   const clientPublicKey = await crypto.subtle.importKey(
     'raw',
     base64urlToUint8Array(p256dhB64),
     { name: 'ECDH', namedCurve: 'P-256' },
     false,
-    []
+    [],
   )
 
   const sharedSecret = new Uint8Array(
     await crypto.subtle.deriveBits(
       { name: 'ECDH', public: clientPublicKey },
       serverKeys.privateKey,
-      256
-    )
+      256,
+    ),
   )
 
   const authSecret = base64urlToUint8Array(authB64)
@@ -165,7 +187,7 @@ async function encryptPayload(
   padded.set(data, 2)
 
   const ciphertext = new Uint8Array(
-    await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, key, padded)
+    await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, key, padded),
   )
 
   // aes128gcm record: salt(16) + rs(4) + keyid_len(1) + keyid(65) + ciphertext
@@ -173,10 +195,14 @@ async function encryptPayload(
   new DataView(rs.buffer).setUint32(0, 4096, false)
   const result = new Uint8Array(16 + 4 + 1 + 65 + ciphertext.length)
   let offset = 0
-  result.set(salt, offset); offset += 16
-  result.set(rs, offset); offset += 4
-  result[offset] = 65; offset += 1
-  result.set(serverPublicRaw, offset); offset += 65
+  result.set(salt, offset)
+  offset += 16
+  result.set(rs, offset)
+  offset += 4
+  result[offset] = 65
+  offset += 1
+  result.set(serverPublicRaw, offset)
+  offset += 65
   result.set(ciphertext, offset)
   return result
 }
@@ -193,11 +219,15 @@ async function hkdf(
   salt: Uint8Array,
   ikm: Uint8Array,
   info: Uint8Array,
-  length: number
+  length: number,
 ): Promise<Uint8Array> {
   const keyMaterial = await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits'])
   return new Uint8Array(
-    await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt, info }, keyMaterial, length * 8)
+    await crypto.subtle.deriveBits(
+      { name: 'HKDF', hash: 'SHA-256', salt, info },
+      keyMaterial,
+      length * 8,
+    ),
   )
 }
 
@@ -265,18 +295,13 @@ Deno.serve(async (req: Request) => {
         const res = await sendPush(sub, payload)
         if (!res.ok && res.status === 410) {
           // Subscription expired — remove it
-          await supabase
-            .from('push_subscriptions')
-            .delete()
-            .eq('endpoint', sub.endpoint)
+          await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
         }
         return res
-      })
+      }),
     )
 
-    const anySucceeded = results.some(
-      (r) => r.status === 'fulfilled' && r.value.ok
-    )
+    const anySucceeded = results.some((r) => r.status === 'fulfilled' && r.value.ok)
 
     if (anySucceeded) {
       sent++
@@ -288,8 +313,7 @@ Deno.serve(async (req: Request) => {
     await supabase.from('reminders').update({ is_sent: true }).eq('id', reminder.id)
   }
 
-  return new Response(
-    JSON.stringify({ processed: reminders.length, sent, failed }),
-    { headers: { 'Content-Type': 'application/json' } }
-  )
+  return new Response(JSON.stringify({ processed: reminders.length, sent, failed }), {
+    headers: { 'Content-Type': 'application/json' },
+  })
 })

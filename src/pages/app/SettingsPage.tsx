@@ -52,30 +52,28 @@ export default function SettingsPage() {
 
       <div className="space-y-6">
         {/* Profile section */}
-        <section
-          className="rounded-xl border p-4"
-          style={{ borderColor: 'var(--border-primary)' }}
-        >
+        <section className="rounded-xl border p-4" style={{ borderColor: 'var(--border-primary)' }}>
           <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
             Perfil
           </h2>
           <div className="mt-3 space-y-2">
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              <span className="font-medium" style={{ color: 'var(--text-primary)' }}>Nombre:</span>{' '}
+              <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                Nombre:
+              </span>{' '}
               {profile?.full_name || 'Sin nombre'}
             </p>
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              <span className="font-medium" style={{ color: 'var(--text-primary)' }}>Email:</span>{' '}
+              <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                Email:
+              </span>{' '}
               {profile?.email}
             </p>
           </div>
         </section>
 
         {/* Theme section */}
-        <section
-          className="rounded-xl border p-4"
-          style={{ borderColor: 'var(--border-primary)' }}
-        >
+        <section className="rounded-xl border p-4" style={{ borderColor: 'var(--border-primary)' }}>
           <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
             Tema
           </h2>
@@ -104,7 +102,13 @@ export default function SettingsPage() {
         {/* Calendar integrations section */}
         <CalendarIntegrations
           isConnecting={exchangeCode.isPending}
-          connectError={exchangeCode.isError ? (exchangeCode.error instanceof Error ? exchangeCode.error.message : 'Error al conectar el calendario') : null}
+          connectError={
+            exchangeCode.isError
+              ? exchangeCode.error instanceof Error
+                ? exchangeCode.error.message
+                : 'Error al conectar el calendario'
+              : null
+          }
         />
       </div>
     </div>

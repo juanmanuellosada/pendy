@@ -29,9 +29,7 @@ export function BoardView({ projectId, tasks, onAddTask, onEditSection }: BoardV
     ]
 
     for (const section of sections) {
-      const sectionTasks = tasks.filter(
-        (t) => t.section_id === section.id && !t.is_completed,
-      )
+      const sectionTasks = tasks.filter((t) => t.section_id === section.id && !t.is_completed)
       cols.push({ id: section.id, name: section.name, tasks: sectionTasks, section })
     }
 
@@ -77,7 +75,9 @@ export function BoardView({ projectId, tasks, onAddTask, onEditSection }: BoardV
           onDrop={(e) => handleDrop(e, col.id)}
           onDragOver={handleDragOver}
           onDeleteSection={col.section ? () => handleDeleteSection(col.section!) : undefined}
-          onEditSection={col.section && onEditSection ? () => onEditSection(col.section!) : undefined}
+          onEditSection={
+            col.section && onEditSection ? () => onEditSection(col.section!) : undefined
+          }
         />
       ))}
 
@@ -131,9 +131,7 @@ function BoardColumn({
 
   return (
     <div
-      className={cn(
-        'flex flex-shrink-0 flex-col rounded-xl transition-colors w-[300px]',
-      )}
+      className={cn('flex flex-shrink-0 flex-col rounded-xl transition-colors w-[300px]')}
       style={{
         backgroundColor: isOver ? 'var(--bg-active)' : 'var(--bg-secondary)',
       }}
@@ -150,16 +148,10 @@ function BoardColumn({
       {/* Column header */}
       <div className="flex items-center justify-between px-3 pt-3 pb-2">
         <div className="flex items-center gap-2">
-          <h3
-            className="text-sm font-semibold"
-            style={{ color: 'var(--text-primary)' }}
-          >
+          <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
             {column.name}
           </h3>
-          <span
-            className="text-xs font-medium"
-            style={{ color: 'var(--text-muted)' }}
-          >
+          <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
             {column.tasks.length}
           </span>
         </div>
@@ -188,8 +180,14 @@ function BoardColumn({
               </button>
               {menuOpen && (
                 <SectionMenu
-                  onEdit={() => { onEditSection?.(); setMenuOpen(false) }}
-                  onDelete={() => { onDeleteSection?.(); setMenuOpen(false) }}
+                  onEdit={() => {
+                    onEditSection?.()
+                    setMenuOpen(false)
+                  }}
+                  onDelete={() => {
+                    onDeleteSection?.()
+                    setMenuOpen(false)
+                  }}
                   onClose={() => setMenuOpen(false)}
                 />
               )}

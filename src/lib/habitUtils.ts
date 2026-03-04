@@ -1,4 +1,12 @@
-import { getDay, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval, subDays, format } from 'date-fns'
+import {
+  getDay,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isWithinInterval,
+  subDays,
+  format,
+} from 'date-fns'
 import type { Habit, HabitCompletion, HabitSchedule } from './types'
 
 const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
@@ -131,9 +139,7 @@ function calcSpecificDaysStreak(
   }
 
   // Best: same logic on full history
-  const sorted = completions
-    .map((c) => c.completed_date)
-    .sort()
+  const sorted = completions.map((c) => c.completed_date).sort()
   let best = 0
   let run = 0
   let prevRequired: string | null = null

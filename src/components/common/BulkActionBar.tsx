@@ -1,13 +1,29 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import {
-  X, Trash2, FolderOpen, Flag, Calendar, Check,
-  ChevronLeft, ChevronRight, Sun, CalendarDays, Circle,
+  X,
+  Trash2,
+  FolderOpen,
+  Flag,
+  Calendar,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Sun,
+  CalendarDays,
+  Circle,
 } from 'lucide-react'
 import {
-  format, addDays, addMonths, subMonths,
-  startOfMonth, endOfMonth, eachDayOfInterval,
-  isSameDay, isSameMonth,
-  startOfWeek, endOfWeek,
+  format,
+  addDays,
+  addMonths,
+  subMonths,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameDay,
+  isSameMonth,
+  startOfWeek,
+  endOfWeek,
 } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useProjects } from '@/hooks/useProjects'
@@ -74,7 +90,11 @@ function MiniDatePicker({ onSelect }: { onSelect: (date: string | null) => void 
         >
           <Icon size={14} style={{ color }} />
           <span className="flex-1 text-left text-xs">{label}</span>
-          {hint && <span className="text-xs capitalize" style={{ color: 'var(--text-muted)' }}>{hint}</span>}
+          {hint && (
+            <span className="text-xs capitalize" style={{ color: 'var(--text-muted)' }}>
+              {hint}
+            </span>
+          )}
         </button>
       ))}
 
@@ -106,7 +126,11 @@ function MiniDatePicker({ onSelect }: { onSelect: (date: string | null) => void 
       {/* Cabeceras de días */}
       <div className="grid grid-cols-7 px-2 text-center">
         {DAY_HEADERS.map((d) => (
-          <span key={d} className="py-0.5 text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>
+          <span
+            key={d}
+            className="py-0.5 text-[10px] font-medium"
+            style={{ color: 'var(--text-muted)' }}
+          >
             {d}
           </span>
         ))}
@@ -232,7 +256,10 @@ export function BulkActionBar({
             <div className="h-1.5 w-1.5 rounded-sm" style={{ backgroundColor: '#283B56' }} />
           )}
         </div>
-        <span className="whitespace-nowrap text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+        <span
+          className="whitespace-nowrap text-sm font-medium"
+          style={{ color: 'var(--text-primary)' }}
+        >
           {selectedCount} {label}
         </span>
       </button>
@@ -253,10 +280,12 @@ export function BulkActionBar({
                   backgroundColor: activeMenu === 'project' ? 'var(--bg-secondary)' : 'transparent',
                 }}
                 onMouseEnter={(e) => {
-                  if (activeMenu !== 'project') e.currentTarget.style.backgroundColor = 'var(--bg-hover)'
+                  if (activeMenu !== 'project')
+                    e.currentTarget.style.backgroundColor = 'var(--bg-hover)'
                 }}
                 onMouseLeave={(e) => {
-                  if (activeMenu !== 'project') e.currentTarget.style.backgroundColor = 'transparent'
+                  if (activeMenu !== 'project')
+                    e.currentTarget.style.backgroundColor = 'transparent'
                 }}
               >
                 <FolderOpen size={14} />
@@ -265,7 +294,10 @@ export function BulkActionBar({
               {activeMenu === 'project' && (
                 <div
                   className="absolute bottom-full mb-2 left-0 z-[60] w-52 rounded-xl border py-1 shadow-xl max-h-60 overflow-y-auto"
-                  style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}
+                  style={{
+                    backgroundColor: 'var(--bg-primary)',
+                    borderColor: 'var(--border-primary)',
+                  }}
                 >
                   {regularProjects.length === 0 ? (
                     <p className="px-3 py-2 text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -286,8 +318,12 @@ export function BulkActionBar({
                               paddingLeft: 12 + project.depth * 12,
                               color: 'var(--text-primary)',
                             }}
-                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.backgroundColor = 'transparent')
+                            }
                           >
                             <span
                               className="h-2.5 w-2.5 flex-shrink-0 rounded-sm"
@@ -307,10 +343,17 @@ export function BulkActionBar({
                                 paddingLeft: 28 + project.depth * 12,
                                 color: 'var(--text-secondary)',
                               }}
-                              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.backgroundColor = 'transparent')
+                              }
                             >
-                              <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ backgroundColor: project.color, opacity: 0.6 }} />
+                              <span
+                                className="h-1.5 w-1.5 flex-shrink-0 rounded-full"
+                                style={{ backgroundColor: project.color, opacity: 0.6 }}
+                              />
                               <span className="truncate">{s.name}</span>
                             </button>
                           ))}
@@ -331,13 +374,16 @@ export function BulkActionBar({
                 className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors"
                 style={{
                   color: activeMenu === 'priority' ? '#283B56' : 'var(--text-secondary)',
-                  backgroundColor: activeMenu === 'priority' ? 'var(--bg-secondary)' : 'transparent',
+                  backgroundColor:
+                    activeMenu === 'priority' ? 'var(--bg-secondary)' : 'transparent',
                 }}
                 onMouseEnter={(e) => {
-                  if (activeMenu !== 'priority') e.currentTarget.style.backgroundColor = 'var(--bg-hover)'
+                  if (activeMenu !== 'priority')
+                    e.currentTarget.style.backgroundColor = 'var(--bg-hover)'
                 }}
                 onMouseLeave={(e) => {
-                  if (activeMenu !== 'priority') e.currentTarget.style.backgroundColor = 'transparent'
+                  if (activeMenu !== 'priority')
+                    e.currentTarget.style.backgroundColor = 'transparent'
                 }}
               >
                 <Flag size={14} />
@@ -346,7 +392,10 @@ export function BulkActionBar({
               {activeMenu === 'priority' && (
                 <div
                   className="absolute bottom-full mb-2 left-0 z-[60] w-44 rounded-xl border py-1 shadow-xl"
-                  style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}
+                  style={{
+                    backgroundColor: 'var(--bg-primary)',
+                    borderColor: 'var(--border-primary)',
+                  }}
                 >
                   {([1, 2, 3, 4] as const).map((p) => (
                     <button
@@ -357,11 +406,13 @@ export function BulkActionBar({
                       }}
                       className="flex w-full items-center gap-2.5 px-3 py-2 text-sm transition-colors"
                       style={{ color: 'var(--text-primary)' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                      }
                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
-                      <Flag size={14} style={{ color: PRIORITY_COLORS[p] }} />
-                      P{p} · {PRIORITY_LABELS[p]}
+                      <Flag size={14} style={{ color: PRIORITY_COLORS[p] }} />P{p} ·{' '}
+                      {PRIORITY_LABELS[p]}
                     </button>
                   ))}
                 </div>
@@ -380,7 +431,8 @@ export function BulkActionBar({
                   backgroundColor: activeMenu === 'date' ? 'var(--bg-secondary)' : 'transparent',
                 }}
                 onMouseEnter={(e) => {
-                  if (activeMenu !== 'date') e.currentTarget.style.backgroundColor = 'var(--bg-hover)'
+                  if (activeMenu !== 'date')
+                    e.currentTarget.style.backgroundColor = 'var(--bg-hover)'
                 }}
                 onMouseLeave={(e) => {
                   if (activeMenu !== 'date') e.currentTarget.style.backgroundColor = 'transparent'
@@ -392,7 +444,10 @@ export function BulkActionBar({
               {activeMenu === 'date' && (
                 <div
                   className="absolute bottom-full mb-2 left-0 z-[60] w-56 rounded-xl border shadow-xl overflow-hidden"
-                  style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}
+                  style={{
+                    backgroundColor: 'var(--bg-primary)',
+                    borderColor: 'var(--border-primary)',
+                  }}
                 >
                   <MiniDatePicker
                     onSelect={(date) => {

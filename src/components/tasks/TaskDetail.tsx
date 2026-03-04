@@ -16,9 +16,22 @@ import {
 } from 'lucide-react'
 import { useAppStore } from '@/stores/appStore'
 import { useUIStore } from '@/stores/uiStore'
-import { useTask, useSubtasks, useUpdateTask, useCreateTask, useCompleteTask, useDeleteTask } from '@/hooks/useTasks'
+import {
+  useTask,
+  useSubtasks,
+  useUpdateTask,
+  useCreateTask,
+  useCompleteTask,
+  useDeleteTask,
+} from '@/hooks/useTasks'
 import { useProjects } from '@/hooks/useProjects'
-import { useTaskLabels, useLabels, useSetTaskLabels, useCreateLabel, LABEL_COLORS } from '@/hooks/useLabels'
+import {
+  useTaskLabels,
+  useLabels,
+  useSetTaskLabels,
+  useCreateLabel,
+  LABEL_COLORS,
+} from '@/hooks/useLabels'
 import { useAllSections } from '@/hooks/useSections'
 import type { Editor } from '@tiptap/react'
 import { useTaskReminders, useCreateReminder, useDeleteReminder } from '@/hooks/useReminders'
@@ -251,8 +264,22 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
 
   /* ── Autocomplete helpers ─────────────────────── */
   type AtItem =
-    | { kind: 'project'; id: string; name: string; color: string; icon?: string | null; depth: number }
-    | { kind: 'section'; id: string; name: string; projectId: string; projectColor: string; depth: number }
+    | {
+        kind: 'project'
+        id: string
+        name: string
+        color: string
+        icon?: string | null
+        depth: number
+      }
+    | {
+        kind: 'section'
+        id: string
+        name: string
+        projectId: string
+        projectColor: string
+        depth: number
+      }
 
   const confirmHashLabel = (label: { id: string; name: string; color: string }) => {
     const editor = titleEditorRef.current
@@ -371,7 +398,10 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
     for (const label of labels) {
       const escaped = label.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       if (new RegExp(`#${escaped}(?=\\s|$)`, 'i').test(stripHtmlTags(cleanTitle))) {
-        if (!newLabelIds.includes(label.id)) { newLabelIds.push(label.id); addedLabel = true }
+        if (!newLabelIds.includes(label.id)) {
+          newLabelIds.push(label.id)
+          addedLabel = true
+        }
         const div = document.createElement('div')
         div.innerHTML = cleanTitle
         const walker = document.createTreeWalker(div, NodeFilter.SHOW_TEXT)
@@ -417,10 +447,7 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
   const handleDescriptionBlur = () => {}
 
   /* ── Explicit save (title + description) ──── */
-  const isDirty = !!task && (
-    title !== task.title ||
-    description !== (task.description ?? '')
-  )
+  const isDirty = !!task && (title !== task.title || description !== (task.description ?? ''))
 
   // Keep a stable ref so the Ctrl+S keyboard handler always uses the latest version
   const saveMainRef = useRef<() => void>(() => {})
@@ -463,7 +490,11 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
     save({ duration_minutes: min })
   }
 
-  const handleRecurrenceChange = (recurring: boolean, rule: string | null, from: 'due_date' | 'completion_date') => {
+  const handleRecurrenceChange = (
+    recurring: boolean,
+    rule: string | null,
+    from: 'due_date' | 'completion_date',
+  ) => {
     setIsRecurring(recurring)
     setRecurrenceRule(rule)
     setRecurrenceFrom(from)
@@ -615,7 +646,9 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
 
   // Hash autocomplete (#labels)
   const hashFilteredLabels =
-    hashQuery !== null ? labels.filter((l) => l.name.toLowerCase().includes(hashQuery.toLowerCase())) : []
+    hashQuery !== null
+      ? labels.filter((l) => l.name.toLowerCase().includes(hashQuery.toLowerCase()))
+      : []
   const showHashCreate =
     hashQuery !== null &&
     hashQuery.trim() !== '' &&
@@ -627,444 +660,517 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
     const flat = flattenProjectTree(buildProjectTree(projects.filter((p) => !p.is_archived)))
     const result: AtItem[] = []
     for (const proj of flat) {
-      result.push({ kind: 'project', id: proj.id, name: proj.name, color: proj.color, icon: proj.icon, depth: proj.depth })
-      const sections = (sectionsMap?.get(proj.id) ?? []).slice().sort((a, b) => a.sort_order - b.sort_order)
+      result.push({
+        kind: 'project',
+        id: proj.id,
+        name: proj.name,
+        color: proj.color,
+        icon: proj.icon,
+        depth: proj.depth,
+      })
+      const sections = (sectionsMap?.get(proj.id) ?? [])
+        .slice()
+        .sort((a, b) => a.sort_order - b.sort_order)
       for (const sec of sections) {
-        result.push({ kind: 'section', id: sec.id, name: sec.name, projectId: proj.id, projectColor: proj.color, depth: proj.depth + 1 })
+        result.push({
+          kind: 'section',
+          id: sec.id,
+          name: sec.name,
+          projectId: proj.id,
+          projectColor: proj.color,
+          depth: proj.depth + 1,
+        })
       }
     }
     return result
   })()
   const atFilteredItems: AtItem[] =
-    atQuery !== null ? allAtItems.filter((item) => item.name.toLowerCase().includes(atQuery.toLowerCase())) : []
+    atQuery !== null
+      ? allAtItems.filter((item) => item.name.toLowerCase().includes(atQuery.toLowerCase()))
+      : []
   const atTotalItems = atFilteredItems.length
 
   /* ── Shared content (used in both panel and fullscreen) ── */
-  const content = isLoading || !task ? (
-    <div className="space-y-3 p-4">
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="h-8 animate-pulse rounded-lg" style={{ backgroundColor: 'var(--bg-secondary)' }} />
-      ))}
-    </div>
-  ) : (
-    <>
-      {/* Title + checkbox */}
-      <div className={cn('p-4 pb-0', fullScreen && 'px-0')} onBlur={handleTitleBlur}>
-        <div className="relative">
-          <TitleEditor
-            content={title}
-            onChange={setTitle}
-            className={cn(task.is_completed && 'line-through opacity-50')}
-            textClassName={cn('font-medium leading-snug', fullScreen ? 'text-lg' : 'text-base')}
-            editorRef={titleEditorRef}
-            onUpdate={handleTitleUpdate}
-            onKeyDown={(event) => {
-              if (hashQuery !== null && hashTotalItems > 0) {
-                if (event.key === 'ArrowDown') {
-                  event.preventDefault()
-                  setHashHighlightIdx((prev) => (prev + 1) % hashTotalItems)
-                  return true
-                }
-                if (event.key === 'ArrowUp') {
-                  event.preventDefault()
-                  setHashHighlightIdx((prev) => (prev - 1 + hashTotalItems) % hashTotalItems)
-                  return true
-                }
-                if (event.key === 'Enter') {
-                  if (hashHighlightIdx < hashFilteredLabels.length) {
-                    confirmHashLabel(hashFilteredLabels[hashHighlightIdx]!)
-                  } else if (showHashCreate && hashQuery?.trim()) {
-                    createAndConfirmHash(hashQuery.trim())
-                  }
-                  return true
-                }
-              }
-              if (atQuery !== null && atTotalItems > 0) {
-                if (event.key === 'ArrowDown') {
-                  event.preventDefault()
-                  setAtHighlightIdx((prev) => (prev + 1) % atTotalItems)
-                  return true
-                }
-                if (event.key === 'ArrowUp') {
-                  event.preventDefault()
-                  setAtHighlightIdx((prev) => (prev - 1 + atTotalItems) % atTotalItems)
-                  return true
-                }
-                if (event.key === 'Enter') {
-                  confirmAtItem(atFilteredItems[atHighlightIdx]!)
-                  return true
-                }
-              }
-              return false
-            }}
-            leftSlot={
-              <div className="pt-0.5">
-                <TaskCheckbox
-                  checked={task.is_completed}
-                  priority={task.priority}
-                  onChange={(checked) => completeTask.mutate({ id: task.id, completed: checked, task })}
-                />
-              </div>
-            }
+  const content =
+    isLoading || !task ? (
+      <div className="space-y-3 p-4">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-8 animate-pulse rounded-lg"
+            style={{ backgroundColor: 'var(--bg-secondary)' }}
           />
-
-          {/* Hash autocomplete dropdown */}
-          {hashQuery !== null && hashTotalItems > 0 && (
-            <div
-              className="absolute left-0 top-full z-30 mt-1 w-52 overflow-hidden rounded-lg border py-1 shadow-lg"
-              style={{
-                backgroundColor: 'var(--bg-primary)',
-                borderColor: 'var(--border-primary)',
-                boxShadow: 'var(--shadow-lg)',
+        ))}
+      </div>
+    ) : (
+      <>
+        {/* Title + checkbox */}
+        <div className={cn('p-4 pb-0', fullScreen && 'px-0')} onBlur={handleTitleBlur}>
+          <div className="relative">
+            <TitleEditor
+              content={title}
+              onChange={setTitle}
+              className={cn(task.is_completed && 'line-through opacity-50')}
+              textClassName={cn('font-medium leading-snug', fullScreen ? 'text-lg' : 'text-base')}
+              editorRef={titleEditorRef}
+              onUpdate={handleTitleUpdate}
+              onKeyDown={(event) => {
+                if (hashQuery !== null && hashTotalItems > 0) {
+                  if (event.key === 'ArrowDown') {
+                    event.preventDefault()
+                    setHashHighlightIdx((prev) => (prev + 1) % hashTotalItems)
+                    return true
+                  }
+                  if (event.key === 'ArrowUp') {
+                    event.preventDefault()
+                    setHashHighlightIdx((prev) => (prev - 1 + hashTotalItems) % hashTotalItems)
+                    return true
+                  }
+                  if (event.key === 'Enter') {
+                    if (hashHighlightIdx < hashFilteredLabels.length) {
+                      confirmHashLabel(hashFilteredLabels[hashHighlightIdx]!)
+                    } else if (showHashCreate && hashQuery?.trim()) {
+                      createAndConfirmHash(hashQuery.trim())
+                    }
+                    return true
+                  }
+                }
+                if (atQuery !== null && atTotalItems > 0) {
+                  if (event.key === 'ArrowDown') {
+                    event.preventDefault()
+                    setAtHighlightIdx((prev) => (prev + 1) % atTotalItems)
+                    return true
+                  }
+                  if (event.key === 'ArrowUp') {
+                    event.preventDefault()
+                    setAtHighlightIdx((prev) => (prev - 1 + atTotalItems) % atTotalItems)
+                    return true
+                  }
+                  if (event.key === 'Enter') {
+                    confirmAtItem(atFilteredItems[atHighlightIdx]!)
+                    return true
+                  }
+                }
+                return false
               }}
-            >
-              {hashFilteredLabels.map((label, idx) => (
-                <button
-                  key={label.id}
-                  type="button"
-                  onMouseDown={(e) => { e.preventDefault(); confirmHashLabel(label) }}
-                  onMouseEnter={() => setHashHighlightIdx(idx)}
-                  className="flex w-full items-center gap-2 px-3 py-1.5 text-sm"
-                  style={{
-                    backgroundColor: idx === hashHighlightIdx ? 'var(--bg-hover)' : 'transparent',
-                    color: 'var(--text-primary)',
-                  }}
-                >
-                  <span className="h-3 w-3 flex-shrink-0 rounded-full" style={{ backgroundColor: label.color }} />
-                  <span className="flex-1 text-left">{label.name}</span>
-                  {taskLabels.some((l) => l.id === label.id) && (
-                    <Check size={11} style={{ color: 'var(--text-primary)' }} />
-                  )}
-                </button>
-              ))}
-              {showHashCreate && (
-                <div className="border-t" style={{ borderColor: 'var(--border-primary)' }}>
+              leftSlot={
+                <div className="pt-0.5">
+                  <TaskCheckbox
+                    checked={task.is_completed}
+                    priority={task.priority}
+                    onChange={(checked) =>
+                      completeTask.mutate({ id: task.id, completed: checked, task })
+                    }
+                  />
+                </div>
+              }
+            />
+
+            {/* Hash autocomplete dropdown */}
+            {hashQuery !== null && hashTotalItems > 0 && (
+              <div
+                className="absolute left-0 top-full z-30 mt-1 w-52 overflow-hidden rounded-lg border py-1 shadow-lg"
+                style={{
+                  backgroundColor: 'var(--bg-primary)',
+                  borderColor: 'var(--border-primary)',
+                  boxShadow: 'var(--shadow-lg)',
+                }}
+              >
+                {hashFilteredLabels.map((label, idx) => (
                   <button
+                    key={label.id}
                     type="button"
-                    onMouseDown={(e) => { e.preventDefault(); createAndConfirmHash(hashQuery.trim()) }}
-                    onMouseEnter={() => setHashHighlightIdx(hashFilteredLabels.length)}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium"
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                      confirmHashLabel(label)
+                    }}
+                    onMouseEnter={() => setHashHighlightIdx(idx)}
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-sm"
                     style={{
-                      backgroundColor: hashHighlightIdx === hashFilteredLabels.length ? 'var(--bg-hover)' : 'var(--bg-secondary)',
+                      backgroundColor: idx === hashHighlightIdx ? 'var(--bg-hover)' : 'transparent',
                       color: 'var(--text-primary)',
                     }}
                   >
-                    <Plus size={14} strokeWidth={2.5} />
-                    Crear «<span className="font-semibold">{hashQuery.trim()}</span>»
+                    <span
+                      className="h-3 w-3 flex-shrink-0 rounded-full"
+                      style={{ backgroundColor: label.color }}
+                    />
+                    <span className="flex-1 text-left">{label.name}</span>
+                    {taskLabels.some((l) => l.id === label.id) && (
+                      <Check size={11} style={{ color: 'var(--text-primary)' }} />
+                    )}
                   </button>
-                </div>
-              )}
-            </div>
-          )}
+                ))}
+                {showHashCreate && (
+                  <div className="border-t" style={{ borderColor: 'var(--border-primary)' }}>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        createAndConfirmHash(hashQuery.trim())
+                      }}
+                      onMouseEnter={() => setHashHighlightIdx(hashFilteredLabels.length)}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium"
+                      style={{
+                        backgroundColor:
+                          hashHighlightIdx === hashFilteredLabels.length
+                            ? 'var(--bg-hover)'
+                            : 'var(--bg-secondary)',
+                        color: 'var(--text-primary)',
+                      }}
+                    >
+                      <Plus size={14} strokeWidth={2.5} />
+                      Crear «<span className="font-semibold">{hashQuery.trim()}</span>»
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
-          {/* At autocomplete dropdown (@projects + sections) */}
-          {atQuery !== null && atTotalItems > 0 && (
-            <div
-              className="absolute left-0 top-full z-30 mt-1 max-h-56 w-64 overflow-y-auto overflow-x-hidden rounded-lg border py-1 shadow-lg"
-              style={{
-                backgroundColor: 'var(--bg-primary)',
-                borderColor: 'var(--border-primary)',
-                boxShadow: 'var(--shadow-lg)',
-              }}
-            >
-              {atFilteredItems.map((item, idx) => (
-                <button
-                  key={item.kind + '-' + item.id}
-                  type="button"
-                  onMouseDown={(e) => { e.preventDefault(); confirmAtItem(item) }}
-                  onMouseEnter={() => setAtHighlightIdx(idx)}
-                  className="flex w-full items-center gap-1.5 py-1.5 pr-3 text-sm"
+            {/* At autocomplete dropdown (@projects + sections) */}
+            {atQuery !== null && atTotalItems > 0 && (
+              <div
+                className="absolute left-0 top-full z-30 mt-1 max-h-56 w-64 overflow-y-auto overflow-x-hidden rounded-lg border py-1 shadow-lg"
+                style={{
+                  backgroundColor: 'var(--bg-primary)',
+                  borderColor: 'var(--border-primary)',
+                  boxShadow: 'var(--shadow-lg)',
+                }}
+              >
+                {atFilteredItems.map((item, idx) => (
+                  <button
+                    key={item.kind + '-' + item.id}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                      confirmAtItem(item)
+                    }}
+                    onMouseEnter={() => setAtHighlightIdx(idx)}
+                    className="flex w-full items-center gap-1.5 py-1.5 pr-3 text-sm"
+                    style={{
+                      paddingLeft: `${8 + item.depth * 14}px`,
+                      backgroundColor: idx === atHighlightIdx ? 'var(--bg-hover)' : 'transparent',
+                      color:
+                        item.kind === 'section' ? 'var(--text-secondary)' : 'var(--text-primary)',
+                    }}
+                  >
+                    {item.kind === 'project' ? (
+                      <span
+                        className="h-2.5 w-2.5 flex-shrink-0 rounded-sm"
+                        style={{ backgroundColor: item.color }}
+                      />
+                    ) : (
+                      <span
+                        className="flex-shrink-0 text-xs leading-none"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        —
+                      </span>
+                    )}
+                    <span className="flex-1 truncate text-left">{item.name}</span>
+                    {item.kind === 'project' && task.project_id === item.id && !task.section_id && (
+                      <Check size={11} style={{ color: 'var(--text-primary)' }} />
+                    )}
+                    {item.kind === 'section' && task.section_id === item.id && (
+                      <Check size={11} style={{ color: 'var(--text-primary)' }} />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Description — MarkdownEditor */}
+        <div
+          className={cn('pb-2 pt-2', fullScreen ? 'px-0' : 'px-4')}
+          onBlur={handleDescriptionBlur}
+        >
+          <MarkdownEditor
+            content={description}
+            onChange={handleDescriptionChange}
+            placeholder="Agregar descripción..."
+            minHeight={fullScreen ? 120 : 60}
+          />
+        </div>
+
+        {/* Divider */}
+        <div
+          className={cn('border-t', fullScreen ? 'mx-0' : 'mx-4')}
+          style={{ borderColor: 'var(--border-primary)' }}
+        />
+
+        {/* Properties */}
+        <div className={cn('space-y-1 p-4', fullScreen && 'px-0')}>
+          {/* Row 1: Date + Deadline side by side */}
+          <div className="flex items-center gap-2 rounded-lg px-2 py-1">
+            <div ref={datePickerRef}>
+              <DateTimePicker
+                date={dueDate}
+                time={dueTime}
+                hasTime={hasTime}
+                durationMinutes={durationMinutes}
+                isRecurring={isRecurring}
+                recurrenceRule={recurrenceRule}
+                recurrenceFrom={recurrenceFrom}
+                onDateChange={handleDateChange}
+                onTimeChange={handleTimeChange}
+                onHasTimeChange={handleHasTimeChange}
+                onDurationChange={handleDurationChange}
+                onRecurrenceChange={handleRecurrenceChange}
+                shortcutKey="D"
+              />
+            </div>
+            <div ref={deadlinePickerRef}>
+              <DeadlinePicker
+                deadline={deadline}
+                onDeadlineChange={handleDeadlineChange}
+                shortcutKey="L"
+              />
+            </div>
+          </div>
+
+          {/* Row 2: Priority + Reminders side by side */}
+          <div className="flex items-center gap-2 rounded-lg px-2 py-1">
+            {/* Priority */}
+            <div className="relative">
+              <button
+                onClick={() => setShowPriorityMenu(!showPriorityMenu)}
+                className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
+                style={{
+                  backgroundColor:
+                    task.priority < 4
+                      ? PRIORITY_COLORS[task.priority] + '18'
+                      : 'var(--bg-secondary)',
+                  borderColor:
+                    task.priority < 4
+                      ? PRIORITY_COLORS[task.priority] + '40'
+                      : 'var(--border-primary)',
+                  color: task.priority < 4 ? PRIORITY_COLORS[task.priority] : 'var(--text-primary)',
+                }}
+              >
+                <Flag size={14} />
+                {PRIORITY_LABELS[task.priority]}
+                <span
+                  className="rounded px-1 py-0.5 font-mono text-[9px] leading-none"
                   style={{
-                    paddingLeft: `${8 + item.depth * 14}px`,
-                    backgroundColor: idx === atHighlightIdx ? 'var(--bg-hover)' : 'transparent',
-                    color: item.kind === 'section' ? 'var(--text-secondary)' : 'var(--text-primary)',
+                    backgroundColor:
+                      task.priority < 4
+                        ? PRIORITY_COLORS[task.priority] + '22'
+                        : 'var(--bg-primary)',
+                    color: 'var(--text-muted)',
                   }}
                 >
-                  {item.kind === 'project' ? (
-                    <span className="h-2.5 w-2.5 flex-shrink-0 rounded-sm" style={{ backgroundColor: item.color }} />
-                  ) : (
-                    <span className="flex-shrink-0 text-xs leading-none" style={{ color: 'var(--text-muted)' }}>—</span>
-                  )}
-                  <span className="flex-1 truncate text-left">{item.name}</span>
-                  {item.kind === 'project' && task.project_id === item.id && !task.section_id && (
-                    <Check size={11} style={{ color: 'var(--text-primary)' }} />
-                  )}
-                  {item.kind === 'section' && task.section_id === item.id && (
-                    <Check size={11} style={{ color: 'var(--text-primary)' }} />
-                  )}
-                </button>
+                  F
+                </span>
+              </button>
+              {showPriorityMenu && (
+                <DropdownMenu onClose={() => setShowPriorityMenu(false)} width={160}>
+                  {([1, 2, 3, 4] as const).map((p) => (
+                    <DropdownItem
+                      key={p}
+                      onClick={() => handlePriorityChange(p)}
+                      active={task.priority === p}
+                    >
+                      <Flag size={14} style={{ color: PRIORITY_COLORS[p] }} />
+                      {PRIORITY_LABELS[p]}
+                    </DropdownItem>
+                  ))}
+                </DropdownMenu>
+              )}
+            </div>
+
+            {/* Reminders — just the picker button, no title */}
+            <div ref={reminderPickerRef}>
+              <ReminderPicker
+                reminders={pendingReminders}
+                onAdd={async (r) => {
+                  await handleAddReminder(r)
+                }}
+                onRemove={(i) => setPendingReminders((prev) => prev.filter((_, idx) => idx !== i))}
+                hasDateTime={hasTime && !!dueDate && !!dueTime}
+                dueDate={dueDate}
+                dueTime={dueTime}
+                shortcutKey="R"
+              />
+            </div>
+          </div>
+
+          {/* Existing server reminders (compact list) */}
+          {serverReminders.length > 0 && (
+            <div className="flex flex-wrap gap-1 px-2">
+              {serverReminders.map((r) => (
+                <div
+                  key={r.id}
+                  className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs"
+                  style={{ backgroundColor: 'rgba(59,130,246,0.1)', color: '#3B82F6' }}
+                >
+                  <Bell size={10} />
+                  <span>{format(new Date(r.remind_at), 'dd/MM HH:mm')}</span>
+                  <button
+                    onClick={() => handleDeleteReminder(r.id)}
+                    className="rounded-full p-0.5 transition-colors hover:bg-black/10"
+                  >
+                    <X size={9} />
+                  </button>
+                </div>
               ))}
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Description — MarkdownEditor */}
-      <div className={cn('pb-2 pt-2', fullScreen ? 'px-0' : 'px-4')} onBlur={handleDescriptionBlur}>
-        <MarkdownEditor
-          content={description}
-          onChange={handleDescriptionChange}
-          placeholder="Agregar descripción..."
-          minHeight={fullScreen ? 120 : 60}
-        />
-      </div>
-
-      {/* Divider */}
-      <div className={cn('border-t', fullScreen ? 'mx-0' : 'mx-4')} style={{ borderColor: 'var(--border-primary)' }} />
-
-      {/* Properties */}
-      <div className={cn('space-y-1 p-4', fullScreen && 'px-0')}>
-        {/* Row 1: Date + Deadline side by side */}
-        <div className="flex items-center gap-2 rounded-lg px-2 py-1">
-          <div ref={datePickerRef}>
-            <DateTimePicker
-              date={dueDate}
-              time={dueTime}
-              hasTime={hasTime}
-              durationMinutes={durationMinutes}
-              isRecurring={isRecurring}
-              recurrenceRule={recurrenceRule}
-              recurrenceFrom={recurrenceFrom}
-              onDateChange={handleDateChange}
-              onTimeChange={handleTimeChange}
-              onHasTimeChange={handleHasTimeChange}
-              onDurationChange={handleDurationChange}
-              onRecurrenceChange={handleRecurrenceChange}
-              shortcutKey="D"
-            />
-          </div>
-          <div ref={deadlinePickerRef}>
-            <DeadlinePicker
-              deadline={deadline}
-              onDeadlineChange={handleDeadlineChange}
-              shortcutKey="L"
-            />
-          </div>
-        </div>
-
-        {/* Row 2: Priority + Reminders side by side */}
-        <div className="flex items-center gap-2 rounded-lg px-2 py-1">
-          {/* Priority */}
+          {/* Project */}
           <div className="relative">
             <button
-              onClick={() => setShowPriorityMenu(!showPriorityMenu)}
-              className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
-              style={{
-                backgroundColor: task.priority < 4 ? PRIORITY_COLORS[task.priority] + '18' : 'var(--bg-secondary)',
-                borderColor: task.priority < 4 ? PRIORITY_COLORS[task.priority] + '40' : 'var(--border-primary)',
-                color: task.priority < 4 ? PRIORITY_COLORS[task.priority] : 'var(--text-primary)',
-              }}
+              onClick={() => setShowProjectMenu(!showProjectMenu)}
+              className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm transition-colors"
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
-              <Flag size={14} />
-              {PRIORITY_LABELS[task.priority]}
+              <Folder size={15} style={{ color: selectedProject?.color ?? 'var(--text-muted)' }} />
+              <span style={{ color: 'var(--text-primary)' }}>
+                {selectedProject?.name ?? 'Entrada'}
+              </span>
+              <ChevronDown size={13} className="ml-auto" style={{ color: 'var(--text-muted)' }} />
               <span
                 className="rounded px-1 py-0.5 font-mono text-[9px] leading-none"
-                style={{
-                  backgroundColor: task.priority < 4 ? PRIORITY_COLORS[task.priority] + '22' : 'var(--bg-primary)',
-                  color: 'var(--text-muted)',
-                }}
+                style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)' }}
               >
-                F
+                O
               </span>
             </button>
-            {showPriorityMenu && (
-              <DropdownMenu onClose={() => setShowPriorityMenu(false)} width={160}>
-                {([1, 2, 3, 4] as const).map((p) => (
-                  <DropdownItem
-                    key={p}
-                    onClick={() => handlePriorityChange(p)}
-                    active={task.priority === p}
-                  >
-                    <Flag size={14} style={{ color: PRIORITY_COLORS[p] }} />
-                    {PRIORITY_LABELS[p]}
-                  </DropdownItem>
-                ))}
+            {showProjectMenu && (
+              <DropdownMenu onClose={() => setShowProjectMenu(false)} width={208} maxHeight={192}>
+                {flattenProjectTree(buildProjectTree(projects.filter((p) => !p.is_archived))).map(
+                  (p) => (
+                    <DropdownItem
+                      key={p.id}
+                      onClick={() => handleProjectChange(p.id)}
+                      active={task.project_id === p.id}
+                    >
+                      {p.depth > 0 && (
+                        <span className="flex-shrink-0" style={{ width: p.depth * 12 }} />
+                      )}
+                      <span
+                        className="h-2.5 w-2.5 rounded-sm shrink-0"
+                        style={{ backgroundColor: p.color }}
+                      />
+                      <span className="truncate">{p.name}</span>
+                    </DropdownItem>
+                  ),
+                )}
               </DropdownMenu>
             )}
           </div>
 
-          {/* Reminders — just the picker button, no title */}
-          <div ref={reminderPickerRef}>
-            <ReminderPicker
-              reminders={pendingReminders}
-              onAdd={async (r) => {
-                await handleAddReminder(r)
-              }}
-              onRemove={(i) => setPendingReminders((prev) => prev.filter((_, idx) => idx !== i))}
-              hasDateTime={hasTime && !!dueDate && !!dueTime}
-              dueDate={dueDate}
-              dueTime={dueTime}
-              shortcutKey="R"
-            />
-          </div>
-        </div>
-
-        {/* Existing server reminders (compact list) */}
-        {serverReminders.length > 0 && (
-          <div className="flex flex-wrap gap-1 px-2">
-            {serverReminders.map((r) => (
-              <div
-                key={r.id}
-                className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs"
-                style={{ backgroundColor: 'rgba(59,130,246,0.1)', color: '#3B82F6' }}
-              >
-                <Bell size={10} />
-                <span>{format(new Date(r.remind_at), 'dd/MM HH:mm')}</span>
-                <button
-                  onClick={() => handleDeleteReminder(r.id)}
-                  className="rounded-full p-0.5 transition-colors hover:bg-black/10"
-                >
-                  <X size={9} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Project */}
-        <div className="relative">
-          <button
-            onClick={() => setShowProjectMenu(!showProjectMenu)}
-            className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm transition-colors"
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            <Folder size={15} style={{ color: selectedProject?.color ?? 'var(--text-muted)' }} />
-            <span style={{ color: 'var(--text-primary)' }}>{selectedProject?.name ?? 'Entrada'}</span>
-            <ChevronDown size={13} className="ml-auto" style={{ color: 'var(--text-muted)' }} />
-            <span
-              className="rounded px-1 py-0.5 font-mono text-[9px] leading-none"
-              style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)' }}
+          {/* Labels */}
+          <div className="relative">
+            <button
+              onClick={() => setShowLabelMenu(!showLabelMenu)}
+              className="flex w-full items-start gap-3 rounded-lg px-2 py-2 text-sm transition-colors"
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
-              O
-            </span>
-          </button>
-          {showProjectMenu && (
-            <DropdownMenu onClose={() => setShowProjectMenu(false)} width={208} maxHeight={192}>
-              {flattenProjectTree(buildProjectTree(projects.filter((p) => !p.is_archived))).map((p) => (
-                <DropdownItem
-                  key={p.id}
-                  onClick={() => handleProjectChange(p.id)}
-                  active={task.project_id === p.id}
-                >
-                  {p.depth > 0 && (
-                    <span className="flex-shrink-0" style={{ width: p.depth * 12 }} />
-                  )}
-                  <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: p.color }} />
-                  <span className="truncate">{p.name}</span>
-                </DropdownItem>
-              ))}
-            </DropdownMenu>
-          )}
-        </div>
-
-        {/* Labels */}
-        <div className="relative">
-          <button
-            onClick={() => setShowLabelMenu(!showLabelMenu)}
-            className="flex w-full items-start gap-3 rounded-lg px-2 py-2 text-sm transition-colors"
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            <Tag size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--text-muted)' }} />
-            <div className="flex flex-1 flex-wrap gap-1">
-              {taskLabels.length === 0 ? (
-                <span style={{ color: 'var(--text-muted)' }}>Agregar etiqueta</span>
-              ) : (
-                taskLabels.map((label) => (
-                  <span
-                    key={label.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      navigate(`/app/label/${label.id}`)
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
+              <Tag size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--text-muted)' }} />
+              <div className="flex flex-1 flex-wrap gap-1">
+                {taskLabels.length === 0 ? (
+                  <span style={{ color: 'var(--text-muted)' }}>Agregar etiqueta</span>
+                ) : (
+                  taskLabels.map((label) => (
+                    <span
+                      key={label.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => {
                         e.stopPropagation()
                         navigate(`/app/label/${label.id}`)
-                      }
-                    }}
-                    className="cursor-pointer rounded-full px-2 py-0.5 text-xs font-medium transition-opacity hover:opacity-75"
-                    style={{ backgroundColor: label.color + '22', color: label.color }}
-                  >
-                    {label.name}
-                  </span>
-                ))
-              )}
-            </div>
-            <span
-              className="mt-0.5 rounded px-1 py-0.5 font-mono text-[9px] leading-none shrink-0"
-              style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)' }}
-            >
-              E
-            </span>
-          </button>
-          {showLabelMenu && (
-            <LabelMenu
-              labels={labels}
-              selectedIds={taskLabels.map((l) => l.id)}
-              onToggle={handleToggleLabel}
-              onClose={() => setShowLabelMenu(false)}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div className={cn('border-t', fullScreen ? 'mx-0' : 'mx-4')} style={{ borderColor: 'var(--border-primary)' }} />
-
-      {/* Subtasks */}
-      <div className={cn('p-4', fullScreen && 'px-0')}>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-          Subtareas ({subtasks.length})
-        </p>
-
-        <div className="space-y-1">
-          {subtasks.map((sub) => (
-            <SubtaskRow
-              key={sub.id}
-              task={sub}
-              onOpen={() => openSubtask(sub.id)}
-            />
-          ))}
-        </div>
-
-        {/* Add subtask */}
-        <div className="mt-2 flex items-center gap-2">
-          <Plus size={14} style={{ color: 'var(--text-muted)' }} />
-          <input
-            ref={subtaskInputRef}
-            value={newSubtask}
-            onChange={(e) => setNewSubtask(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleAddSubtask()
-            }}
-            placeholder="Agregar subtarea"
-            className="flex-1 text-sm outline-none"
-            style={{ backgroundColor: 'transparent', color: 'var(--text-primary)' }}
-          />
-          {newSubtask.trim() ? (
-            <button
-              onClick={handleAddSubtask}
-              className="rounded px-2 py-1 text-xs font-medium text-white"
-              style={{ backgroundColor: '#283B56' }}
-            >
-              Agregar
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.stopPropagation()
+                          navigate(`/app/label/${label.id}`)
+                        }
+                      }}
+                      className="cursor-pointer rounded-full px-2 py-0.5 text-xs font-medium transition-opacity hover:opacity-75"
+                      style={{ backgroundColor: label.color + '22', color: label.color }}
+                    >
+                      {label.name}
+                    </span>
+                  ))
+                )}
+              </div>
+              <span
+                className="mt-0.5 rounded px-1 py-0.5 font-mono text-[9px] leading-none shrink-0"
+                style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)' }}
+              >
+                E
+              </span>
             </button>
-          ) : (
-            <span
-              className="rounded px-1 py-0.5 font-mono text-[9px] leading-none"
-              style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)' }}
-            >
-              N
-            </span>
-          )}
+            {showLabelMenu && (
+              <LabelMenu
+                labels={labels}
+                selectedIds={taskLabels.map((l) => l.id)}
+                onToggle={handleToggleLabel}
+                onClose={() => setShowLabelMenu(false)}
+              />
+            )}
+          </div>
         </div>
-      </div>
-    </>
-  )
+
+        {/* Divider */}
+        <div
+          className={cn('border-t', fullScreen ? 'mx-0' : 'mx-4')}
+          style={{ borderColor: 'var(--border-primary)' }}
+        />
+
+        {/* Subtasks */}
+        <div className={cn('p-4', fullScreen && 'px-0')}>
+          <p
+            className="mb-3 text-xs font-semibold uppercase tracking-wider"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            Subtareas ({subtasks.length})
+          </p>
+
+          <div className="space-y-1">
+            {subtasks.map((sub) => (
+              <SubtaskRow key={sub.id} task={sub} onOpen={() => openSubtask(sub.id)} />
+            ))}
+          </div>
+
+          {/* Add subtask */}
+          <div className="mt-2 flex items-center gap-2">
+            <Plus size={14} style={{ color: 'var(--text-muted)' }} />
+            <input
+              ref={subtaskInputRef}
+              value={newSubtask}
+              onChange={(e) => setNewSubtask(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleAddSubtask()
+              }}
+              placeholder="Agregar subtarea"
+              className="flex-1 text-sm outline-none"
+              style={{ backgroundColor: 'transparent', color: 'var(--text-primary)' }}
+            />
+            {newSubtask.trim() ? (
+              <button
+                onClick={handleAddSubtask}
+                className="rounded px-2 py-1 text-xs font-medium text-white"
+                style={{ backgroundColor: '#283B56' }}
+              >
+                Agregar
+              </button>
+            ) : (
+              <span
+                className="rounded px-1 py-0.5 font-mono text-[9px] leading-none"
+                style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)' }}
+              >
+                N
+              </span>
+            )}
+          </div>
+        </div>
+      </>
+    )
 
   /* ── Full screen render ── */
   if (fullScreen) {
@@ -1084,7 +1190,10 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
             >
               <ArrowLeft size={16} />
             </button>
-            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+            <span
+              className="text-xs font-semibold uppercase tracking-wider"
+              style={{ color: 'var(--text-muted)' }}
+            >
               Detalle de tarea
             </span>
           </div>
@@ -1109,7 +1218,8 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
                 onClick={() => {
                   showConfirmDialog({
                     title: '¿Eliminar tarea?',
-                    message: 'Esta acción no se puede deshacer. La tarea y sus subtareas serán eliminadas permanentemente.',
+                    message:
+                      'Esta acción no se puede deshacer. La tarea y sus subtareas serán eliminadas permanentemente.',
                     onConfirm: () => {
                       deleteTask.mutate(task.id)
                       close()
@@ -1126,9 +1236,7 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-3xl px-6 py-4">
-            {content}
-          </div>
+          <div className="mx-auto max-w-3xl px-6 py-4">{content}</div>
         </div>
       </div>
     )
@@ -1178,7 +1286,10 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
                 <ArrowLeft size={16} />
               </button>
             )}
-            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+            <span
+              className="text-xs font-semibold uppercase tracking-wider"
+              style={{ color: 'var(--text-muted)' }}
+            >
               {parentStack.length > 0 ? 'Subtarea' : 'Detalle de tarea'}
             </span>
           </div>
@@ -1213,7 +1324,8 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
                 onClick={() => {
                   showConfirmDialog({
                     title: '¿Eliminar tarea?',
-                    message: 'Esta acción no se puede deshacer. La tarea y sus subtareas serán eliminadas permanentemente.',
+                    message:
+                      'Esta acción no se puede deshacer. La tarea y sus subtareas serán eliminadas permanentemente.',
                     onConfirm: () => {
                       deleteTask.mutate(task.id)
                       if (parentStack.length > 0) goBack()
@@ -1237,9 +1349,7 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto">
-          {content}
-        </div>
+        <div className="flex-1 overflow-y-auto">{content}</div>
       </aside>
     </>
   )
@@ -1256,7 +1366,8 @@ function SubtaskRow({ task, onOpen }: { task: Task; onOpen: () => void }) {
   }
 
   return (
-    <div className="group flex items-center gap-2 rounded-lg py-1 px-1 transition-colors"
+    <div
+      className="group flex items-center gap-2 rounded-lg py-1 px-1 transition-colors"
       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
     >
@@ -1281,7 +1392,10 @@ function SubtaskRow({ task, onOpen }: { task: Task; onOpen: () => void }) {
         />
       </button>
       {task.due_date && (
-        <span className="shrink-0 flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+        <span
+          className="shrink-0 flex items-center gap-1 text-xs"
+          style={{ color: 'var(--text-muted)' }}
+        >
           {formatRelativeDate(task.due_date)}
           {task.is_recurring && <Repeat size={11} />}
         </span>

@@ -55,7 +55,11 @@ const SingleLine = Extension.create({
             if (clean !== text) {
               event.preventDefault()
               _view.dispatch(
-                _view.state.tr.insertText(clean, _view.state.selection.from, _view.state.selection.to),
+                _view.state.tr.insertText(
+                  clean,
+                  _view.state.selection.from,
+                  _view.state.selection.to,
+                ),
               )
               return true
             }
@@ -123,7 +127,10 @@ function computeNLPDecorations(state: EditorState): DecorationSet {
         const from = posMap[ms]!
         const to = posMap[me - 1]! + 1
         decorations.push(
-          Decoration.inline(from, to, { style: `color: ${NLP_HIGHLIGHT_COLOR}`, class: 'nlp-token' }),
+          Decoration.inline(from, to, {
+            style: `color: ${NLP_HIGHLIGHT_COLOR}`,
+            class: 'nlp-token',
+          }),
         )
       }
     }
@@ -340,11 +347,7 @@ export function TitleEditor({
           // Replace text node directly with new text + link mark
           const linkMark = editor.schema.marks.link!.create({ href: url })
           const newText = text && text !== '' ? text : editor.state.doc.textBetween(from, to)
-          const tr = editor.state.tr.replaceWith(
-            from,
-            to,
-            editor.schema.text(newText, [linkMark]),
-          )
+          const tr = editor.state.tr.replaceWith(from, to, editor.schema.text(newText, [linkMark]))
           editor.view.dispatch(tr)
         }
 
@@ -393,11 +396,7 @@ export function TitleEditor({
             <Strikethrough size={13} />
           </ToolbarButton>
 
-          <ToolbarButton
-            onClick={openLinkDialog}
-            isActive={editor.isActive('link')}
-            label="Enlace"
-          >
+          <ToolbarButton onClick={openLinkDialog} isActive={editor.isActive('link')} label="Enlace">
             <LinkIcon size={13} />
           </ToolbarButton>
         </div>

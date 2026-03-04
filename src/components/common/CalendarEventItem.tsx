@@ -52,19 +52,13 @@ export function CalendarEventItem({ event }: CalendarEventItemProps) {
             />
             Evento
           </span>
-          <span
-            className="truncate text-[11px]"
-            style={{ color: 'var(--text-muted)' }}
-          >
+          <span className="truncate text-[11px]" style={{ color: 'var(--text-muted)' }}>
             {calendarName}
           </span>
         </div>
 
         {/* Title */}
-        <p
-          className="truncate text-sm font-medium"
-          style={{ color: 'var(--text-primary)' }}
-        >
+        <p className="truncate text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
           {event.title}
         </p>
 
@@ -74,10 +68,7 @@ export function CalendarEventItem({ event }: CalendarEventItemProps) {
             {timeStr}
           </span>
           {event.location && (
-            <span
-              className="truncate text-xs"
-              style={{ color: 'var(--text-muted)' }}
-            >
+            <span className="truncate text-xs" style={{ color: 'var(--text-muted)' }}>
               · {event.location}
             </span>
           )}
@@ -86,9 +77,7 @@ export function CalendarEventItem({ event }: CalendarEventItemProps) {
 
       {/* External link icon (visible on hover) */}
       {event.htmlLink && (
-        <div
-          className="mt-0.5 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-60"
-        >
+        <div className="mt-0.5 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-60">
           <ExternalLink size={13} style={{ color: 'var(--text-muted)' }} />
         </div>
       )}

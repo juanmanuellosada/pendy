@@ -97,11 +97,7 @@ export const taskService = {
   },
 
   async getTaskById(id: string): Promise<Task | null> {
-    const { data, error } = await supabase
-      .from('tasks')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle()
+    const { data, error } = await supabase.from('tasks').select('*').eq('id', id).maybeSingle()
 
     if (error) throw error
     return data
@@ -168,10 +164,7 @@ export const taskService = {
     return data
   },
 
-  async updateTask(
-    id: string,
-    updates: Partial<Task> & { label_ids?: string[] },
-  ): Promise<Task> {
+  async updateTask(id: string, updates: Partial<Task> & { label_ids?: string[] }): Promise<Task> {
     const { label_ids, ...taskUpdates } = updates as Partial<Task> & { label_ids?: string[] }
 
     const { data, error } = await supabase

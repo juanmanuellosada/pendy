@@ -58,7 +58,8 @@ export function useExchangeCalendarCode() {
   return useMutation({
     mutationFn: async ({ code }: { code: string }) => {
       const codeVerifier = sessionStorage.getItem('pkce_verifier_google')
-      if (!codeVerifier) throw new Error('No se encontró el code_verifier. Intenta conectar de nuevo.')
+      if (!codeVerifier)
+        throw new Error('No se encontró el code_verifier. Intenta conectar de nuevo.')
       sessionStorage.removeItem('pkce_verifier_google')
 
       // Forzamos refresh para garantizar un token fresco tras el redirect OAuth
@@ -297,7 +298,9 @@ export function useRefreshCalendarToken() {
 
         if (refreshError || !authToken) {
           // Fallback: intentar con la sesión existente si refreshSession falla
-          const { data: { session: fallback } } = await supabase.auth.getSession()
+          const {
+            data: { session: fallback },
+          } = await supabase.auth.getSession()
           authToken = fallback?.access_token
           if (!authToken) throw new Error('Sesión no disponible. Vuelve a iniciar sesión.')
         }

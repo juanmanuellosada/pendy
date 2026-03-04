@@ -67,7 +67,10 @@ export function ProjectEditor({ open, onClose, project, parentId }: ProjectEdito
           borderColor: 'var(--border-primary)',
         }}
       >
-        <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: 'var(--border-primary)' }}>
+        <div
+          className="flex items-center justify-between border-b px-4 py-3"
+          style={{ borderColor: 'var(--border-primary)' }}
+        >
           <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
             {project ? 'Editar proyecto' : parentId ? 'Nuevo subproyecto' : 'Nuevo proyecto'}
           </h2>
@@ -78,7 +81,10 @@ export function ProjectEditor({ open, onClose, project, parentId }: ProjectEdito
 
         <div className="p-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
+            <label
+              className="block text-sm font-medium mb-1"
+              style={{ color: 'var(--text-primary)' }}
+            >
               Nombre
             </label>
             <input
@@ -99,7 +105,10 @@ export function ProjectEditor({ open, onClose, project, parentId }: ProjectEdito
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
+            <label
+              className="block text-sm font-medium mb-2"
+              style={{ color: 'var(--text-primary)' }}
+            >
               Color
             </label>
             <div className="flex items-center gap-3">
@@ -121,7 +130,10 @@ export function ProjectEditor({ open, onClose, project, parentId }: ProjectEdito
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t px-4 py-3" style={{ borderColor: 'var(--border-primary)' }}>
+        <div
+          className="flex items-center justify-end gap-2 border-t px-4 py-3"
+          style={{ borderColor: 'var(--border-primary)' }}
+        >
           <button
             onClick={onClose}
             className="rounded-lg px-4 py-1.5 text-sm font-medium transition-colors"

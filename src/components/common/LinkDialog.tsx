@@ -9,13 +9,7 @@ interface LinkDialogProps {
   onClose: () => void
 }
 
-export function LinkDialog({
-  open,
-  initialUrl,
-  initialText,
-  onSubmit,
-  onClose,
-}: LinkDialogProps) {
+export function LinkDialog({ open, initialUrl, initialText, onSubmit, onClose }: LinkDialogProps) {
   const [url, setUrl] = useState(initialUrl)
   const [text, setText] = useState(initialText ?? '')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -39,10 +33,7 @@ export function LinkDialog({
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-50 bg-black/30 animate-fade-backdrop"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 z-50 bg-black/30 animate-fade-backdrop" onClick={onClose} />
       {/* Dialog */}
       <div
         className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm rounded-xl border p-5 shadow-lg animate-scale-in"
@@ -71,7 +62,10 @@ export function LinkDialog({
           {/* Text field (shown when editing existing link) */}
           {showText && (
             <>
-              <label className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+              <label
+                className="mb-1.5 block text-xs font-medium"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 Texto
               </label>
               <input
@@ -89,7 +83,10 @@ export function LinkDialog({
             </>
           )}
 
-          <label className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+          <label
+            className="mb-1.5 block text-xs font-medium"
+            style={{ color: 'var(--text-secondary)' }}
+          >
             URL
           </label>
           <input

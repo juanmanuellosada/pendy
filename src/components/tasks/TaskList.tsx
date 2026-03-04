@@ -25,25 +25,18 @@ export function TaskList({ tasks, onEditTask, showProject, emptyMessage }: TaskL
   return (
     <div className="divide-y" style={{ borderColor: 'var(--border-secondary)' }}>
       {pendingTasks.map((task) => (
-        <TaskItem
-          key={task.id}
-          task={task}
-          onEdit={onEditTask}
-          showProject={showProject}
-        />
+        <TaskItem key={task.id} task={task} onEdit={onEditTask} showProject={showProject} />
       ))}
       {completedTasks.length > 0 && (
         <div className="pt-4">
-          <p className="px-3 pb-2 text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+          <p
+            className="px-3 pb-2 text-xs font-medium uppercase tracking-wider"
+            style={{ color: 'var(--text-muted)' }}
+          >
             Completadas ({completedTasks.length})
           </p>
           {completedTasks.map((task) => (
-            <TaskItem
-              key={task.id}
-              task={task}
-              onEdit={onEditTask}
-              showProject={showProject}
-            />
+            <TaskItem key={task.id} task={task} onEdit={onEditTask} showProject={showProject} />
           ))}
         </div>
       )}

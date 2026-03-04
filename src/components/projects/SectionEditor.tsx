@@ -106,7 +106,9 @@ export function SectionEditor({ open, onClose, onSave, section, shortcutKey }: S
             >
               <span>{section ? 'Guardar' : 'Crear'}</span>
               {!section && shortcutKey && (
-                <span className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-[10px]">{shortcutKey}</span>
+                <span className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-[10px]">
+                  {shortcutKey}
+                </span>
               )}
             </button>
           </div>

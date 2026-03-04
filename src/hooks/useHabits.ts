@@ -140,8 +140,13 @@ export function useUpdateHabit() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<Omit<Habit, 'id' | 'user_id'>> }) =>
-      habitService.updateHabit(id, updates),
+    mutationFn: ({
+      id,
+      updates,
+    }: {
+      id: string
+      updates: Partial<Omit<Habit, 'id' | 'user_id'>>
+    }) => habitService.updateHabit(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: habitKeys.list(user!.id) })
     },

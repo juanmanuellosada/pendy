@@ -1,10 +1,23 @@
 import { useState } from 'react'
 import { Plus, Repeat, Flame, Trophy, CheckCircle2, Pencil, Trash2, Archive } from 'lucide-react'
 import { format, subDays, startOfWeek } from 'date-fns'
-import { useHabits, useHabitCompletionsExtended, useToggleHabitCompletion, useDeleteHabit, useUpdateHabit } from '@/hooks/useHabits'
+import {
+  useHabits,
+  useHabitCompletionsExtended,
+  useToggleHabitCompletion,
+  useDeleteHabit,
+  useUpdateHabit,
+} from '@/hooks/useHabits'
 import { HabitEditor } from '@/components/habits/HabitEditor'
 import { HabitCheckbox } from '@/components/habits/HabitCheckbox'
-import { calculateStreak, getWeeklyProgress, getRecurrenceLabel, isCompletedOnDate, habitAppearsOnDate, getHabitDatesInRange } from '@/lib/habitUtils'
+import {
+  calculateStreak,
+  getWeeklyProgress,
+  getRecurrenceLabel,
+  isCompletedOnDate,
+  habitAppearsOnDate,
+  getHabitDatesInRange,
+} from '@/lib/habitUtils'
 import { useUIStore } from '@/stores/uiStore'
 import { stripHtmlTags, stripLabelTokensFromHtml } from '@/lib/utils'
 import type { Habit, HabitCompletion } from '@/lib/types'
@@ -24,7 +37,9 @@ export function HabitsView() {
 
   const activeHabits = habits.filter((h) => !h.is_archived)
   const todayHabits = activeHabits.filter((h) => habitAppearsOnDate(h, today))
-  const completedToday = todayHabits.filter((h) => isCompletedOnDate(completions, h.id, today)).length
+  const completedToday = todayHabits.filter((h) =>
+    isCompletedOnDate(completions, h.id, today),
+  ).length
   const bestStreak = activeHabits.reduce((best, h) => {
     const s = calculateStreak(h, completions, today)
     return s.best > best ? s.best : best
@@ -42,7 +57,8 @@ export function HabitsView() {
   const handleDelete = (habit: Habit) => {
     showConfirmDialog({
       title: `¿Eliminar "${stripHtmlTags(habit.name)}"?`,
-      message: 'Se eliminarán también todas las marcaciones de este hábito. Esta acción no se puede deshacer.',
+      message:
+        'Se eliminarán también todas las marcaciones de este hábito. Esta acción no se puede deshacer.',
       confirmLabel: 'Eliminar',
       onConfirm: async () => {
         await deleteHabit.mutateAsync(habit.id)
@@ -68,7 +84,11 @@ export function HabitsView() {
     return (
       <div className="space-y-3">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-14 animate-pulse rounded-lg" style={{ backgroundColor: 'var(--bg-secondary)' }} />
+          <div
+            key={i}
+            className="h-14 animate-pulse rounded-lg"
+            style={{ backgroundColor: 'var(--bg-secondary)' }}
+          />
         ))}
       </div>
     )
@@ -211,8 +231,12 @@ function StatCard({
       <div className="rounded-lg p-2" style={{ backgroundColor: bg }}>
         {icon}
       </div>
-      <span className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{value}</span>
-      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</span>
+      <span className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+        {value}
+      </span>
+      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+        {label}
+      </span>
     </div>
   )
 }
@@ -244,7 +268,10 @@ function HabitGroup({
 }: HabitGroupProps) {
   return (
     <div>
-      <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+      <h2
+        className="mb-2 text-xs font-semibold uppercase tracking-wider"
+        style={{ color: 'var(--text-muted)' }}
+      >
         {title}
       </h2>
       <div
@@ -302,9 +329,10 @@ function HabitRow({
   const from = subDays(today, 29)
   const heatmapDates = getHabitDatesInRange(habit, from, today)
 
-  const weeklyProgress = habit.recurrence_type === 'times_per_week'
-    ? getWeeklyProgress(completions, habit.id, startOfWeek(today, { weekStartsOn: 1 }))
-    : null
+  const weeklyProgress =
+    habit.recurrence_type === 'times_per_week'
+      ? getWeeklyProgress(completions, habit.id, startOfWeek(today, { weekStartsOn: 1 }))
+      : null
 
   return (
     <div
@@ -368,8 +396,14 @@ function HabitRow({
           <div
             className="rounded-full px-2 py-0.5 text-xs font-medium"
             style={{
-              backgroundColor: weeklyProgress.done >= (habit.times_per_week ?? 1) ? `${habit.color}20` : 'var(--bg-secondary)',
-              color: weeklyProgress.done >= (habit.times_per_week ?? 1) ? habit.color : 'var(--text-secondary)',
+              backgroundColor:
+                weeklyProgress.done >= (habit.times_per_week ?? 1)
+                  ? `${habit.color}20`
+                  : 'var(--bg-secondary)',
+              color:
+                weeklyProgress.done >= (habit.times_per_week ?? 1)
+                  ? habit.color
+                  : 'var(--text-secondary)',
             }}
           >
             {weeklyProgress.done}/{habit.times_per_week} sem.

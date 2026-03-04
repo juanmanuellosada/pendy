@@ -1,8 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  CheckCircle2, Zap, Calendar, Tag,
-  ArrowRight, Repeat, Bell, Heart, Flame
+  CheckCircle2,
+  Zap,
+  Calendar,
+  Tag,
+  ArrowRight,
+  Repeat,
+  Bell,
+  Heart,
+  Flame,
 } from 'lucide-react'
 
 const features = [
@@ -46,16 +53,33 @@ const features = [
   {
     icon: Bell,
     title: 'Recordatorios',
-    description:
-      'Notificaciones push y por email. Elige exactamente cuándo quieres que te avisen.',
+    description: 'Notificaciones push y por email. Elige exactamente cuándo quieres que te avisen.',
   },
 ]
 
 const mockTasks = [
-  { title: 'Revisar propuesta de diseño', priority: '#EC1E2A', label: 'Trabajo', done: true, time: '9:00' },
-  { title: 'Llamar al proveedor', priority: '#F59E0B', label: 'Trabajo', done: false, time: '11:30' },
+  {
+    title: 'Revisar propuesta de diseño',
+    priority: '#EC1E2A',
+    label: 'Trabajo',
+    done: true,
+    time: '9:00',
+  },
+  {
+    title: 'Llamar al proveedor',
+    priority: '#F59E0B',
+    label: 'Trabajo',
+    done: false,
+    time: '11:30',
+  },
   { title: 'Comprar verduras para la semana', priority: '#6B7280', label: 'Compras', done: false },
-  { title: 'Revisar métricas del proyecto', priority: '#3B82F6', label: 'Trabajo', done: false, time: '15:00' },
+  {
+    title: 'Revisar métricas del proyecto',
+    priority: '#3B82F6',
+    label: 'Trabajo',
+    done: false,
+    time: '15:00',
+  },
   { title: 'Actualizar documentación', priority: '#6B7280', label: 'Personal', done: false },
 ]
 
@@ -73,7 +97,10 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-[#0f1117] overflow-hidden">
       {/* ── HERO ──────────────────────────────────────────────── */}
-      <section className="relative min-h-screen flex flex-col" style={{ backgroundColor: '#16202f' }}>
+      <section
+        className="relative min-h-screen flex flex-col"
+        style={{ backgroundColor: '#16202f' }}
+      >
         {/* Subtle grid */}
         <div
           className="absolute inset-0 pointer-events-none"
@@ -87,17 +114,27 @@ export default function LandingPage() {
         {/* Glows */}
         <div
           className="absolute top-0 right-0 w-[500px] h-[500px] pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at top right, rgba(236,30,42,0.1) 0%, transparent 65%)' }}
+          style={{
+            background:
+              'radial-gradient(ellipse at top right, rgba(236,30,42,0.1) 0%, transparent 65%)',
+          }}
         />
         <div
           className="absolute bottom-0 left-0 w-[400px] h-[400px] pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at bottom left, rgba(40,59,86,0.4) 0%, transparent 65%)' }}
+          style={{
+            background:
+              'radial-gradient(ellipse at bottom left, rgba(40,59,86,0.4) 0%, transparent 65%)',
+          }}
         />
 
         {/* Nav */}
         <nav className="relative z-10 flex items-center justify-between px-8 py-6">
           <div className="flex items-center gap-3">
-            <img src={`${import.meta.env.BASE_URL}pendy-logo.png`} alt="Pendy" className="w-8 h-8 rounded-lg" />
+            <img
+              src={`${import.meta.env.BASE_URL}pendy-logo.png`}
+              alt="Pendy"
+              className="w-8 h-8 rounded-lg"
+            />
             <span
               className="text-white font-bold text-xl tracking-tight"
               style={{ fontFamily: '"Bricolage Grotesque", system-ui, sans-serif' }}
@@ -172,7 +209,8 @@ export default function LandingPage() {
               }`}
               style={{ fontFamily: '"DM Sans", system-ui, sans-serif' }}
             >
-              Gestión de tareas y hábitos pensada para la claridad. Proyectos, calendario, rutinas y recordatorios — todo integrado.
+              Gestión de tareas y hábitos pensada para la claridad. Proyectos, calendario, rutinas y
+              recordatorios — todo integrado.
             </p>
 
             {/* CTAs */}
@@ -316,7 +354,10 @@ export default function LandingPage() {
                     className="flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs text-gray-500"
                     style={{ fontFamily: '"DM Sans", system-ui' }}
                   >
-                    <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: item.color }} />
+                    <div
+                      className="w-2.5 h-2.5 rounded-sm"
+                      style={{ backgroundColor: item.color }}
+                    />
                     {item.label}
                   </div>
                 ))}
@@ -362,7 +403,13 @@ export default function LandingPage() {
                       >
                         {task.done && (
                           <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
-                            <path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <path
+                              d="M1 3L3 5L7 1"
+                              stroke="white"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
                           </svg>
                         )}
                       </div>
@@ -442,9 +489,14 @@ export default function LandingPage() {
                 >
                   <div
                     className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 transition-all duration-300 group-hover:scale-110"
-                    style={{ backgroundColor: isHighlight ? 'rgba(249,115,22,0.1)' : 'rgba(40,59,86,0.07)' }}
+                    style={{
+                      backgroundColor: isHighlight ? 'rgba(249,115,22,0.1)' : 'rgba(40,59,86,0.07)',
+                    }}
                   >
-                    <Icon className="w-5 h-5" style={{ color: isHighlight ? '#F59E0B' : '#283B56' }} />
+                    <Icon
+                      className="w-5 h-5"
+                      style={{ color: isHighlight ? '#F59E0B' : '#283B56' }}
+                    />
                   </div>
                   <h3
                     className="text-base font-bold text-gray-900 dark:text-white mb-2"
@@ -479,11 +531,17 @@ export default function LandingPage() {
             {/* Accent glows */}
             <div
               className="absolute top-0 right-0 w-56 h-56 pointer-events-none"
-              style={{ background: 'radial-gradient(circle at top right, rgba(236,30,42,0.12) 0%, transparent 60%)' }}
+              style={{
+                background:
+                  'radial-gradient(circle at top right, rgba(236,30,42,0.12) 0%, transparent 60%)',
+              }}
             />
             <div
               className="absolute bottom-0 left-0 w-44 h-44 pointer-events-none"
-              style={{ background: 'radial-gradient(circle at bottom left, rgba(255,255,255,0.03) 0%, transparent 60%)' }}
+              style={{
+                background:
+                  'radial-gradient(circle at bottom left, rgba(255,255,255,0.03) 0%, transparent 60%)',
+              }}
             />
 
             <div className="relative">
@@ -534,13 +592,10 @@ export default function LandingPage() {
             </span>
           </div>
           <span className="text-gray-300 dark:text-gray-700 hidden md:inline">·</span>
-          <p
-            className="text-sm text-gray-400"
-            style={{ fontFamily: '"DM Sans", system-ui' }}
-          >
+          <p className="text-sm text-gray-400" style={{ fontFamily: '"DM Sans", system-ui' }}>
             © 2026. Hecho con{' '}
-            <Heart size={11} className="inline text-red-500 fill-red-500 mx-0.5 -mt-0.5" />{' '}
-            para la productividad personal.
+            <Heart size={11} className="inline text-red-500 fill-red-500 mx-0.5 -mt-0.5" /> para la
+            productividad personal.
           </p>
         </div>
       </footer>

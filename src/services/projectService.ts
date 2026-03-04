@@ -72,10 +72,7 @@ export const projectService = {
   },
 
   async archiveProject(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('projects')
-      .update({ is_archived: true })
-      .eq('id', id)
+    const { error } = await supabase.from('projects').update({ is_archived: true }).eq('id', id)
 
     if (error) throw error
   },

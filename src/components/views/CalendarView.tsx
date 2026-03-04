@@ -21,12 +21,25 @@ import {
 import { es } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Plus, Calendar, CheckSquare, X, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
-import { useCalendarTasks, useRecurringTasks, useUpdateTask, useCompleteTask } from '@/hooks/useTasks'
+import {
+  useCalendarTasks,
+  useRecurringTasks,
+  useUpdateTask,
+  useCompleteTask,
+} from '@/hooks/useTasks'
 import { useProjects } from '@/hooks/useProjects'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { useAppStore } from '@/stores/appStore'
 import { useCalendarEventMutations } from '@/hooks/useCalendarEvents'
-import { useHabits, useHabitCompletions, useToggleHabitCompletion, useHabitSchedules, useSetHabitDefaultTime, useUpsertHabitSchedule, useUpdateHabit } from '@/hooks/useHabits'
+import {
+  useHabits,
+  useHabitCompletions,
+  useToggleHabitCompletion,
+  useHabitSchedules,
+  useSetHabitDefaultTime,
+  useUpsertHabitSchedule,
+  useUpdateHabit,
+} from '@/hooks/useHabits'
 import { TaskCheckbox } from '@/components/tasks/TaskCheckbox'
 import { HabitCheckbox } from '@/components/habits/HabitCheckbox'
 import { useHabitTooltip } from '@/components/habits/HabitTooltip'
@@ -35,12 +48,22 @@ import { PRIORITY_COLORS } from '@/lib/constants'
 import { cn, stripHtmlTags, stripLabelTokensFromText } from '@/lib/utils'
 import type { Task, CalendarEvent, Habit, HabitCompletion, HabitSchedule } from '@/lib/types'
 import { TaskTooltip } from '@/components/common/TaskTooltip'
-import { CalendarEventTooltip, getEventColor, getCalendarName } from '@/components/common/CalendarEventTooltip'
+import {
+  CalendarEventTooltip,
+  getEventColor,
+  getCalendarName,
+} from '@/components/common/CalendarEventTooltip'
 import { CalendarEventEditor } from '@/components/common/CalendarEventEditor'
 import type { CalendarMode } from '@/stores/uiStore'
 import { useCalendarEventsByRange } from '@/hooks/useCalendarEvents'
 import { useIsMobile } from '@/hooks/useIsMobile'
-import { habitAppearsOnDate, getScheduledTimeForDate, timeStrToHour, hourToTimeStr, isCompletedOnDate } from '@/lib/habitUtils'
+import {
+  habitAppearsOnDate,
+  getScheduledTimeForDate,
+  timeStrToHour,
+  hourToTimeStr,
+  isCompletedOnDate,
+} from '@/lib/habitUtils'
 
 const GOOGLE_COLOR = '#4285F4'
 
@@ -59,8 +82,12 @@ function expandRecurringTasks(tasks: Task[], rangeStart: Date, rangeEnd: Date): 
       const [y, m, d] = task.due_date.split('-').map(Number)
       const dtstart = new Date(Date.UTC(y!, m! - 1, d!))
       const rule = new RRule({ ...RRule.parseString(ruleStr), dtstart })
-      const startUTC = new Date(Date.UTC(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate()))
-      const endUTC = new Date(Date.UTC(rangeEnd.getFullYear(), rangeEnd.getMonth(), rangeEnd.getDate()))
+      const startUTC = new Date(
+        Date.UTC(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate()),
+      )
+      const endUTC = new Date(
+        Date.UTC(rangeEnd.getFullYear(), rangeEnd.getMonth(), rangeEnd.getDate()),
+      )
       for (const occ of rule.between(startUTC, endUTC, true)) {
         const occStr = [
           occ.getUTCFullYear(),
@@ -77,15 +104,21 @@ function expandRecurringTasks(tasks: Task[], rangeStart: Date, rangeEnd: Date): 
               ? (() => {
                   const orig = new Date(task.due_datetime)
                   return new Date(
-                    occ.getUTCFullYear(), occ.getUTCMonth(), occ.getUTCDate(),
-                    orig.getHours(), orig.getMinutes(), orig.getSeconds(),
+                    occ.getUTCFullYear(),
+                    occ.getUTCMonth(),
+                    occ.getUTCDate(),
+                    orig.getHours(),
+                    orig.getMinutes(),
+                    orig.getSeconds(),
                   ).toISOString()
                 })()
               : null,
           is_completed: false,
         })
       }
-    } catch { /* RRULE inválida */ }
+    } catch {
+      /* RRULE inválida */
+    }
   }
   return virtual
 }
@@ -102,7 +135,7 @@ const MIN_DURATION = 15
 
 /** Calcula posiciones de columna para bloques que se superponen en el tiempo */
 function computeOverlapLayout(
-  items: { id: string; startH: number; endH: number }[]
+  items: { id: string; startH: number; endH: number }[],
 ): Map<string, { col: number; totalCols: number }> {
   const result = new Map<string, { col: number; totalCols: number }>()
   if (items.length === 0) return result
@@ -153,10 +186,17 @@ function snapMinutes(totalMinutes: number): number {
   return Math.round(totalMinutes / SNAP_MINUTES) * SNAP_MINUTES
 }
 
-export function CalendarView({ calendarMode, onAddTask, showFutureRecurrences = true, showCompleted = true, showHabits = true }: CalendarViewProps) {
+export function CalendarView({
+  calendarMode,
+  onAddTask,
+  showFutureRecurrences = true,
+  showCompleted = true,
+  showHabits = true,
+}: CalendarViewProps) {
   const isMobile = useIsMobile()
   // En mobile, semana y 4 días se colapsan a vista de día
-  const effectiveMode: CalendarMode = isMobile && (calendarMode === 'week' || calendarMode === '4days') ? 'day' : calendarMode
+  const effectiveMode: CalendarMode =
+    isMobile && (calendarMode === 'week' || calendarMode === '4days') ? 'day' : calendarMode
   const hourHeight = isMobile ? 48 : HOUR_HEIGHT
 
   const [currentDate, setCurrentDate] = useState(() => {
@@ -172,8 +212,16 @@ export function CalendarView({ calendarMode, onAddTask, showFutureRecurrences = 
 
   // Calendar event editor state (shared across all sub-components)
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null)
-  const [creatingEventInfo, setCreatingEventInfo] = useState<{ date: Date; hour: number; durationMinutes?: number } | null>(null)
-  const [creatingTaskInfo, setCreatingTaskInfo] = useState<{ date: string; time: string; durationMinutes: number } | null>(null)
+  const [creatingEventInfo, setCreatingEventInfo] = useState<{
+    date: Date
+    hour: number
+    durationMinutes?: number
+  } | null>(null)
+  const [creatingTaskInfo, setCreatingTaskInfo] = useState<{
+    date: string
+    time: string
+    durationMinutes: number
+  } | null>(null)
 
   const days = useMemo((): Date[] => {
     switch (effectiveMode) {
@@ -224,11 +272,15 @@ export function CalendarView({ calendarMode, onAddTask, showFutureRecurrences = 
   const navigate = (dir: 1 | -1) => {
     setCurrentDate((prev) => {
       switch (effectiveMode) {
-        case 'week': return dir === 1 ? addWeeks(prev, 1) : subWeeks(prev, 1)
-        case '4days': return dir === 1 ? addDays(prev, 4) : subDays(prev, 4)
-        case 'day': return dir === 1 ? addDays(prev, 1) : subDays(prev, 1)
+        case 'week':
+          return dir === 1 ? addWeeks(prev, 1) : subWeeks(prev, 1)
+        case '4days':
+          return dir === 1 ? addDays(prev, 4) : subDays(prev, 4)
+        case 'day':
+          return dir === 1 ? addDays(prev, 1) : subDays(prev, 1)
         case 'month':
-        default: return dir === 1 ? addMonths(prev, 1) : subMonths(prev, 1)
+        default:
+          return dir === 1 ? addMonths(prev, 1) : subMonths(prev, 1)
       }
     })
   }
@@ -253,7 +305,8 @@ export function CalendarView({ calendarMode, onAddTask, showFutureRecurrences = 
     }
   }, [effectiveMode, currentDate])
 
-  const isTimelineMode = effectiveMode === 'week' || effectiveMode === '4days' || effectiveMode === 'day'
+  const isTimelineMode =
+    effectiveMode === 'week' || effectiveMode === '4days' || effectiveMode === 'day'
   const isMonthView = effectiveMode === 'month'
 
   const todayViewStr = format(new Date(), 'yyyy-MM-dd')
@@ -262,7 +315,8 @@ export function CalendarView({ calendarMode, onAddTask, showFutureRecurrences = 
   // Tareas expandidas con recurrencias virtuales para el rango visible
   const allTasks = useMemo(() => {
     if (!showFutureRecurrences || days.length === 0) return tasks
-    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
     const rangeEnd = days[days.length - 1]!
     if (rangeEnd <= today) return tasks
     const rangeStart = days[0]! > today ? days[0]! : today
@@ -310,127 +364,187 @@ export function CalendarView({ calendarMode, onAddTask, showFutureRecurrences = 
   return (
     <HourHeightCtx.Provider value={hourHeight}>
       <>
-      <div className="flex flex-col animate-fade-in">
-        {/* Navigation */}
-        <div className="flex items-center gap-2 mb-5">
-          <button
-            onClick={() => setCurrentDate(new Date())}
-            className="rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
-            style={{ borderColor: 'var(--border-primary)', color: 'var(--text-primary)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            Hoy
-          </button>
-          <div className="flex items-center gap-0.5">
-            <button onClick={() => navigate(-1)} className="rounded-lg p-1.5 transition-colors" style={{ color: 'var(--text-secondary)' }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')} aria-label="Anterior"><ChevronLeft size={16} /></button>
-            <button onClick={() => navigate(1)} className="rounded-lg p-1.5 transition-colors" style={{ color: 'var(--text-secondary)' }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')} aria-label="Siguiente"><ChevronRight size={16} /></button>
+        <div className="flex flex-col animate-fade-in">
+          {/* Navigation */}
+          <div className="flex items-center gap-2 mb-5">
+            <button
+              onClick={() => setCurrentDate(new Date())}
+              className="rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
+              style={{ borderColor: 'var(--border-primary)', color: 'var(--text-primary)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              Hoy
+            </button>
+            <div className="flex items-center gap-0.5">
+              <button
+                onClick={() => navigate(-1)}
+                className="rounded-lg p-1.5 transition-colors"
+                style={{ color: 'var(--text-secondary)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                aria-label="Anterior"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                onClick={() => navigate(1)}
+                className="rounded-lg p-1.5 transition-colors"
+                style={{ color: 'var(--text-secondary)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                aria-label="Siguiente"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+            <span
+              className="text-sm font-semibold capitalize"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              {periodLabel}
+            </span>
           </div>
-          <span className="text-sm font-semibold capitalize" style={{ color: 'var(--text-primary)' }}>{periodLabel}</span>
+
+          {/* ── Timeline mode (week / 4days / day) ── */}
+          {isTimelineMode && (
+            <TimelineGrid
+              days={days}
+              tasks={allTasks}
+              calendarEvents={calendarEvents}
+              habits={habits}
+              habitCompletions={habitCompletions}
+              habitSchedules={habitSchedules}
+              showFutureRecurrences={showFutureRecurrences}
+              showCompleted={showCompleted}
+              showHabits={showHabits}
+              onNavigate={navigate}
+              onEditEvent={setEditingEvent}
+              onCreateEvent={setCreatingEventInfo}
+              onCreateTask={setCreatingTaskInfo}
+              onSetHabitDefaultTime={(habitId, time) =>
+                setHabitDefaultTime.mutate({ habitId, time })
+              }
+              onUpsertHabitSchedule={(habitId, date, time) =>
+                upsertHabitSchedule.mutate({ habitId, date, time })
+              }
+              onToggleHabitCompletion={(habitId, date) =>
+                toggleHabitCompletion.mutate({ habitId, date })
+              }
+              onUpdateHabitDuration={(habitId, duration_minutes) =>
+                updateHabit.mutate({ id: habitId, updates: { duration_minutes } })
+              }
+              onEditHabit={(habit, date) => setSelectedHabit(habit.id, format(date, 'yyyy-MM-dd'))}
+            />
+          )}
+
+          {/* ── Month grid ── */}
+          {isMonthView && (
+            <div
+              className="rounded-xl border overflow-hidden"
+              style={{ borderColor: 'var(--border-primary)' }}
+            >
+              <div
+                className="grid border-b"
+                style={{
+                  gridTemplateColumns: `repeat(${headerCols}, 1fr)`,
+                  borderColor: 'var(--border-primary)',
+                  backgroundColor: 'var(--bg-secondary)',
+                }}
+              >
+                {WEEK_DAYS.map((name) => (
+                  <div
+                    key={name}
+                    className="py-2.5 text-center text-xs font-semibold uppercase tracking-wider"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    {name}
+                  </div>
+                ))}
+              </div>
+              <div>
+                {Array.from({ length: Math.ceil(days.length / 7) }).map((_, rowIdx) => (
+                  <div
+                    key={rowIdx}
+                    className="grid"
+                    style={{
+                      gridTemplateColumns: 'repeat(7, 1fr)',
+                      borderBottom:
+                        rowIdx < Math.ceil(days.length / 7) - 1
+                          ? '1px solid var(--border-secondary)'
+                          : 'none',
+                    }}
+                  >
+                    {days.slice(rowIdx * 7, rowIdx * 7 + 7).map((day, colIdx) => {
+                      const dateStr = format(day, 'yyyy-MM-dd')
+                      return (
+                        <MonthDayCell
+                          key={colIdx}
+                          day={day}
+                          dateStr={dateStr}
+                          tasks={tasksForDay(day)}
+                          calendarEvents={eventsForDay(day)}
+                          habits={(() => {
+                            if (!showHabits) return []
+                            const dateS = format(day, 'yyyy-MM-dd')
+                            if (!showFutureRecurrences && dateS > todayViewStr) return []
+                            const dayH = habits.filter((h) => habitAppearsOnDate(h, day))
+                            return showCompleted
+                              ? dayH
+                              : dayH.filter((h) => !isCompletedOnDate(habitCompletions, h.id, day))
+                          })()}
+                          isTodayDate={isToday(day)}
+                          inCurrentMonth={isSameMonth(day, currentDate)}
+                          isOver={dragOverDate === dateStr}
+                          hasRightBorder={colIdx < 6}
+                          onAddTask={onAddTask}
+                          onDragStart={handleDragStart}
+                          onDragOver={handleDragOver}
+                          onDragLeave={handleDragLeave}
+                          onDrop={handleDrop}
+                          onEditEvent={setEditingEvent}
+                          onEditHabit={(habit, day) =>
+                            setSelectedHabit(habit.id, format(day, 'yyyy-MM-dd'))
+                          }
+                          onCreateEvent={(date, hour) => setCreatingEventInfo({ date, hour })}
+                        />
+                      )
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* ── Timeline mode (week / 4days / day) ── */}
-        {isTimelineMode && (
-          <TimelineGrid
-            days={days}
-            tasks={allTasks}
-            calendarEvents={calendarEvents}
-            habits={habits}
-            habitCompletions={habitCompletions}
-            habitSchedules={habitSchedules}
-            showFutureRecurrences={showFutureRecurrences}
-            showCompleted={showCompleted}
-            showHabits={showHabits}
-            onNavigate={navigate}
-            onEditEvent={setEditingEvent}
-            onCreateEvent={setCreatingEventInfo}
-            onCreateTask={setCreatingTaskInfo}
-            onSetHabitDefaultTime={(habitId, time) => setHabitDefaultTime.mutate({ habitId, time })}
-            onUpsertHabitSchedule={(habitId, date, time) => upsertHabitSchedule.mutate({ habitId, date, time })}
-            onToggleHabitCompletion={(habitId, date) => toggleHabitCompletion.mutate({ habitId, date })}
-            onUpdateHabitDuration={(habitId, duration_minutes) => updateHabit.mutate({ id: habitId, updates: { duration_minutes } })}
-            onEditHabit={(habit, date) => setSelectedHabit(habit.id, format(date, 'yyyy-MM-dd'))}
+        {/* Calendar event editor */}
+        {editingEvent && (
+          <CalendarEventEditor
+            event={editingEvent}
+            variant="panel"
+            onClose={() => setEditingEvent(null)}
+          />
+        )}
+        {creatingEventInfo && (
+          <CalendarEventEditor
+            defaultDate={creatingEventInfo.date}
+            defaultHour={creatingEventInfo.hour}
+            defaultDurationMinutes={creatingEventInfo.durationMinutes}
+            onClose={() => setCreatingEventInfo(null)}
           />
         )}
 
-        {/* ── Month grid ── */}
-        {isMonthView && (
-          <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-primary)' }}>
-            <div className="grid border-b" style={{ gridTemplateColumns: `repeat(${headerCols}, 1fr)`, borderColor: 'var(--border-primary)', backgroundColor: 'var(--bg-secondary)' }}>
-              {WEEK_DAYS.map((name) => (
-                <div key={name} className="py-2.5 text-center text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{name}</div>
-              ))}
-            </div>
-            <div>
-              {Array.from({ length: Math.ceil(days.length / 7) }).map((_, rowIdx) => (
-                <div key={rowIdx} className="grid" style={{ gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: rowIdx < Math.ceil(days.length / 7) - 1 ? '1px solid var(--border-secondary)' : 'none' }}>
-                  {days.slice(rowIdx * 7, rowIdx * 7 + 7).map((day, colIdx) => {
-                    const dateStr = format(day, 'yyyy-MM-dd')
-                    return (
-                      <MonthDayCell
-                        key={colIdx}
-                        day={day}
-                        dateStr={dateStr}
-                        tasks={tasksForDay(day)}
-                        calendarEvents={eventsForDay(day)}
-                        habits={(() => {
-                          if (!showHabits) return []
-                          const dateS = format(day, 'yyyy-MM-dd')
-                          if (!showFutureRecurrences && dateS > todayViewStr) return []
-                          const dayH = habits.filter((h) => habitAppearsOnDate(h, day))
-                          return showCompleted ? dayH : dayH.filter((h) => !isCompletedOnDate(habitCompletions, h.id, day))
-                        })()}
-                        isTodayDate={isToday(day)}
-                        inCurrentMonth={isSameMonth(day, currentDate)}
-                        isOver={dragOverDate === dateStr}
-                        hasRightBorder={colIdx < 6}
-                        onAddTask={onAddTask}
-                        onDragStart={handleDragStart}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                        onEditEvent={setEditingEvent}
-                        onEditHabit={(habit, day) => setSelectedHabit(habit.id, format(day, 'yyyy-MM-dd'))}
-                        onCreateEvent={(date, hour) => setCreatingEventInfo({ date, hour })}
-                      />
-                    )
-                  })}
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* Task editor from calendar */}
+        {creatingTaskInfo && (
+          <TaskEditor
+            open
+            defaultDate={creatingTaskInfo.date}
+            defaultTime={creatingTaskInfo.time}
+            defaultDurationMinutes={creatingTaskInfo.durationMinutes}
+            onClose={() => setCreatingTaskInfo(null)}
+          />
         )}
-      </div>
-
-      {/* Calendar event editor */}
-      {editingEvent && (
-        <CalendarEventEditor
-          event={editingEvent}
-          variant="panel"
-          onClose={() => setEditingEvent(null)}
-        />
-      )}
-      {creatingEventInfo && (
-        <CalendarEventEditor
-          defaultDate={creatingEventInfo.date}
-          defaultHour={creatingEventInfo.hour}
-          defaultDurationMinutes={creatingEventInfo.durationMinutes}
-          onClose={() => setCreatingEventInfo(null)}
-        />
-      )}
-
-      {/* Task editor from calendar */}
-      {creatingTaskInfo && (
-        <TaskEditor
-          open
-          defaultDate={creatingTaskInfo.date}
-          defaultTime={creatingTaskInfo.time}
-          defaultDurationMinutes={creatingTaskInfo.durationMinutes}
-          onClose={() => setCreatingTaskInfo(null)}
-        />
-      )}
-
-    </>
+      </>
     </HourHeightCtx.Provider>
   )
 }
@@ -521,7 +635,7 @@ function TimelineGrid({
 
   // Calendar event drag state
   const [calEvDrag, setCalEvDrag] = useState<CalendarEventDragState | null>(null)
-  const [calEvCurrentDy, setCalEvCurrentDy] = useState(0)      // dy for same-column visual
+  const [calEvCurrentDy, setCalEvCurrentDy] = useState(0) // dy for same-column visual
   const [calEvPreviewHour, setCalEvPreviewHour] = useState<number | null>(null) // snapped hour for cross-column preview
   const [calEvDidMove, setCalEvDidMove] = useState(false)
   const calEvDidMoveRef = useRef(false)
@@ -531,13 +645,31 @@ function TimelineGrid({
   const [localCalEvHints, setLocalCalEvHints] = useState<Record<string, number>>({})
 
   // Habit drag state (from all-day chip to timeline, cross-column)
-  const [habitDrag, setHabitDrag] = useState<{ habit: Habit; ghostHour: number | null; ghostCol: number | null } | null>(null)
+  const [habitDrag, setHabitDrag] = useState<{
+    habit: Habit
+    ghostHour: number | null
+    ghostCol: number | null
+  } | null>(null)
   const habitDragRef = useRef(habitDrag)
-  useEffect(() => { habitDragRef.current = habitDrag }, [habitDrag])
+  useEffect(() => {
+    habitDragRef.current = habitDrag
+  }, [habitDrag])
 
   // Drag-to-create state
-  const [createDrag, setCreateDrag] = useState<{ col: number; date: Date; startHour: number; currentHour: number; startY: number } | null>(null)
-  const [typePicker, setTypePicker] = useState<{ date: Date; startHour: number; durationMinutes: number; screenX: number; screenY: number } | null>(null)
+  const [createDrag, setCreateDrag] = useState<{
+    col: number
+    date: Date
+    startHour: number
+    currentHour: number
+    startY: number
+  } | null>(null)
+  const [typePicker, setTypePicker] = useState<{
+    date: Date
+    startHour: number
+    durationMinutes: number
+    screenX: number
+    screenY: number
+  } | null>(null)
 
   // Drag-to-create effects
   useEffect(() => {
@@ -548,7 +680,7 @@ function TimelineGrid({
       const relY = e.clientY - rect.top
       const rawHour = Math.max(createDrag.startHour, Math.min(START_HOUR + relY / HOUR_HEIGHT, 24))
       const snapped = Math.max(createDrag.startHour, snapMinutes(Math.round(rawHour * 60)) / 60)
-      setCreateDrag((prev) => prev ? { ...prev, currentHour: snapped } : null)
+      setCreateDrag((prev) => (prev ? { ...prev, currentHour: snapped } : null))
     }
 
     const onUp = (e: MouseEvent) => {
@@ -558,7 +690,13 @@ function TimelineGrid({
       const rawEndMin = Math.round(createDrag.currentHour * 60)
       const duration = dy > 8 ? Math.max(MIN_DURATION, snapMinutes(rawEndMin - startMin)) : 60
       setCreateDrag(null)
-      setTypePicker({ date: createDrag.date, startHour: startMin / 60, durationMinutes: duration, screenX: e.clientX, screenY: e.clientY })
+      setTypePicker({
+        date: createDrag.date,
+        startHour: startMin / 60,
+        durationMinutes: duration,
+        screenX: e.clientX,
+        screenY: e.clientY,
+      })
     }
     document.addEventListener('mousemove', onMove)
     document.addEventListener('mouseup', onUp)
@@ -588,18 +726,26 @@ function TimelineGrid({
     const todayStr = format(new Date(), 'yyyy-MM-dd')
     return days.map((day) => {
       const dateStr = format(day, 'yyyy-MM-dd')
-      const baseTasks = tasks.filter((t) => t.due_date === dateStr && (showCompleted || !t.is_completed))
+      const baseTasks = tasks.filter(
+        (t) => t.due_date === dateStr && (showCompleted || !t.is_completed),
+      )
       const allDay = baseTasks.filter((t) => !t.has_time || !t.due_datetime)
       const timed = baseTasks.filter((t) => t.has_time && t.due_datetime)
       const dayEvents = calendarEvents.filter((ev) => format(ev.start, 'yyyy-MM-dd') === dateStr)
       const allDayEvents = dayEvents.filter((ev) => ev.isAllDay)
       const timedEvents = dayEvents.filter((ev) => !ev.isAllDay)
-      let dayHabits = (!showHabits || (!showFutureRecurrences && dateStr > todayStr))
-        ? []
-        : habits.filter((h) => habitAppearsOnDate(h, day))
-      if (!showCompleted) dayHabits = dayHabits.filter((h) => !isCompletedOnDate(habitCompletions, h.id, day))
-      const unscheduledHabits = dayHabits.filter((h) => getScheduledTimeForDate(h, habitSchedules, day) === null)
-      const scheduledHabits = dayHabits.filter((h) => getScheduledTimeForDate(h, habitSchedules, day) !== null)
+      let dayHabits =
+        !showHabits || (!showFutureRecurrences && dateStr > todayStr)
+          ? []
+          : habits.filter((h) => habitAppearsOnDate(h, day))
+      if (!showCompleted)
+        dayHabits = dayHabits.filter((h) => !isCompletedOnDate(habitCompletions, h.id, day))
+      const unscheduledHabits = dayHabits.filter(
+        (h) => getScheduledTimeForDate(h, habitSchedules, day) === null,
+      )
+      const scheduledHabits = dayHabits.filter(
+        (h) => getScheduledTimeForDate(h, habitSchedules, day) !== null,
+      )
 
       // Layout de overlap para bloques con hora en este día
       const layoutItems: { id: string; startH: number; endH: number }[] = []
@@ -622,73 +768,110 @@ function TimelineGrid({
       }
       const colLayout = computeOverlapLayout(layoutItems)
 
-      return { day, dateStr, allDay, timed, allDayEvents, timedEvents, unscheduledHabits, scheduledHabits, colLayout }
+      return {
+        day,
+        dateStr,
+        allDay,
+        timed,
+        allDayEvents,
+        timedEvents,
+        unscheduledHabits,
+        scheduledHabits,
+        colLayout,
+      }
     })
-  }, [days, tasks, calendarEvents, habits, habitCompletions, habitSchedules, showFutureRecurrences, showCompleted, showHabits])
+  }, [
+    days,
+    tasks,
+    calendarEvents,
+    habits,
+    habitCompletions,
+    habitSchedules,
+    showFutureRecurrences,
+    showCompleted,
+    showHabits,
+  ])
 
-  const hasAnyAllDay = dayData.some((d) => d.allDay.length > 0 || d.allDayEvents.length > 0 || d.unscheduledHabits.length > 0)
+  const hasAnyAllDay = dayData.some(
+    (d) => d.allDay.length > 0 || d.allDayEvents.length > 0 || d.unscheduledHabits.length > 0,
+  )
 
-  const getColFromX = useCallback((clientX: number): number => {
-    if (!gridRef.current) return -1
-    const rect = gridRef.current.getBoundingClientRect()
-    const hourLabelWidth = 56
-    const colAreaLeft = rect.left + hourLabelWidth
-    const colAreaWidth = rect.width - hourLabelWidth
-    const colWidth = colAreaWidth / days.length
-    return Math.floor((clientX - colAreaLeft) / colWidth)
-  }, [days.length])
+  const getColFromX = useCallback(
+    (clientX: number): number => {
+      if (!gridRef.current) return -1
+      const rect = gridRef.current.getBoundingClientRect()
+      const hourLabelWidth = 56
+      const colAreaLeft = rect.left + hourLabelWidth
+      const colAreaWidth = rect.width - hourLabelWidth
+      const colWidth = colAreaWidth / days.length
+      return Math.floor((clientX - colAreaLeft) / colWidth)
+    },
+    [days.length],
+  )
 
-  const getHourFromY = useCallback((clientY: number): number => {
-    if (!gridRef.current) return 0
-    const rect = gridRef.current.getBoundingClientRect()
-    // rect.top ya incluye el efecto del scroll del contenedor (la grid sube en el viewport
-    // cuando se scrollea), por lo que NO se suma scrollTop nuevamente.
-    const py = clientY - rect.top
-    return pxToHours(py, HOUR_HEIGHT)
-  }, [HOUR_HEIGHT])
+  const getHourFromY = useCallback(
+    (clientY: number): number => {
+      if (!gridRef.current) return 0
+      const rect = gridRef.current.getBoundingClientRect()
+      // rect.top ya incluye el efecto del scroll del contenedor (la grid sube en el viewport
+      // cuando se scrollea), por lo que NO se suma scrollTop nuevamente.
+      const py = clientY - rect.top
+      return pxToHours(py, HOUR_HEIGHT)
+    },
+    [HOUR_HEIGHT],
+  )
 
   /* ── Start task drag (called by task blocks) ── */
-  const handleTaskDragStart = useCallback((task: Task, e: React.MouseEvent) => {
-    if (task.id.includes('::')) return // tarea virtual — no arrastrar
-    const dt = new Date(task.due_datetime!)
-    const hour = dt.getHours() + dt.getMinutes() / 60
-    const col = getColFromX(e.clientX)
-    setDidMove(false)
-    didMoveRef.current = false
+  const handleTaskDragStart = useCallback(
+    (task: Task, e: React.MouseEvent) => {
+      if (task.id.includes('::')) return // tarea virtual — no arrastrar
+      const dt = new Date(task.due_datetime!)
+      const hour = dt.getHours() + dt.getMinutes() / 60
+      const col = getColFromX(e.clientX)
+      setDidMove(false)
+      didMoveRef.current = false
 
-    setTaskPreviewHour(null)
-    setDrag({
-      taskId: task.id,
-      task,
-      startX: e.clientX,
-      startY: e.clientY,
-      baseHour: hour,
-      baseDuration: task.duration_minutes || 60,
-      originCol: col,
-    })
-    setGhostOffset({ dx: 0, dy: 0 })
-  }, [getColFromX])
+      setTaskPreviewHour(null)
+      setDrag({
+        taskId: task.id,
+        task,
+        startX: e.clientX,
+        startY: e.clientY,
+        baseHour: hour,
+        baseDuration: task.duration_minutes || 60,
+        originCol: col,
+      })
+      setGhostOffset({ dx: 0, dy: 0 })
+    },
+    [getColFromX],
+  )
 
   /* ── Start calendar event drag ── */
-  const handleCalEvDragStart = useCallback((event: CalendarEvent, e: React.MouseEvent) => {
-    if (!event.calendarId) return // can't update without calendarId
-    const hour = event.start.getHours() + event.start.getMinutes() / 60
-    const duration = Math.max((event.end.getTime() - event.start.getTime()) / 60_000, MIN_DURATION)
-    const col = getColFromX(e.clientX)
-    setCalEvDidMove(false)
-    calEvDidMoveRef.current = false
-    setCalEvCurrentDy(0)
-    setCalEvPreviewHour(null)
+  const handleCalEvDragStart = useCallback(
+    (event: CalendarEvent, e: React.MouseEvent) => {
+      if (!event.calendarId) return // can't update without calendarId
+      const hour = event.start.getHours() + event.start.getMinutes() / 60
+      const duration = Math.max(
+        (event.end.getTime() - event.start.getTime()) / 60_000,
+        MIN_DURATION,
+      )
+      const col = getColFromX(e.clientX)
+      setCalEvDidMove(false)
+      calEvDidMoveRef.current = false
+      setCalEvCurrentDy(0)
+      setCalEvPreviewHour(null)
 
-    setCalEvDrag({
-      event,
-      startX: e.clientX,
-      startY: e.clientY,
-      baseHour: hour,
-      baseDuration: duration,
-      originCol: col,
-    })
-  }, [getColFromX])
+      setCalEvDrag({
+        event,
+        startX: e.clientX,
+        startY: e.clientY,
+        baseHour: hour,
+        baseDuration: duration,
+        originCol: col,
+      })
+    },
+    [getColFromX],
+  )
 
   /* ── Task drag move & drop ── */
   useEffect(() => {
@@ -716,7 +899,10 @@ function TimelineGrid({
           setHighlightCol(null)
           setTaskPreviewHour(null)
         }
-        if (edgeTimer.current) { clearTimeout(edgeTimer.current); edgeTimer.current = null }
+        if (edgeTimer.current) {
+          clearTimeout(edgeTimer.current)
+          edgeTimer.current = null
+        }
       } else {
         setHighlightCol(null)
         setTaskPreviewHour(null)
@@ -757,7 +943,10 @@ function TimelineGrid({
     }
 
     const onUp = (ev: MouseEvent) => {
-      if (edgeTimer.current) { clearTimeout(edgeTimer.current); edgeTimer.current = null }
+      if (edgeTimer.current) {
+        clearTimeout(edgeTimer.current)
+        edgeTimer.current = null
+      }
       setHighlightCol(null)
       setCurrentDragCol(-1)
       setTaskPreviewHour(null)
@@ -771,7 +960,10 @@ function TimelineGrid({
         if (targetDay) {
           const isSameCol = clampedCol === drag.originCol
           const rawHour = isSameCol
-            ? pxToHours((drag.baseHour - START_HOUR) * HOUR_HEIGHT + (ev.clientY - drag.startY), HOUR_HEIGHT)
+            ? pxToHours(
+                (drag.baseHour - START_HOUR) * HOUR_HEIGHT + (ev.clientY - drag.startY),
+                HOUR_HEIGHT,
+              )
             : getHourFromY(ev.clientY)
           const totalMin = snapMinutes(Math.round(rawHour * 60))
           const clampedMin = Math.max(0, Math.min(totalMin, 24 * 60 - drag.baseDuration))
@@ -863,7 +1055,10 @@ function TimelineGrid({
         if (targetDay) {
           const isSameCol = clampedCol === frozenDrag.originCol
           const rawHour = isSameCol
-            ? pxToHours((frozenDrag.baseHour - START_HOUR) * HOUR_HEIGHT + (ev.clientY - frozenDrag.startY), HOUR_HEIGHT)
+            ? pxToHours(
+                (frozenDrag.baseHour - START_HOUR) * HOUR_HEIGHT + (ev.clientY - frozenDrag.startY),
+                HOUR_HEIGHT,
+              )
             : getHourFromY(ev.clientY)
           const totalMin = snapMinutes(Math.round(rawHour * 60))
           const clampedMin = Math.max(0, Math.min(totalMin, 24 * 60 - frozenDrag.baseDuration))
@@ -883,10 +1078,15 @@ function TimelineGrid({
               end: newEnd,
             })
           } catch (err) {
-            setLocalCalEvHints((prev) => { const next = { ...prev }; delete next[eventId]; return next })
-            const msg = err instanceof Error && err.message === 'PERMISSION_DENIED'
-              ? 'Sin permiso para editar este evento. Reconecta Google Calendar con permisos de escritura.'
-              : 'No se pudo mover el evento. Intenta de nuevo.'
+            setLocalCalEvHints((prev) => {
+              const next = { ...prev }
+              delete next[eventId]
+              return next
+            })
+            const msg =
+              err instanceof Error && err.message === 'PERMISSION_DENIED'
+                ? 'Sin permiso para editar este evento. Reconecta Google Calendar con permisos de escritura.'
+                : 'No se pudo mover el evento. Intenta de nuevo.'
             toast.error(msg)
           }
         }
@@ -905,76 +1105,144 @@ function TimelineGrid({
   }, [calEvDrag, days, getColFromX, getHourFromY, updateCalendarEvent, onEditEvent])
 
   // Cleanup edge timer on unmount
-  useEffect(() => () => { if (edgeTimer.current) clearTimeout(edgeTimer.current) }, [])
+  useEffect(
+    () => () => {
+      if (edgeTimer.current) clearTimeout(edgeTimer.current)
+    },
+    [],
+  )
 
   /* ── Habit drag from all-day chip to timeline (multi-column) ── */
-  const startHabitDragInGrid = useCallback((habit: Habit, e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setHabitDrag({ habit, ghostHour: null, ghostCol: null })
+  const startHabitDragInGrid = useCallback(
+    (habit: Habit, e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setHabitDrag({ habit, ghostHour: null, ghostCol: null })
 
-    const onMove = (ev: MouseEvent) => {
-      if (!gridRef.current) return
-      const rect = gridRef.current.getBoundingClientRect()
-      const y = ev.clientY - rect.top
-      if (y < 0) {
-        setHabitDrag((p) => p ? { ...p, ghostHour: null, ghostCol: null } : null)
-        return
+      const onMove = (ev: MouseEvent) => {
+        if (!gridRef.current) return
+        const rect = gridRef.current.getBoundingClientRect()
+        const y = ev.clientY - rect.top
+        if (y < 0) {
+          setHabitDrag((p) => (p ? { ...p, ghostHour: null, ghostCol: null } : null))
+          return
+        }
+        const rawHour = pxToHours(y, HOUR_HEIGHT)
+        const snappedMin = snapMinutes(Math.round(rawHour * 60))
+        const snapped = Math.max(START_HOUR, snappedMin / 60)
+        const col = getColFromX(ev.clientX)
+        setHabitDrag((p) =>
+          p
+            ? { ...p, ghostHour: snapped, ghostCol: col >= 0 && col < days.length ? col : null }
+            : null,
+        )
       }
-      const rawHour = pxToHours(y, HOUR_HEIGHT)
-      const snappedMin = snapMinutes(Math.round(rawHour * 60))
-      const snapped = Math.max(START_HOUR, snappedMin / 60)
-      const col = getColFromX(ev.clientX)
-      setHabitDrag((p) => p ? { ...p, ghostHour: snapped, ghostCol: col >= 0 && col < days.length ? col : null } : null)
-    }
 
-    const onUp = (_ev: MouseEvent) => {
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
-      const state = habitDragRef.current
-      setHabitDrag(null)
-      if (!state?.ghostHour || state.ghostCol === null) return
+      const onUp = (_ev: MouseEvent) => {
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+        const state = habitDragRef.current
+        setHabitDrag(null)
+        if (!state?.ghostHour || state.ghostCol === null) return
 
-      const targetDay = days[state.ghostCol]
-      if (!targetDay) return
+        const targetDay = days[state.ghostCol]
+        if (!targetDay) return
 
-      const time = hourToTimeStr(state.ghostHour)
-      const dateStr = format(targetDay, 'yyyy-MM-dd')
+        const time = hourToTimeStr(state.ghostHour)
+        const dateStr = format(targetDay, 'yyyy-MM-dd')
 
-      if (!state.habit.scheduled_time) {
-        onSetHabitDefaultTime?.(state.habit.id, time)
-      } else {
-        onUpsertHabitSchedule?.(state.habit.id, dateStr, time)
+        if (!state.habit.scheduled_time) {
+          onSetHabitDefaultTime?.(state.habit.id, time)
+        } else {
+          onUpsertHabitSchedule?.(state.habit.id, dateStr, time)
+        }
       }
-    }
 
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
-  }, [HOUR_HEIGHT, days, getColFromX, onSetHabitDefaultTime, onUpsertHabitSchedule])
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
+    },
+    [HOUR_HEIGHT, days, getColFromX, onSetHabitDefaultTime, onUpsertHabitSchedule],
+  )
 
-  const isDragSameCol = !!(drag && didMove && currentDragCol >= 0 && currentDragCol === drag.originCol)
-  const isCalEvSameCol = !!(calEvDrag && calEvDidMove && calEvCurrentCol >= 0 && calEvCurrentCol === calEvDrag.originCol)
+  const isDragSameCol = !!(
+    drag &&
+    didMove &&
+    currentDragCol >= 0 &&
+    currentDragCol === drag.originCol
+  )
+  const isCalEvSameCol = !!(
+    calEvDrag &&
+    calEvDidMove &&
+    calEvCurrentCol >= 0 &&
+    calEvCurrentCol === calEvDrag.originCol
+  )
 
   return (
-    <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-primary)' }}>
+    <div
+      className="rounded-xl border overflow-hidden"
+      style={{ borderColor: 'var(--border-primary)' }}
+    >
       {/* Day headers */}
-      <div className="grid border-b" style={{ gridTemplateColumns: `56px repeat(${days.length}, 1fr)`, borderColor: 'var(--border-primary)', backgroundColor: 'var(--bg-secondary)' }}>
+      <div
+        className="grid border-b"
+        style={{
+          gridTemplateColumns: `56px repeat(${days.length}, 1fr)`,
+          borderColor: 'var(--border-primary)',
+          backgroundColor: 'var(--bg-secondary)',
+        }}
+      >
         <div />
         {days.map((day, i) => (
-          <div key={i} className="py-2 text-center" style={{ borderLeft: '1px solid var(--border-secondary)' }}>
-            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{format(day, 'EEE', { locale: es })}</p>
-            <div className="mx-auto mt-0.5 flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold" style={{ backgroundColor: isToday(day) ? '#283B56' : 'transparent', color: isToday(day) ? '#fff' : 'var(--text-primary)' }}>{format(day, 'd')}</div>
+          <div
+            key={i}
+            className="py-2 text-center"
+            style={{ borderLeft: '1px solid var(--border-secondary)' }}
+          >
+            <p
+              className="text-xs font-semibold uppercase tracking-wider"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              {format(day, 'EEE', { locale: es })}
+            </p>
+            <div
+              className="mx-auto mt-0.5 flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold"
+              style={{
+                backgroundColor: isToday(day) ? '#283B56' : 'transparent',
+                color: isToday(day) ? '#fff' : 'var(--text-primary)',
+              }}
+            >
+              {format(day, 'd')}
+            </div>
           </div>
         ))}
       </div>
 
       {/* All-day row */}
       {hasAnyAllDay && (
-        <div className="grid border-b" style={{ gridTemplateColumns: `56px repeat(${days.length}, 1fr)`, borderColor: 'var(--border-secondary)' }}>
-          <div className="flex items-start justify-end pr-2 pt-1 text-[10px]" style={{ color: 'var(--text-muted)' }}>Todo el día</div>
+        <div
+          className="grid border-b"
+          style={{
+            gridTemplateColumns: `56px repeat(${days.length}, 1fr)`,
+            borderColor: 'var(--border-secondary)',
+          }}
+        >
+          <div
+            className="flex items-start justify-end pr-2 pt-1 text-[10px]"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            Todo el día
+          </div>
           {dayData.map((dd, i) => (
-            <div key={i} className="min-h-[32px] border-l p-1 flex flex-col gap-0.5 overflow-hidden min-w-0" style={{ borderColor: 'var(--border-secondary)' }}>
-              {dd.allDay.map((t) => <TaskTooltip key={t.id} task={t}><AllDayChip task={t} /></TaskTooltip>)}
+            <div
+              key={i}
+              className="min-h-[32px] border-l p-1 flex flex-col gap-0.5 overflow-hidden min-w-0"
+              style={{ borderColor: 'var(--border-secondary)' }}
+            >
+              {dd.allDay.map((t) => (
+                <TaskTooltip key={t.id} task={t}>
+                  <AllDayChip task={t} />
+                </TaskTooltip>
+              ))}
               {dd.allDayEvents.map((ev) => (
                 <div
                   key={ev.id}
@@ -983,8 +1251,16 @@ function TimelineGrid({
                   title={ev.title}
                   onClick={() => onEditEvent(ev)}
                 >
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: ev.calendarColor ?? GOOGLE_COLOR }} />
-                  <span className="truncate min-w-0 flex-1" style={{ color: 'var(--text-primary)' }}>{ev.title}</span>
+                  <span
+                    className="h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: ev.calendarColor ?? GOOGLE_COLOR }}
+                  />
+                  <span
+                    className="truncate min-w-0 flex-1"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {ev.title}
+                  </span>
                 </div>
               ))}
               {dd.unscheduledHabits.map((habit) => (
@@ -1004,12 +1280,24 @@ function TimelineGrid({
       )}
 
       {/* Timeline body */}
-      <div ref={containerRef} className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
-        <div ref={gridRef} className="relative grid" style={{ gridTemplateColumns: `56px repeat(${days.length}, 1fr)` }}>
+      <div
+        ref={containerRef}
+        className="overflow-y-auto"
+        style={{ maxHeight: 'calc(100vh - 260px)' }}
+      >
+        <div
+          ref={gridRef}
+          className="relative grid"
+          style={{ gridTemplateColumns: `56px repeat(${days.length}, 1fr)` }}
+        >
           {/* Hour labels */}
           <div>
             {Array.from({ length: TOTAL_HOURS }, (_, i) => (
-              <div key={i} className="relative pr-2 text-right text-[11px]" style={{ height: HOUR_HEIGHT, color: 'var(--text-muted)' }}>
+              <div
+                key={i}
+                className="relative pr-2 text-right text-[11px]"
+                style={{ height: HOUR_HEIGHT, color: 'var(--text-muted)' }}
+              >
                 <span className="relative -top-2">{`${(START_HOUR + i).toString().padStart(2, '0')}:00`}</span>
               </div>
             ))}
@@ -1035,7 +1323,13 @@ function TimelineGrid({
                   if (!gridRef.current) return
                   e.preventDefault()
                   const hour = Math.max(0, Math.min(getHourFromY(e.clientY), 23.75))
-                  setCreateDrag({ col: colIdx, date: dd.day, startHour: hour, currentHour: hour, startY: e.clientY })
+                  setCreateDrag({
+                    col: colIdx,
+                    date: dd.day,
+                    startHour: hour,
+                    currentHour: hour,
+                    startY: e.clientY,
+                  })
                 }}
               />
 
@@ -1045,7 +1339,9 @@ function TimelineGrid({
                   className="pointer-events-none absolute left-0.5 right-0.5 z-20 rounded-md"
                   style={{
                     top: (createDrag.startHour - START_HOUR) * HOUR_HEIGHT,
-                    height: Math.max(MIN_DURATION / 60, createDrag.currentHour - createDrag.startHour) * HOUR_HEIGHT,
+                    height:
+                      Math.max(MIN_DURATION / 60, createDrag.currentHour - createDrag.startHour) *
+                      HOUR_HEIGHT,
                     backgroundColor: 'rgba(40,59,86,0.25)',
                     border: '2px dashed #283B56',
                   }}
@@ -1054,7 +1350,11 @@ function TimelineGrid({
 
               {/* Hour lines (pointer-events-none — purely visual) */}
               {Array.from({ length: TOTAL_HOURS }, (_, i) => (
-                <div key={i} className="pointer-events-none border-t" style={{ height: HOUR_HEIGHT, borderColor: 'var(--border-secondary)' }} />
+                <div
+                  key={i}
+                  className="pointer-events-none border-t"
+                  style={{ height: HOUR_HEIGHT, borderColor: 'var(--border-secondary)' }}
+                />
               ))}
 
               {dd.timed.map((task) => {
@@ -1079,8 +1379,12 @@ function TimelineGrid({
                   <CalendarTimelineBlock
                     key={ev.id}
                     event={ev}
-                    isDragging={!!(calEvDrag?.event.id === ev.id && calEvDidMove && !isCalEvSameCol)}
-                    activeDragDy={calEvDrag?.event.id === ev.id && isCalEvSameCol ? calEvCurrentDy : 0}
+                    isDragging={
+                      !!(calEvDrag?.event.id === ev.id && calEvDidMove && !isCalEvSameCol)
+                    }
+                    activeDragDy={
+                      calEvDrag?.event.id === ev.id && isCalEvSameCol ? calEvCurrentDy : 0
+                    }
                     localHourHint={localCalEvHints[ev.id]}
                     onDragStart={handleCalEvDragStart}
                     col={layout?.col}
@@ -1108,66 +1412,98 @@ function TimelineGrid({
                 )
               })}
               {/* Habit drag ghost preview in this column */}
-              {habitDrag?.ghostHour !== null && habitDrag?.ghostHour !== undefined && habitDrag.ghostCol === colIdx && (
-                <div
-                  className="pointer-events-none absolute left-0.5 right-0.5 z-20 rounded-md border-l-2"
-                  style={{
-                    top: (habitDrag.ghostHour - START_HOUR) * HOUR_HEIGHT,
-                    height: (habitDrag.habit.duration_minutes / 60) * HOUR_HEIGHT,
-                    backgroundColor: `${habitDrag.habit.color}25`,
-                    borderLeftColor: habitDrag.habit.color,
-                  }}
-                >
-                  <p className="truncate px-1.5 py-0.5 text-[11px] font-medium" style={{ color: habitDrag.habit.color }}>
-                    {habitDrag.habit.icon && `${habitDrag.habit.icon} `}{stripHtmlTags(habitDrag.habit.name)}
-                  </p>
-                </div>
-              )}
+              {habitDrag?.ghostHour !== null &&
+                habitDrag?.ghostHour !== undefined &&
+                habitDrag.ghostCol === colIdx && (
+                  <div
+                    className="pointer-events-none absolute left-0.5 right-0.5 z-20 rounded-md border-l-2"
+                    style={{
+                      top: (habitDrag.ghostHour - START_HOUR) * HOUR_HEIGHT,
+                      height: (habitDrag.habit.duration_minutes / 60) * HOUR_HEIGHT,
+                      backgroundColor: `${habitDrag.habit.color}25`,
+                      borderLeftColor: habitDrag.habit.color,
+                    }}
+                  >
+                    <p
+                      className="truncate px-1.5 py-0.5 text-[11px] font-medium"
+                      style={{ color: habitDrag.habit.color }}
+                    >
+                      {habitDrag.habit.icon && `${habitDrag.habit.icon} `}
+                      {stripHtmlTags(habitDrag.habit.name)}
+                    </p>
+                  </div>
+                )}
 
               {/* Preview de tarea al arrastrar a otro día */}
-              {drag && didMove && highlightCol === colIdx && taskPreviewHour != null && (() => {
-                const taskColor = PRIORITY_COLORS[drag.task.priority] ?? PRIORITY_COLORS[4]
-                return (
+              {drag &&
+                didMove &&
+                highlightCol === colIdx &&
+                taskPreviewHour != null &&
+                (() => {
+                  const taskColor = PRIORITY_COLORS[drag.task.priority] ?? PRIORITY_COLORS[4]
+                  return (
+                    <div
+                      className="pointer-events-none absolute left-0.5 right-0.5 z-20 overflow-hidden rounded-md border-l-2 px-1.5 py-0.5 shadow-md"
+                      style={{
+                        top: (taskPreviewHour - START_HOUR) * HOUR_HEIGHT,
+                        height: Math.max(
+                          (drag.baseDuration / 60) * HOUR_HEIGHT,
+                          (MIN_DURATION / 60) * HOUR_HEIGHT,
+                        ),
+                        borderLeftColor: taskColor,
+                        backgroundColor: `${taskColor}40`,
+                        outline: `1.5px dashed ${taskColor}`,
+                        outlineOffset: '-1px',
+                      }}
+                    >
+                      <p
+                        className="truncate text-[11px] font-medium"
+                        style={{ color: 'var(--text-primary)' }}
+                      >
+                        {stripHtmlTags(drag.task.title)}
+                      </p>
+                    </div>
+                  )
+                })()}
+
+              {/* Preview de evento al arrastrar a otro día */}
+              {calEvDrag &&
+                calEvDidMove &&
+                calEvHighlightCol === colIdx &&
+                calEvPreviewHour != null && (
                   <div
                     className="pointer-events-none absolute left-0.5 right-0.5 z-20 overflow-hidden rounded-md border-l-2 px-1.5 py-0.5 shadow-md"
                     style={{
-                      top: (taskPreviewHour - START_HOUR) * HOUR_HEIGHT,
-                      height: Math.max((drag.baseDuration / 60) * HOUR_HEIGHT, (MIN_DURATION / 60) * HOUR_HEIGHT),
-                      borderLeftColor: taskColor,
-                      backgroundColor: `${taskColor}40`,
-                      outline: `1.5px dashed ${taskColor}`,
+                      top: (calEvPreviewHour - START_HOUR) * HOUR_HEIGHT,
+                      height: Math.max(
+                        (calEvDrag.baseDuration / 60) * HOUR_HEIGHT,
+                        (MIN_DURATION / 60) * HOUR_HEIGHT,
+                      ),
+                      borderLeftColor: getEventColor(calEvDrag.event),
+                      backgroundColor: `${getEventColor(calEvDrag.event)}40`,
+                      outline: `1.5px dashed ${getEventColor(calEvDrag.event)}`,
                       outlineOffset: '-1px',
                     }}
                   >
-                    <p className="truncate text-[11px] font-medium" style={{ color: 'var(--text-primary)' }}>
-                      {stripHtmlTags(drag.task.title)}
+                    <p
+                      className="truncate text-[11px] font-medium"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
+                      {calEvDrag.event.title}
                     </p>
                   </div>
-                )
-              })()}
-
-              {/* Preview de evento al arrastrar a otro día */}
-              {calEvDrag && calEvDidMove && calEvHighlightCol === colIdx && calEvPreviewHour != null && (
-                <div
-                  className="pointer-events-none absolute left-0.5 right-0.5 z-20 overflow-hidden rounded-md border-l-2 px-1.5 py-0.5 shadow-md"
-                  style={{
-                    top: (calEvPreviewHour - START_HOUR) * HOUR_HEIGHT,
-                    height: Math.max((calEvDrag.baseDuration / 60) * HOUR_HEIGHT, (MIN_DURATION / 60) * HOUR_HEIGHT),
-                    borderLeftColor: getEventColor(calEvDrag.event),
-                    backgroundColor: `${getEventColor(calEvDrag.event)}40`,
-                    outline: `1.5px dashed ${getEventColor(calEvDrag.event)}`,
-                    outlineOffset: '-1px',
-                  }}
-                >
-                  <p className="truncate text-[11px] font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {calEvDrag.event.title}
-                  </p>
-                </div>
-              )}
+                )}
 
               {colIdx === todayIdx && (
-                <div ref={nowLineRef} className="pointer-events-none absolute left-0 right-0 z-20 flex items-center" style={{ top: nowTop }}>
-                  <div className="h-2.5 w-2.5 -ml-[5px] rounded-full" style={{ backgroundColor: '#EC1E2A' }} />
+                <div
+                  ref={nowLineRef}
+                  className="pointer-events-none absolute left-0 right-0 z-20 flex items-center"
+                  style={{ top: nowTop }}
+                >
+                  <div
+                    className="h-2.5 w-2.5 -ml-[5px] rounded-full"
+                    style={{ backgroundColor: '#EC1E2A' }}
+                  />
                   <div className="flex-1 border-t-2" style={{ borderColor: '#EC1E2A' }} />
                 </div>
               )}
@@ -1175,37 +1511,53 @@ function TimelineGrid({
           ))}
 
           {todayIdx >= 0 && (
-            <div className="pointer-events-none absolute left-0 z-20" style={{ top: nowTop - 7, width: 56 }}>
-              <span className="block text-right pr-2 text-[10px] font-semibold" style={{ color: '#EC1E2A' }}>{nowLabel}</span>
+            <div
+              className="pointer-events-none absolute left-0 z-20"
+              style={{ top: nowTop - 7, width: 56 }}
+            >
+              <span
+                className="block text-right pr-2 text-[10px] font-semibold"
+                style={{ color: '#EC1E2A' }}
+              >
+                {nowLabel}
+              </span>
             </div>
           )}
         </div>
       </div>
 
       {/* Type picker popup after drag */}
-      {typePicker && createPortal(
-        <CalendarCreationTypePicker
-          date={typePicker.date}
-          startHour={typePicker.startHour}
-          durationMinutes={typePicker.durationMinutes}
-          screenX={typePicker.screenX}
-          screenY={typePicker.screenY}
-          onEvent={() => {
-            onCreateEvent({ date: typePicker.date, hour: typePicker.startHour, durationMinutes: typePicker.durationMinutes })
-            setTypePicker(null)
-          }}
-          onTask={() => {
-            const h = Math.floor(typePicker.startHour)
-            const m = Math.round((typePicker.startHour - h) * 60)
-            const dateStr = format(typePicker.date, 'yyyy-MM-dd')
-            onCreateTask({ date: dateStr, time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`, durationMinutes: typePicker.durationMinutes })
-            setTypePicker(null)
-          }}
-          onClose={() => setTypePicker(null)}
-        />,
-        document.body,
-      )}
-
+      {typePicker &&
+        createPortal(
+          <CalendarCreationTypePicker
+            date={typePicker.date}
+            startHour={typePicker.startHour}
+            durationMinutes={typePicker.durationMinutes}
+            screenX={typePicker.screenX}
+            screenY={typePicker.screenY}
+            onEvent={() => {
+              onCreateEvent({
+                date: typePicker.date,
+                hour: typePicker.startHour,
+                durationMinutes: typePicker.durationMinutes,
+              })
+              setTypePicker(null)
+            }}
+            onTask={() => {
+              const h = Math.floor(typePicker.startHour)
+              const m = Math.round((typePicker.startHour - h) * 60)
+              const dateStr = format(typePicker.date, 'yyyy-MM-dd')
+              onCreateTask({
+                date: dateStr,
+                time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
+                durationMinutes: typePicker.durationMinutes,
+              })
+              setTypePicker(null)
+            }}
+            onClose={() => setTypePicker(null)}
+          />,
+          document.body,
+        )}
     </div>
   )
 }
@@ -1269,11 +1621,27 @@ function CalendarCreationTypePicker({
         width: W,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, paddingLeft: 4 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 6,
+          paddingLeft: 4,
+        }}
+      >
         <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>{timeLabel}</span>
         <button
           onClick={onClose}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, borderRadius: 4, lineHeight: 1, color: 'var(--text-muted)' }}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 2,
+            borderRadius: 4,
+            lineHeight: 1,
+            color: 'var(--text-muted)',
+          }}
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
         >
@@ -1284,10 +1652,19 @@ function CalendarCreationTypePicker({
         <button
           onClick={onEvent}
           style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '6px 8px', borderRadius: 8, border: 'none',
-            backgroundColor: 'transparent', cursor: 'pointer',
-            color: 'var(--text-primary)', fontSize: 13, fontWeight: 500, width: '100%', textAlign: 'left',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '6px 8px',
+            borderRadius: 8,
+            border: 'none',
+            backgroundColor: 'transparent',
+            cursor: 'pointer',
+            color: 'var(--text-primary)',
+            fontSize: 13,
+            fontWeight: 500,
+            width: '100%',
+            textAlign: 'left',
           }}
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
@@ -1298,10 +1675,19 @@ function CalendarCreationTypePicker({
         <button
           onClick={onTask}
           style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '6px 8px', borderRadius: 8, border: 'none',
-            backgroundColor: 'transparent', cursor: 'pointer',
-            color: 'var(--text-primary)', fontSize: 13, fontWeight: 500, width: '100%', textAlign: 'left',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '6px 8px',
+            borderRadius: 8,
+            border: 'none',
+            backgroundColor: 'transparent',
+            cursor: 'pointer',
+            color: 'var(--text-primary)',
+            fontSize: 13,
+            fontWeight: 500,
+            width: '100%',
+            textAlign: 'left',
           }}
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
@@ -1339,7 +1725,10 @@ function CalendarTimelineBlock({
   const calendarName = getCalendarName(event)
 
   const serverStartHour = event.start.getHours() + event.start.getMinutes() / 60
-  const serverDuration = Math.max((event.end.getTime() - event.start.getTime()) / 60_000, MIN_DURATION)
+  const serverDuration = Math.max(
+    (event.end.getTime() - event.start.getTime()) / 60_000,
+    MIN_DURATION,
+  )
 
   // Optimistic state: persists until server data matches
   const [localDuration, setLocalDuration] = useState<number | null>(null)
@@ -1402,7 +1791,10 @@ function CalendarTimelineBlock({
             (MIN_DURATION / 60) * HOUR_HEIGHT,
             (effectiveDuration / 60) * HOUR_HEIGHT + latestDelta,
           )
-          const snapped = Math.max(MIN_DURATION, snapMinutes(Math.round((newPx / HOUR_HEIGHT) * 60)))
+          const snapped = Math.max(
+            MIN_DURATION,
+            snapMinutes(Math.round((newPx / HOUR_HEIGHT) * 60)),
+          )
 
           if (event.calendarId) {
             const newEnd = new Date(event.start.getTime() + snapped * 60_000)
@@ -1416,9 +1808,10 @@ function CalendarTimelineBlock({
               })
             } catch (err) {
               setLocalDuration(null)
-              const msg = err instanceof Error && err.message === 'PERMISSION_DENIED'
-                ? 'Sin permiso para editar este evento. Reconecta Google Calendar con permisos de escritura.'
-                : 'No se pudo cambiar la duración del evento. Intenta de nuevo.'
+              const msg =
+                err instanceof Error && err.message === 'PERMISSION_DENIED'
+                  ? 'Sin permiso para editar este evento. Reconecta Google Calendar con permisos de escritura.'
+                  : 'No se pudo cambiar la duración del evento. Intenta de nuevo.'
               toast.error(msg)
             }
           }
@@ -1443,14 +1836,19 @@ function CalendarTimelineBlock({
         className={cn(
           'group absolute left-0.5 right-0.5 z-10 select-none overflow-hidden rounded-md border-l-2 px-1.5 py-0.5',
           isDragging && 'opacity-25',
-          isSameColDrag ? 'shadow-lg z-30 cursor-grabbing' : resizing ? 'shadow-lg z-30' : 'cursor-pointer opacity-90 hover:opacity-100',
+          isSameColDrag
+            ? 'shadow-lg z-30 cursor-grabbing'
+            : resizing
+              ? 'shadow-lg z-30'
+              : 'cursor-pointer opacity-90 hover:opacity-100',
         )}
         style={{
           top: Math.max(0, baseTop),
           height: renderHeight,
           borderLeftColor: color,
           backgroundColor: `${color}1A`,
-          transition: isSameColDrag || isDragging || resizing ? 'none' : 'top 0.15s ease, height 0.15s ease',
+          transition:
+            isSameColDrag || isDragging || resizing ? 'none' : 'top 0.15s ease, height 0.15s ease',
           ...overlapPos(col, totalCols),
         }}
         onMouseDown={handleMouseDown}
@@ -1576,7 +1974,10 @@ function TimelineTaskBlock({
         setResizeDelta((prev) => {
           if (Math.abs(prev) < 4) return 0
           const newPx = Math.max((MIN_DURATION / 60) * HOUR_HEIGHT, baseHeight + prev)
-          const snapped = Math.max(MIN_DURATION, snapMinutes(Math.round((newPx / HOUR_HEIGHT) * 60)))
+          const snapped = Math.max(
+            MIN_DURATION,
+            snapMinutes(Math.round((newPx / HOUR_HEIGHT) * 60)),
+          )
           updateTask.mutate({ id: task.id, updates: { duration_minutes: snapped } })
           return 0
         })
@@ -1609,7 +2010,8 @@ function TimelineTaskBlock({
         borderLeftColor: color,
         backgroundColor: `${color}18`,
         ...(isVirtual ? { outline: `1px dashed ${color}80`, outlineOffset: '-1px' } : {}),
-        transition: isSameColDrag || isDragging || resizing ? 'none' : 'top 0.15s ease, height 0.15s ease',
+        transition:
+          isSameColDrag || isDragging || resizing ? 'none' : 'top 0.15s ease, height 0.15s ease',
         ...overlapPos(col, totalCols),
       }}
       onMouseDown={handleMouseDown}
@@ -1621,14 +2023,27 @@ function TimelineTaskBlock({
           <TaskCheckbox
             checked={task.is_completed}
             priority={task.priority}
-            onChange={isVirtual ? () => {} : (completed) => completeTask.mutate({ id: task.id, completed })}
+            onChange={
+              isVirtual ? () => {} : (completed) => completeTask.mutate({ id: task.id, completed })
+            }
           />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1">
-            <p className={cn('truncate text-[11px] font-medium flex-1 min-w-0', task.is_completed && 'line-through')} style={{ color: 'var(--text-primary)' }}>{stripLabelTokensFromText(stripHtmlTags(task.title))}</p>
+            <p
+              className={cn(
+                'truncate text-[11px] font-medium flex-1 min-w-0',
+                task.is_completed && 'line-through',
+              )}
+              style={{ color: 'var(--text-primary)' }}
+            >
+              {stripLabelTokensFromText(stripHtmlTags(task.title))}
+            </p>
             {!showTimeSeparate && (
-              <span className="shrink-0 text-[10px] whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
+              <span
+                className="shrink-0 text-[10px] whitespace-nowrap"
+                style={{ color: 'var(--text-muted)' }}
+              >
                 {timeStart}
                 {task.is_recurring && <span className="ml-0.5">↻</span>}
               </span>
@@ -1641,25 +2056,43 @@ function TimelineTaskBlock({
             </p>
           )}
           {showDescription && (
-            <p className="truncate text-[10px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>{description}</p>
+            <p className="truncate text-[10px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+              {description}
+            </p>
           )}
           {showProject && (
             <div className="flex items-center gap-1 mt-0.5">
-              <span className="inline-block h-2 w-2 rounded-sm shrink-0" style={{ backgroundColor: project.color }} />
-              <span className="truncate text-[10px]" style={{ color: 'var(--text-muted)' }}>{project.name}</span>
+              <span
+                className="inline-block h-2 w-2 rounded-sm shrink-0"
+                style={{ backgroundColor: project.color }}
+              />
+              <span className="truncate text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                {project.name}
+              </span>
             </div>
           )}
           {showLabels && (
             <div className="flex items-center gap-1 mt-0.5 flex-wrap">
               {labels.slice(0, 2).map((label) => (
-                <span key={label.id} className="rounded px-1 py-px text-[9px] font-medium" style={{ backgroundColor: label.color + '20', color: label.color }}>{label.name}</span>
+                <span
+                  key={label.id}
+                  className="rounded px-1 py-px text-[9px] font-medium"
+                  style={{ backgroundColor: label.color + '20', color: label.color }}
+                >
+                  {label.name}
+                </span>
               ))}
             </div>
           )}
         </div>
       </div>
 
-      <div data-resize-handle className="absolute bottom-0 left-0 right-0 flex cursor-s-resize items-center justify-center opacity-0 transition-opacity group-hover:opacity-100" style={{ height: 7 }} onMouseDown={handleResizeStart}>
+      <div
+        data-resize-handle
+        className="absolute bottom-0 left-0 right-0 flex cursor-s-resize items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
+        style={{ height: 7 }}
+        onMouseDown={handleResizeStart}
+      >
         <div className="h-0.5 w-6 rounded-full" style={{ backgroundColor: color }} />
       </div>
     </div>
@@ -1684,42 +2117,60 @@ function CalendarHabitChip({
   onEdit?: () => void
 }) {
   const completed = isCompletedOnDate(completions, habit.id, date)
-  const { tooltipHandlers, tooltipPortal } = useHabitTooltip({ habit, completions, date, scheduledTime: null })
+  const { tooltipHandlers, tooltipPortal } = useHabitTooltip({
+    habit,
+    completions,
+    date,
+    scheduledTime: null,
+  })
 
   return (
     <>
-    <div
-      className="group flex items-center gap-1 rounded px-1 py-0.5 text-[11px] overflow-hidden min-w-0 select-none"
-      style={{
-        backgroundColor: `${habit.color}15`,
-        borderLeft: `2px solid ${habit.color}`,
-        opacity: completed ? 0.6 : 1,
-        cursor: 'grab',
-      }}
-      onMouseDown={onDragStart}
-      {...tooltipHandlers}
-      title="Arrastrá al horario para programar"
-    >
-      <HabitCheckbox completed={completed} color={habit.color} onChange={onToggle} size="sm" />
-      {habit.icon && <span className="shrink-0">{habit.icon}</span>}
-      <span className="truncate flex-1 min-w-0" style={{ color: 'var(--text-primary)', textDecoration: completed ? 'line-through' : 'none' }}>
-        {stripHtmlTags(habit.name)}
-      </span>
-      <span className="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ backgroundColor: `${habit.color}22`, color: habit.color }}>
-        Hábito
-      </span>
-      {onEdit && (
-        <button
-          className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity rounded p-0.5"
-          style={{ color: 'var(--text-muted)', cursor: 'pointer' }}
-          onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onEdit() }}
-          title="Editar hábito"
+      <div
+        className="group flex items-center gap-1 rounded px-1 py-0.5 text-[11px] overflow-hidden min-w-0 select-none"
+        style={{
+          backgroundColor: `${habit.color}15`,
+          borderLeft: `2px solid ${habit.color}`,
+          opacity: completed ? 0.6 : 1,
+          cursor: 'grab',
+        }}
+        onMouseDown={onDragStart}
+        {...tooltipHandlers}
+        title="Arrastrá al horario para programar"
+      >
+        <HabitCheckbox completed={completed} color={habit.color} onChange={onToggle} size="sm" />
+        {habit.icon && <span className="shrink-0">{habit.icon}</span>}
+        <span
+          className="truncate flex-1 min-w-0"
+          style={{
+            color: 'var(--text-primary)',
+            textDecoration: completed ? 'line-through' : 'none',
+          }}
         >
-          <Pencil size={10} />
-        </button>
-      )}
-    </div>
-    {tooltipPortal}
+          {stripHtmlTags(habit.name)}
+        </span>
+        <span
+          className="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
+          style={{ backgroundColor: `${habit.color}22`, color: habit.color }}
+        >
+          Hábito
+        </span>
+        {onEdit && (
+          <button
+            className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity rounded p-0.5"
+            style={{ color: 'var(--text-muted)', cursor: 'pointer' }}
+            onMouseDown={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              onEdit()
+            }}
+            title="Editar hábito"
+          >
+            <Pencil size={10} />
+          </button>
+        )}
+      </div>
+      {tooltipPortal}
     </>
   )
 }
@@ -1791,124 +2242,155 @@ function CalendarHabitBlock({
   const endLabel = `${String(Math.floor(endHours) % 24).padStart(2, '0')}:${String(Math.round((endHours % 1) * 60) % 60).padStart(2, '0')}`
   const showTime = renderHeight >= 38
 
-  const handleDragStart = useCallback((e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('[data-resize-handle]')) return
-    if ((e.target as HTMLElement).closest('button')) return
-    e.preventDefault()
-    e.stopPropagation()
-    didMove.current = false
-    setInteracting(true)
-    const startY = e.clientY
+  const handleDragStart = useCallback(
+    (e: React.MouseEvent) => {
+      if ((e.target as HTMLElement).closest('[data-resize-handle]')) return
+      if ((e.target as HTMLElement).closest('button')) return
+      e.preventDefault()
+      e.stopPropagation()
+      didMove.current = false
+      setInteracting(true)
+      const startY = e.clientY
 
-    const onMove = (ev: MouseEvent) => {
-      const delta = ev.clientY - startY
-      if (Math.abs(delta) > 3) didMove.current = true
-      setActiveDragDy(delta)
-    }
-
-    const onUp = () => {
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
-      setInteracting(false)
-
-      if (!didMove.current) {
-        onEdit?.()
-        return
+      const onMove = (ev: MouseEvent) => {
+        const delta = ev.clientY - startY
+        if (Math.abs(delta) > 3) didMove.current = true
+        setActiveDragDy(delta)
       }
 
-      setActiveDragDy((prev) => {
-        if (Math.abs(prev) < 4) return 0
-        const newHours = pxToHours((baseHour - START_HOUR) * HOUR_HEIGHT + prev, HOUR_HEIGHT)
-        const totalMin = snapMinutes(Math.round(newHours * 60))
-        const clampedMin = Math.max(0, Math.min(totalMin, 24 * 60 - baseDuration))
-        const snappedHour = clampedMin / 60
-        setLocalHour(snappedHour)
-        onReschedule(hourToTimeStr(snappedHour))
-        return 0
-      })
-    }
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+        setInteracting(false)
 
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
-  }, [baseHour, baseDuration, HOUR_HEIGHT, onReschedule, onEdit])
+        if (!didMove.current) {
+          onEdit?.()
+          return
+        }
 
-  const handleResizeStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setInteracting(true)
-    const startY = e.clientY
+        setActiveDragDy((prev) => {
+          if (Math.abs(prev) < 4) return 0
+          const newHours = pxToHours((baseHour - START_HOUR) * HOUR_HEIGHT + prev, HOUR_HEIGHT)
+          const totalMin = snapMinutes(Math.round(newHours * 60))
+          const clampedMin = Math.max(0, Math.min(totalMin, 24 * 60 - baseDuration))
+          const snappedHour = clampedMin / 60
+          setLocalHour(snappedHour)
+          onReschedule(hourToTimeStr(snappedHour))
+          return 0
+        })
+      }
 
-    const onMove = (ev: MouseEvent) => setResizeDelta(ev.clientY - startY)
-    const onUp = () => {
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
-      setInteracting(false)
-      setResizeDelta((prev) => {
-        if (Math.abs(prev) < 4) return 0
-        const newPx = Math.max((MIN_DURATION / 60) * HOUR_HEIGHT, (baseDuration / 60) * HOUR_HEIGHT + prev)
-        const snapped = Math.max(MIN_DURATION, snapMinutes(Math.round((newPx / HOUR_HEIGHT) * 60)))
-        setLocalDuration(snapped)
-        onUpdateDuration(snapped)
-        return 0
-      })
-    }
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
-  }, [baseDuration, HOUR_HEIGHT, onUpdateDuration])
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
+    },
+    [baseHour, baseDuration, HOUR_HEIGHT, onReschedule, onEdit],
+  )
+
+  const handleResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setInteracting(true)
+      const startY = e.clientY
+
+      const onMove = (ev: MouseEvent) => setResizeDelta(ev.clientY - startY)
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+        setInteracting(false)
+        setResizeDelta((prev) => {
+          if (Math.abs(prev) < 4) return 0
+          const newPx = Math.max(
+            (MIN_DURATION / 60) * HOUR_HEIGHT,
+            (baseDuration / 60) * HOUR_HEIGHT + prev,
+          )
+          const snapped = Math.max(
+            MIN_DURATION,
+            snapMinutes(Math.round((newPx / HOUR_HEIGHT) * 60)),
+          )
+          setLocalDuration(snapped)
+          onUpdateDuration(snapped)
+          return 0
+        })
+      }
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
+    },
+    [baseDuration, HOUR_HEIGHT, onUpdateDuration],
+  )
 
   return (
     <>
-    <div
-      className={cn(
-        'group absolute z-10 select-none overflow-hidden rounded-md border-l-2 px-1.5 py-0.5',
-        completed && 'opacity-50',
-        interacting ? 'shadow-lg z-30 cursor-grabbing' : 'cursor-pointer opacity-90 hover:opacity-100',
-      )}
-      style={{
-        top: Math.max(0, baseTop),
-        height: renderHeight,
-        borderLeftColor: habit.color,
-        backgroundColor: `${habit.color}1A`,
-        transition: interacting ? 'none' : 'top 0.15s ease, height 0.15s ease',
-        ...overlapPos(col, totalCols),
-      }}
-      onMouseDown={handleDragStart}
-      {...tooltipHandlers}
-    >
-      <div className="flex items-center gap-1">
-        <HabitCheckbox completed={completed} color={habit.color} onChange={onToggle} size="sm" />
-        {habit.icon && <span className="shrink-0 text-[10px]">{habit.icon}</span>}
-        <p className={cn('truncate text-[11px] font-medium leading-tight flex-1 min-w-0', completed && 'line-through')} style={{ color: 'var(--text-primary)' }}>
-          {stripHtmlTags(habit.name)}
-        </p>
-        <span className="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ backgroundColor: `${habit.color}22`, color: habit.color }}>
-          Hábito
-        </span>
-      </div>
-      {showTime && (
-        <p className="text-[10px]" style={{ color: `${habit.color}BB` }}>
-          {startLabel}–{endLabel}
-        </p>
-      )}
-
-      {/* Resize handle */}
       <div
-        data-resize-handle
-        className="absolute bottom-0 left-0 right-0 flex cursor-s-resize items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
-        style={{ height: 7 }}
-        onMouseDown={handleResizeStart}
+        className={cn(
+          'group absolute z-10 select-none overflow-hidden rounded-md border-l-2 px-1.5 py-0.5',
+          completed && 'opacity-50',
+          interacting
+            ? 'shadow-lg z-30 cursor-grabbing'
+            : 'cursor-pointer opacity-90 hover:opacity-100',
+        )}
+        style={{
+          top: Math.max(0, baseTop),
+          height: renderHeight,
+          borderLeftColor: habit.color,
+          backgroundColor: `${habit.color}1A`,
+          transition: interacting ? 'none' : 'top 0.15s ease, height 0.15s ease',
+          ...overlapPos(col, totalCols),
+        }}
+        onMouseDown={handleDragStart}
+        {...tooltipHandlers}
       >
-        <div className="h-0.5 w-6 rounded-full" style={{ backgroundColor: habit.color }} />
+        <div className="flex items-center gap-1">
+          <HabitCheckbox completed={completed} color={habit.color} onChange={onToggle} size="sm" />
+          {habit.icon && <span className="shrink-0 text-[10px]">{habit.icon}</span>}
+          <p
+            className={cn(
+              'truncate text-[11px] font-medium leading-tight flex-1 min-w-0',
+              completed && 'line-through',
+            )}
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {stripHtmlTags(habit.name)}
+          </p>
+          <span
+            className="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
+            style={{ backgroundColor: `${habit.color}22`, color: habit.color }}
+          >
+            Hábito
+          </span>
+        </div>
+        {showTime && (
+          <p className="text-[10px]" style={{ color: `${habit.color}BB` }}>
+            {startLabel}–{endLabel}
+          </p>
+        )}
+
+        {/* Resize handle */}
+        <div
+          data-resize-handle
+          className="absolute bottom-0 left-0 right-0 flex cursor-s-resize items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
+          style={{ height: 7 }}
+          onMouseDown={handleResizeStart}
+        >
+          <div className="h-0.5 w-6 rounded-full" style={{ backgroundColor: habit.color }} />
+        </div>
       </div>
-    </div>
-    {tooltipPortal}
+      {tooltipPortal}
     </>
   )
 }
 
 /* ── All-day chip ──────────────────────────────────────── */
 
-function AllDayChip({ task, onMouseEnter, onMouseLeave }: { task: Task; onMouseEnter?: (e: React.MouseEvent) => void; onMouseLeave?: (e: React.MouseEvent) => void }) {
+function AllDayChip({
+  task,
+  onMouseEnter,
+  onMouseLeave,
+}: {
+  task: Task
+  onMouseEnter?: (e: React.MouseEvent) => void
+  onMouseLeave?: (e: React.MouseEvent) => void
+}) {
   const completeTask = useCompleteTask()
   const { setSelectedTaskId } = useAppStore()
   const color = PRIORITY_COLORS[task.priority] ?? PRIORITY_COLORS[4]
@@ -1921,7 +2403,10 @@ function AllDayChip({ task, onMouseEnter, onMouseLeave }: { task: Task; onMouseE
         task.is_completed && 'opacity-50',
         isVirtual && 'opacity-70',
       )}
-      style={{ backgroundColor: `${color}20`, ...(isVirtual ? { outline: `1px dashed ${color}60` } : {}) }}
+      style={{
+        backgroundColor: `${color}20`,
+        ...(isVirtual ? { outline: `1px dashed ${color}60` } : {}),
+      }}
       onClick={() => setSelectedTaskId(originalTaskId(task.id))}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
@@ -1929,9 +2414,14 @@ function AllDayChip({ task, onMouseEnter, onMouseLeave }: { task: Task; onMouseE
       <TaskCheckbox
         checked={task.is_completed}
         priority={task.priority}
-        onChange={isVirtual ? () => {} : (completed) => completeTask.mutate({ id: task.id, completed })}
+        onChange={
+          isVirtual ? () => {} : (completed) => completeTask.mutate({ id: task.id, completed })
+        }
       />
-      <span className={cn('truncate min-w-0 flex-1', task.is_completed && 'line-through')} style={{ color: 'var(--text-primary)' }}>
+      <span
+        className={cn('truncate min-w-0 flex-1', task.is_completed && 'line-through')}
+        style={{ color: 'var(--text-primary)' }}
+      >
         {stripLabelTokensFromText(stripHtmlTags(task.title))}
       </span>
     </div>
@@ -1997,7 +2487,11 @@ function MonthDayCell({
       className="relative flex flex-col p-1.5 transition-colors select-none min-h-[108px] overflow-hidden"
       style={{
         borderRight: hasRightBorder ? '1px solid var(--border-secondary)' : 'none',
-        backgroundColor: isOver ? 'var(--bg-active)' : !inCurrentMonth ? 'var(--bg-secondary)' : 'transparent',
+        backgroundColor: isOver
+          ? 'var(--bg-active)'
+          : !inCurrentMonth
+            ? 'var(--bg-secondary)'
+            : 'transparent',
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -2010,7 +2504,11 @@ function MonthDayCell({
           className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold"
           style={{
             backgroundColor: isTodayDate ? '#283B56' : 'transparent',
-            color: isTodayDate ? '#fff' : inCurrentMonth ? 'var(--text-primary)' : 'var(--text-muted)',
+            color: isTodayDate
+              ? '#fff'
+              : inCurrentMonth
+                ? 'var(--text-primary)'
+                : 'var(--text-muted)',
           }}
         >
           {format(day, 'd')}
@@ -2046,8 +2544,17 @@ function MonthDayCell({
               className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs cursor-grab active:cursor-grabbing overflow-hidden min-w-0 transition-opacity hover:opacity-80"
               style={{ backgroundColor: PRIORITY_COLORS[task.priority] + '20' }}
             >
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: PRIORITY_COLORS[task.priority] }} />
-              <span className={cn('truncate min-w-0 flex-1', task.is_completed && 'line-through opacity-50')} style={{ color: 'var(--text-primary)' }}>
+              <span
+                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                style={{ backgroundColor: PRIORITY_COLORS[task.priority] }}
+              />
+              <span
+                className={cn(
+                  'truncate min-w-0 flex-1',
+                  task.is_completed && 'line-through opacity-50',
+                )}
+                style={{ color: 'var(--text-primary)' }}
+              >
                 {stripLabelTokensFromText(stripHtmlTags(task.title))}
               </span>
             </div>
@@ -2061,8 +2568,13 @@ function MonthDayCell({
             title={ev.isAllDay ? ev.title : `${format(ev.start, 'HH:mm')} ${ev.title}`}
             onClick={() => onEditEvent(ev)}
           >
-            <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: ev.calendarColor ?? GOOGLE_COLOR }} />
-            <span className="truncate min-w-0 flex-1" style={{ color: 'var(--text-primary)' }}>{ev.title}</span>
+            <span
+              className="h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ backgroundColor: ev.calendarColor ?? GOOGLE_COLOR }}
+            />
+            <span className="truncate min-w-0 flex-1" style={{ color: 'var(--text-primary)' }}>
+              {ev.title}
+            </span>
           </div>
         ))}
         {visibleHabits.map((habit) => (
@@ -2074,11 +2586,15 @@ function MonthDayCell({
             onClick={() => onEditHabit?.(habit, day)}
           >
             {habit.icon && <span className="shrink-0">{habit.icon}</span>}
-            <span className="truncate min-w-0 flex-1" style={{ color: 'var(--text-primary)' }}>{stripHtmlTags(habit.name)}</span>
+            <span className="truncate min-w-0 flex-1" style={{ color: 'var(--text-primary)' }}>
+              {stripHtmlTags(habit.name)}
+            </span>
           </div>
         ))}
         {overflow > 0 && (
-          <p className="px-1.5 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>+{overflow} más</p>
+          <p className="px-1.5 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+            +{overflow} más
+          </p>
         )}
       </div>
     </div>

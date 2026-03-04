@@ -7,9 +7,16 @@ import { TitleEditor } from '@/components/tasks/TitleEditor'
 import type { Habit } from '@/lib/types'
 
 const PRESET_COLORS = [
-  '#283B56', '#EC1E2A', '#22C55E', '#3B82F6',
-  '#F59E0B', '#8B5CF6', '#EC4899', '#14B8A6',
-  '#F97316', '#6B7280',
+  '#283B56',
+  '#EC1E2A',
+  '#22C55E',
+  '#3B82F6',
+  '#F59E0B',
+  '#8B5CF6',
+  '#EC4899',
+  '#14B8A6',
+  '#F97316',
+  '#6B7280',
 ]
 
 const DAY_LABELS = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
@@ -120,10 +127,7 @@ export function HabitEditor({ open, onClose, habit }: HabitEditorProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Dialog */}
       <div
@@ -171,7 +175,8 @@ export function HabitEditor({ open, onClose, habit }: HabitEditorProps) {
             <div
               className="flex-1 rounded-lg border px-3 py-2"
               style={{
-                borderColor: error && !stripHtmlTags(form.name).trim() ? '#EC1E2A' : 'var(--border-primary)',
+                borderColor:
+                  error && !stripHtmlTags(form.name).trim() ? '#EC1E2A' : 'var(--border-primary)',
                 backgroundColor: 'var(--bg-secondary)',
               }}
             >
@@ -188,7 +193,10 @@ export function HabitEditor({ open, onClose, habit }: HabitEditorProps) {
 
           {/* Color */}
           <div>
-            <label className="mb-2 block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+            <label
+              className="mb-2 block text-xs font-medium"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               Color
             </label>
             <div className="flex flex-wrap gap-2">
@@ -210,18 +218,26 @@ export function HabitEditor({ open, onClose, habit }: HabitEditorProps) {
 
           {/* Duración */}
           <div>
-            <label className="mb-2 block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+            <label
+              className="mb-2 block text-xs font-medium"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               Duración
             </label>
             <div className="flex flex-wrap gap-1.5 mb-2">
               {DURATION_PRESETS.map((min) => (
                 <button
                   key={min}
-                  onClick={() => { set('duration_minutes', min); setCustomDuration('') }}
+                  onClick={() => {
+                    set('duration_minutes', min)
+                    setCustomDuration('')
+                  }}
                   className="rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
                   style={{
-                    borderColor: form.duration_minutes === min ? form.color : 'var(--border-primary)',
-                    backgroundColor: form.duration_minutes === min ? `${form.color}18` : 'var(--bg-secondary)',
+                    borderColor:
+                      form.duration_minutes === min ? form.color : 'var(--border-primary)',
+                    backgroundColor:
+                      form.duration_minutes === min ? `${form.color}18` : 'var(--bg-secondary)',
                     color: form.duration_minutes === min ? form.color : 'var(--text-secondary)',
                   }}
                 >
@@ -250,13 +266,18 @@ export function HabitEditor({ open, onClose, habit }: HabitEditorProps) {
                   color: 'var(--text-primary)',
                 }}
               />
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>min (1–480)</span>
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                min (1–480)
+              </span>
             </div>
           </div>
 
           {/* Recurrencia */}
           <div>
-            <label className="mb-2 block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+            <label
+              className="mb-2 block text-xs font-medium"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               Recurrencia
             </label>
 
@@ -266,8 +287,13 @@ export function HabitEditor({ open, onClose, habit }: HabitEditorProps) {
                 { value: 'times_per_week', label: 'X veces por semana' },
                 { value: 'specific_days', label: 'Días específicos' },
               ].map(({ value, label }) => (
-                <label key={value} className="flex cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors"
-                  style={{ backgroundColor: form.recurrence_type === value ? 'var(--bg-active)' : 'var(--bg-secondary)' }}
+                <label
+                  key={value}
+                  className="flex cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors"
+                  style={{
+                    backgroundColor:
+                      form.recurrence_type === value ? 'var(--bg-active)' : 'var(--bg-secondary)',
+                  }}
                 >
                   <input
                     type="radio"
@@ -278,7 +304,9 @@ export function HabitEditor({ open, onClose, habit }: HabitEditorProps) {
                     className="accent-current"
                     style={{ accentColor: form.color }}
                   />
-                  <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{label}</span>
+                  <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
+                    {label}
+                  </span>
                 </label>
               ))}
             </div>
@@ -293,7 +321,10 @@ export function HabitEditor({ open, onClose, habit }: HabitEditorProps) {
                 >
                   <Minus size={14} />
                 </button>
-                <span className="w-8 text-center text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                <span
+                  className="w-8 text-center text-sm font-semibold"
+                  style={{ color: 'var(--text-primary)' }}
+                >
                   {form.times_per_week}
                 </span>
                 <button
@@ -318,7 +349,9 @@ export function HabitEditor({ open, onClose, habit }: HabitEditorProps) {
                     onClick={() => toggleDay(day)}
                     className="flex h-9 w-9 items-center justify-center rounded-lg text-xs font-semibold transition-colors"
                     style={{
-                      backgroundColor: form.specific_days.includes(day) ? form.color : 'var(--bg-secondary)',
+                      backgroundColor: form.specific_days.includes(day)
+                        ? form.color
+                        : 'var(--bg-secondary)',
                       color: form.specific_days.includes(day) ? '#FFFFFF' : 'var(--text-secondary)',
                       border: `1px solid ${form.specific_days.includes(day) ? form.color : 'var(--border-primary)'}`,
                     }}
@@ -331,9 +364,7 @@ export function HabitEditor({ open, onClose, habit }: HabitEditorProps) {
             )}
           </div>
 
-          {error && (
-            <p className="text-xs text-red-500">{error}</p>
-          )}
+          {error && <p className="text-xs text-red-500">{error}</p>}
         </div>
 
         {/* Footer */}

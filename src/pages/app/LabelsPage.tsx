@@ -1,7 +1,13 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Pencil, Trash2, Check, Star, ListChecks, ChevronRight } from 'lucide-react'
-import { useLabels, useCreateLabel, useUpdateLabel, useDeleteLabel, LABEL_COLORS } from '@/hooks/useLabels'
+import {
+  useLabels,
+  useCreateLabel,
+  useUpdateLabel,
+  useDeleteLabel,
+  LABEL_COLORS,
+} from '@/hooks/useLabels'
 import { useUIStore } from '@/stores/uiStore'
 import { ColorPicker } from '@/components/common/ColorPicker'
 import { useAuth } from '@/hooks/useAuth'
@@ -99,7 +105,9 @@ export default function LabelsPage() {
           <input
             value={newLabelName}
             onChange={(e) => setNewLabelName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleCreate() }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleCreate()
+            }}
             placeholder="Nombre de la etiqueta..."
             className="flex-1 rounded-lg border px-3 py-2 text-sm outline-none"
             style={{
@@ -146,8 +154,8 @@ export default function LabelsPage() {
                   isSelectMode
                     ? () => toggle(label.id)
                     : isEditing
-                    ? undefined
-                    : () => navigate(`/app/label/${label.id}`)
+                      ? undefined
+                      : () => navigate(`/app/label/${label.id}`)
                 }
                 onMouseEnter={(e) => {
                   if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--bg-hover)'
@@ -201,7 +209,10 @@ export default function LabelsPage() {
                   <span
                     className="flex-1 text-sm"
                     style={{ color: 'var(--text-primary)' }}
-                    onDoubleClick={(e) => { e.stopPropagation(); startEdit(label.id, label.name) }}
+                    onDoubleClick={(e) => {
+                      e.stopPropagation()
+                      startEdit(label.id, label.name)
+                    }}
                   >
                     {label.name}
                   </span>
@@ -219,20 +230,24 @@ export default function LabelsPage() {
                   <>
                     {/* Favorito */}
                     <button
-                      onClick={(e) => { e.stopPropagation(); toggleFavorite(label.id, label.is_favorite) }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleFavorite(label.id, label.is_favorite)
+                      }}
                       className="rounded p-1 transition-colors"
                       style={{ color: label.is_favorite ? '#F59E0B' : 'var(--text-muted)' }}
                       title={label.is_favorite ? 'Quitar de favoritos' : 'Marcar como favorito'}
                     >
-                      <Star
-                        size={14}
-                        fill={label.is_favorite ? '#F59E0B' : 'none'}
-                      />
+                      <Star size={14} fill={label.is_favorite ? '#F59E0B' : 'none'} />
                     </button>
 
                     {isEditing ? (
                       <button
-                        onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); saveEdit(label.id, label.color) }}
+                        onMouseDown={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          saveEdit(label.id, label.color)
+                        }}
                         className="rounded p-1"
                         style={{ color: '#22C55E' }}
                         title="Guardar"
@@ -242,7 +257,10 @@ export default function LabelsPage() {
                     ) : (
                       <div className="flex items-center opacity-0 transition-opacity group-hover:opacity-100">
                         <button
-                          onClick={(e) => { e.stopPropagation(); startEdit(label.id, label.name) }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            startEdit(label.id, label.name)
+                          }}
                           className="rounded p-1 transition-colors"
                           style={{ color: 'var(--text-muted)' }}
                           onMouseEnter={(e) => (e.currentTarget.style.color = '#283B56')}
@@ -252,7 +270,10 @@ export default function LabelsPage() {
                           <Pencil size={14} />
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleDelete(label.id, label.name) }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDelete(label.id, label.name)
+                          }}
                           className="rounded p-1"
                           style={{ color: '#EC1E2A' }}
                           title="Eliminar etiqueta"

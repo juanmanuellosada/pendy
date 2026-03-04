@@ -184,7 +184,10 @@ const HabitTooltipContent = forwardRef<HTMLDivElement, TooltipContentProps>(
               className="flex-shrink-0"
               style={{ color: completed ? '#22C55E' : 'var(--text-muted)' }}
             />
-            <span className="text-xs" style={{ color: completed ? '#22C55E' : 'var(--text-muted)' }}>
+            <span
+              className="text-xs"
+              style={{ color: completed ? '#22C55E' : 'var(--text-muted)' }}
+            >
               {completed ? 'Completado hoy' : 'Pendiente hoy'}
             </span>
           </div>

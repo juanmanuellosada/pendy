@@ -36,10 +36,7 @@ export const NormalizeCheckboxPaste = Extension.create({
 
             // Step 2: Ensure all task items have content after [ ]
             // markdown-it requires at least a space + char after the brackets
-            normalized = normalized.replace(
-              /^(\s*[-*+]\s+\[[ xX]\])\s*$/gm,
-              '$1 \u200B',
-            )
+            normalized = normalized.replace(/^(\s*[-*+]\s+\[[ xX]\])\s*$/gm, '$1 \u200B')
 
             // If nothing changed, let default handling take over
             if (normalized === text) return false
@@ -53,8 +50,14 @@ export const NormalizeCheckboxPaste = Extension.create({
               plain: boolean,
               view: EditorView,
             ) => Slice
-            const slice = (view as unknown as { someProp: (name: string, f: (p: ClipboardTextParser) => Slice | undefined) => Slice | undefined })
-              .someProp('clipboardTextParser', (parser) => parser(normalized, $context, false, view))
+            const slice = (
+              view as unknown as {
+                someProp: (
+                  name: string,
+                  f: (p: ClipboardTextParser) => Slice | undefined,
+                ) => Slice | undefined
+              }
+            ).someProp('clipboardTextParser', (parser) => parser(normalized, $context, false, view))
 
             if (slice) {
               view.dispatch(view.state.tr.replaceSelection(slice))

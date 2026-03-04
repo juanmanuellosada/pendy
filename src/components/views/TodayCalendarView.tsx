@@ -9,7 +9,14 @@ import { useProjects } from '@/hooks/useProjects'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { useAppStore } from '@/stores/appStore'
 import { useCalendarEventMutations } from '@/hooks/useCalendarEvents'
-import { useHabits, useHabitCompletions, useToggleHabitCompletion, useHabitSchedules, useSetHabitDefaultTime, useUpsertHabitSchedule } from '@/hooks/useHabits'
+import {
+  useHabits,
+  useHabitCompletions,
+  useToggleHabitCompletion,
+  useHabitSchedules,
+  useSetHabitDefaultTime,
+  useUpsertHabitSchedule,
+} from '@/hooks/useHabits'
 import { TaskCheckbox } from '@/components/tasks/TaskCheckbox'
 import { HabitCheckbox } from '@/components/habits/HabitCheckbox'
 import { useHabitTooltip } from '@/components/habits/HabitTooltip'
@@ -19,9 +26,19 @@ import { cn, stripHtmlTags, stripLabelTokensFromText } from '@/lib/utils'
 import { TaskTooltip } from '@/components/common/TaskTooltip'
 import { CalendarEventEditor } from '@/components/common/CalendarEventEditor'
 import type { Task, Label, CalendarEvent, Habit, HabitCompletion } from '@/lib/types'
-import { CalendarEventTooltip, getEventColor, getCalendarName } from '@/components/common/CalendarEventTooltip'
+import {
+  CalendarEventTooltip,
+  getEventColor,
+  getCalendarName,
+} from '@/components/common/CalendarEventTooltip'
 import { useIsMobile } from '@/hooks/useIsMobile'
-import { habitAppearsOnDate, getScheduledTimeForDate, timeStrToHour, hourToTimeStr, isCompletedOnDate } from '@/lib/habitUtils'
+import {
+  habitAppearsOnDate,
+  getScheduledTimeForDate,
+  timeStrToHour,
+  hourToTimeStr,
+  isCompletedOnDate,
+} from '@/lib/habitUtils'
 
 const HOUR_HEIGHT = 100 // px per hour (desktop)
 
@@ -35,7 +52,7 @@ const MIN_DURATION = 15 // minimum 15 minutes
 
 /** Calcula posiciones de columna para bloques que se superponen en el tiempo */
 function computeOverlapLayout(
-  items: { id: string; startH: number; endH: number }[]
+  items: { id: string; startH: number; endH: number }[],
 ): Map<string, { col: number; totalCols: number }> {
   const result = new Map<string, { col: number; totalCols: number }>()
   if (items.length === 0) return result
@@ -88,7 +105,12 @@ function snapMinutes(totalMinutes: number): number {
   return Math.round(totalMinutes / SNAP_MINUTES) * SNAP_MINUTES
 }
 
-export function TodayCalendarView({ tasks, calendarEvents = [], showCompleted = true, showHabits = true }: TodayCalendarViewProps) {
+export function TodayCalendarView({
+  tasks,
+  calendarEvents = [],
+  showCompleted = true,
+  showHabits = true,
+}: TodayCalendarViewProps) {
   const isMobile = useIsMobile()
   const hourHeight = isMobile ? 40 : HOUR_HEIGHT
   const containerRef = useRef<HTMLDivElement>(null)
@@ -100,12 +122,29 @@ export function TodayCalendarView({ tasks, calendarEvents = [], showCompleted = 
 
   // Editor state
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null)
-  const [creatingEventInfo, setCreatingEventInfo] = useState<{ date: Date; hour: number; durationMinutes?: number } | null>(null)
-  const [creatingTaskInfo, setCreatingTaskInfo] = useState<{ date: string; time: string; durationMinutes: number } | null>(null)
+  const [creatingEventInfo, setCreatingEventInfo] = useState<{
+    date: Date
+    hour: number
+    durationMinutes?: number
+  } | null>(null)
+  const [creatingTaskInfo, setCreatingTaskInfo] = useState<{
+    date: string
+    time: string
+    durationMinutes: number
+  } | null>(null)
 
   // Drag-to-create state
-  const [createDrag, setCreateDrag] = useState<{ startHour: number; currentHour: number; startY: number } | null>(null)
-  const [typePicker, setTypePicker] = useState<{ startHour: number; durationMinutes: number; screenX: number; screenY: number } | null>(null)
+  const [createDrag, setCreateDrag] = useState<{
+    startHour: number
+    currentHour: number
+    startY: number
+  } | null>(null)
+  const [typePicker, setTypePicker] = useState<{
+    startHour: number
+    durationMinutes: number
+    screenX: number
+    screenY: number
+  } | null>(null)
 
   // Habit data
   const today = new Date()
@@ -117,17 +156,14 @@ export function TodayCalendarView({ tasks, calendarEvents = [], showCompleted = 
   const setHabitDefaultTime = useSetHabitDefaultTime()
   const upsertHabitSchedule = useUpsertHabitSchedule()
 
-  const todayHabits = useMemo(
-    () => {
-      if (!showHabits) return []
-      return allHabits.filter((h) => {
-        if (!habitAppearsOnDate(h, today)) return false
-        if (!showCompleted && isCompletedOnDate(habitCompletions, h.id, today)) return false
-        return true
-      })
-    },
-    [allHabits, todayDateStr, showCompleted, showHabits, habitCompletions],
-  )
+  const todayHabits = useMemo(() => {
+    if (!showHabits) return []
+    return allHabits.filter((h) => {
+      if (!habitAppearsOnDate(h, today)) return false
+      if (!showCompleted && isCompletedOnDate(habitCompletions, h.id, today)) return false
+      return true
+    })
+  }, [allHabits, todayDateStr, showCompleted, showHabits, habitCompletions])
   const unscheduledHabits = useMemo(
     () => todayHabits.filter((h) => getScheduledTimeForDate(h, habitSchedules, today) === null),
     [todayHabits, habitSchedules],
@@ -138,9 +174,13 @@ export function TodayCalendarView({ tasks, calendarEvents = [], showCompleted = 
   )
 
   // Habit drag state (from all-day zone to timeline)
-  const [habitDrag, setHabitDrag] = useState<{ habit: Habit; ghostHour: number | null } | null>(null)
+  const [habitDrag, setHabitDrag] = useState<{ habit: Habit; ghostHour: number | null } | null>(
+    null,
+  )
   const habitDragRef = useRef(habitDrag)
-  useEffect(() => { habitDragRef.current = habitDrag }, [habitDrag])
+  useEffect(() => {
+    habitDragRef.current = habitDrag
+  }, [habitDrag])
 
   // Update current time every minute
   useEffect(() => {
@@ -156,43 +196,49 @@ export function TodayCalendarView({ tasks, calendarEvents = [], showCompleted = 
   }, [])
 
   // Habit drag from all-day chip to timeline
-  const startHabitDrag = useCallback((habit: Habit, e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setHabitDrag({ habit, ghostHour: null })
+  const startHabitDrag = useCallback(
+    (habit: Habit, e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setHabitDrag({ habit, ghostHour: null })
 
-    const onMove = (ev: MouseEvent) => {
-      if (!gridRef.current) return
-      const rect = gridRef.current.getBoundingClientRect()
-      const scrollTop = containerRef.current?.scrollTop ?? 0
-      const y = ev.clientY - rect.top + scrollTop
-      if (y < 0) {
-        setHabitDrag((p) => p ? { ...p, ghostHour: null } : null)
-        return
+      const onMove = (ev: MouseEvent) => {
+        if (!gridRef.current) return
+        const rect = gridRef.current.getBoundingClientRect()
+        const scrollTop = containerRef.current?.scrollTop ?? 0
+        const y = ev.clientY - rect.top + scrollTop
+        if (y < 0) {
+          setHabitDrag((p) => (p ? { ...p, ghostHour: null } : null))
+          return
+        }
+        const rawHour = pxToHours(y, hourHeight)
+        const snappedMin = snapMinutes(Math.round(rawHour * 60))
+        const snapped = Math.max(START_HOUR, snappedMin / 60)
+        setHabitDrag((p) => (p ? { ...p, ghostHour: snapped } : null))
       }
-      const rawHour = pxToHours(y, hourHeight)
-      const snappedMin = snapMinutes(Math.round(rawHour * 60))
-      const snapped = Math.max(START_HOUR, snappedMin / 60)
-      setHabitDrag((p) => p ? { ...p, ghostHour: snapped } : null)
-    }
 
-    const onUp = () => {
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
-      const state = habitDragRef.current
-      if (!state?.ghostHour) { setHabitDrag(null); return }
-      const time = hourToTimeStr(state.ghostHour)
-      if (!state.habit.scheduled_time) {
-        setHabitDefaultTime.mutate({ habitId: state.habit.id, time })
-      } else {
-        upsertHabitSchedule.mutate({ habitId: state.habit.id, date: todayDateStr, time })
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+        const state = habitDragRef.current
+        if (!state?.ghostHour) {
+          setHabitDrag(null)
+          return
+        }
+        const time = hourToTimeStr(state.ghostHour)
+        if (!state.habit.scheduled_time) {
+          setHabitDefaultTime.mutate({ habitId: state.habit.id, time })
+        } else {
+          upsertHabitSchedule.mutate({ habitId: state.habit.id, date: todayDateStr, time })
+        }
+        setHabitDrag(null)
       }
-      setHabitDrag(null)
-    }
 
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
-  }, [hourHeight, todayDateStr, setHabitDefaultTime, upsertHabitSchedule])
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
+    },
+    [hourHeight, todayDateStr, setHabitDefaultTime, upsertHabitSchedule],
+  )
 
   // Split tasks into three buckets:
   // - overdueTasks: due_date < today (regardless of has_time)
@@ -216,7 +262,8 @@ export function TodayCalendarView({ tasks, calendarEvents = [], showCompleted = 
 
   const allDayEvents = calendarEvents.filter((e) => e.isAllDay)
   const timedEvents = calendarEvents.filter((e) => !e.isAllDay)
-  const hasAllDaySection = allDayTasks.length > 0 || allDayEvents.length > 0 || unscheduledHabits.length > 0
+  const hasAllDaySection =
+    allDayTasks.length > 0 || allDayEvents.length > 0 || unscheduledHabits.length > 0
 
   // Calcula columnas de overlap para todos los bloques con hora en el timeline
   const timedLayout = useMemo(() => {
@@ -247,14 +294,17 @@ export function TodayCalendarView({ tasks, calendarEvents = [], showCompleted = 
   const nowLabel = format(now, 'HH:mm')
 
   // Drag-to-create: mousedown starts the gesture
-  const handleBackdropMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!gridRef.current) return
-    e.preventDefault()
-    const rect = gridRef.current.getBoundingClientRect()
-    const relY = e.clientY - rect.top
-    const hour = Math.max(0, Math.min(pxToHours(relY, hourHeight), 23.75))
-    setCreateDrag({ startHour: hour, currentHour: hour, startY: e.clientY })
-  }, [hourHeight])
+  const handleBackdropMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!gridRef.current) return
+      e.preventDefault()
+      const rect = gridRef.current.getBoundingClientRect()
+      const relY = e.clientY - rect.top
+      const hour = Math.max(0, Math.min(pxToHours(relY, hourHeight), 23.75))
+      setCreateDrag({ startHour: hour, currentHour: hour, startY: e.clientY })
+    },
+    [hourHeight],
+  )
 
   // Drag-to-create: mousemove + mouseup on window
   useEffect(() => {
@@ -265,7 +315,7 @@ export function TodayCalendarView({ tasks, calendarEvents = [], showCompleted = 
       const relY = e.clientY - rect.top
       const rawHour = Math.max(createDrag.startHour, Math.min(pxToHours(relY, hourHeight), 24))
       const snapped = Math.max(createDrag.startHour, snapMinutes(Math.round(rawHour * 60)) / 60)
-      setCreateDrag((prev) => prev ? { ...prev, currentHour: snapped } : null)
+      setCreateDrag((prev) => (prev ? { ...prev, currentHour: snapped } : null))
     }
     const onUp = (e: MouseEvent) => {
       if (!createDrag) return
@@ -274,7 +324,12 @@ export function TodayCalendarView({ tasks, calendarEvents = [], showCompleted = 
       const rawEndMin = Math.round(createDrag.currentHour * 60)
       const duration = dy > 8 ? Math.max(MIN_DURATION, snapMinutes(rawEndMin - startMin)) : 60
       setCreateDrag(null)
-      setTypePicker({ startHour: startMin / 60, durationMinutes: duration, screenX: e.clientX, screenY: e.clientY })
+      setTypePicker({
+        startHour: startMin / 60,
+        durationMinutes: duration,
+        screenX: e.clientX,
+        screenY: e.clientY,
+      })
     }
     document.addEventListener('mousemove', onMove)
     document.addEventListener('mouseup', onUp)
@@ -286,267 +341,285 @@ export function TodayCalendarView({ tasks, calendarEvents = [], showCompleted = 
 
   return (
     <HourHeightCtx.Provider value={hourHeight}>
-    <>
-      <div className="flex flex-col">
-        {/* Overdue section */}
-        {overdueTasks.length > 0 && (
-          <div className="mb-2">
-            <div className="flex">
-              <div
-                className="w-14 shrink-0 pr-2 pt-1 text-right text-xs font-medium"
-                style={{ color: '#EC1E2A' }}
-              >
-                Vencidas
-              </div>
-              <div
-                className="flex-1 rounded-lg border-l-2 py-1 pl-2"
-                style={{ borderColor: '#EC1E2A44', backgroundColor: 'rgba(236,30,42,0.04)' }}
-              >
-                {overdueTasks.map((task) => (
-                  <TaskTooltip key={task.id} task={task}>
-                    <OverdueTaskCard task={task} />
-                  </TaskTooltip>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* All-day section */}
-        {hasAllDaySection && (
-          <div className="mb-2">
-            <div className="flex">
-              <div
-                className="w-14 shrink-0 pr-2 pt-1 text-right text-xs"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                Todo el día
-              </div>
-              <div
-                className="flex-1 border-l py-1 pl-2"
-                style={{ borderColor: 'var(--border-secondary)' }}
-              >
-                {allDayTasks.map((task) => (
-                  <TaskTooltip key={task.id} task={task}>
-                    <TimelineTaskCard task={task} />
-                  </TaskTooltip>
-                ))}
-                {allDayEvents.map((event) => (
-                  <AllDayEventChip
-                    key={event.id}
-                    event={event}
-                    onEdit={() => setEditingEvent(event)}
-                  />
-                ))}
-                {/* Habit chips for unscheduled habits */}
-                {unscheduledHabits.map((habit) => (
-                  <HabitChip
-                    key={habit.id}
-                    habit={habit}
-                    completions={habitCompletions}
-                    date={today}
-                    onToggle={() => toggleHabitCompletion.mutate({ habitId: habit.id, date: today })}
-                    onDragStart={(e) => startHabitDrag(habit, e)}
-                    onEdit={() => setSelectedHabit(habit.id, todayDateStr)}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Timeline */}
-        <div
-          ref={containerRef}
-          className="relative overflow-y-auto"
-          style={{ maxHeight: 'calc(100vh - 200px)' }}
-        >
-          <div className="flex">
-          {/* Hour labels */}
-          <div className="w-14 shrink-0">
-            {Array.from({ length: TOTAL_HOURS }, (_, i) => {
-              const hour = START_HOUR + i
-              return (
+      <>
+        <div className="flex flex-col">
+          {/* Overdue section */}
+          {overdueTasks.length > 0 && (
+            <div className="mb-2">
+              <div className="flex">
                 <div
-                  key={hour}
-                  className="relative pr-2 text-right text-xs"
-                  style={{ height: hourHeight, color: 'var(--text-muted)' }}
+                  className="w-14 shrink-0 pr-2 pt-1 text-right text-xs font-medium"
+                  style={{ color: '#EC1E2A' }}
                 >
-                  <span className="relative -top-2">
-                    {`${hour.toString().padStart(2, '0')}:00`}
+                  Vencidas
+                </div>
+                <div
+                  className="flex-1 rounded-lg border-l-2 py-1 pl-2"
+                  style={{ borderColor: '#EC1E2A44', backgroundColor: 'rgba(236,30,42,0.04)' }}
+                >
+                  {overdueTasks.map((task) => (
+                    <TaskTooltip key={task.id} task={task}>
+                      <OverdueTaskCard task={task} />
+                    </TaskTooltip>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* All-day section */}
+          {hasAllDaySection && (
+            <div className="mb-2">
+              <div className="flex">
+                <div
+                  className="w-14 shrink-0 pr-2 pt-1 text-right text-xs"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  Todo el día
+                </div>
+                <div
+                  className="flex-1 border-l py-1 pl-2"
+                  style={{ borderColor: 'var(--border-secondary)' }}
+                >
+                  {allDayTasks.map((task) => (
+                    <TaskTooltip key={task.id} task={task}>
+                      <TimelineTaskCard task={task} />
+                    </TaskTooltip>
+                  ))}
+                  {allDayEvents.map((event) => (
+                    <AllDayEventChip
+                      key={event.id}
+                      event={event}
+                      onEdit={() => setEditingEvent(event)}
+                    />
+                  ))}
+                  {/* Habit chips for unscheduled habits */}
+                  {unscheduledHabits.map((habit) => (
+                    <HabitChip
+                      key={habit.id}
+                      habit={habit}
+                      completions={habitCompletions}
+                      date={today}
+                      onToggle={() =>
+                        toggleHabitCompletion.mutate({ habitId: habit.id, date: today })
+                      }
+                      onDragStart={(e) => startHabitDrag(habit, e)}
+                      onEdit={() => setSelectedHabit(habit.id, todayDateStr)}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Timeline */}
+          <div
+            ref={containerRef}
+            className="relative overflow-y-auto"
+            style={{ maxHeight: 'calc(100vh - 200px)' }}
+          >
+            <div className="flex">
+              {/* Hour labels */}
+              <div className="w-14 shrink-0">
+                {Array.from({ length: TOTAL_HOURS }, (_, i) => {
+                  const hour = START_HOUR + i
+                  return (
+                    <div
+                      key={hour}
+                      className="relative pr-2 text-right text-xs"
+                      style={{ height: hourHeight, color: 'var(--text-muted)' }}
+                    >
+                      <span className="relative -top-2">
+                        {`${hour.toString().padStart(2, '0')}:00`}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Grid + events */}
+              <div ref={gridRef} className="relative flex-1 cursor-crosshair">
+                {/* Backdrop for drag-to-create (behind task/event blocks) */}
+                <div
+                  className="absolute inset-0 z-0 cursor-crosshair"
+                  onMouseDown={handleBackdropMouseDown}
+                />
+
+                {/* Creation ghost preview during drag */}
+                {createDrag && (
+                  <div
+                    className="pointer-events-none absolute left-1 right-1 z-20 rounded-md"
+                    style={{
+                      top: (createDrag.startHour - START_HOUR) * hourHeight,
+                      height:
+                        Math.max(MIN_DURATION / 60, createDrag.currentHour - createDrag.startHour) *
+                        hourHeight,
+                      backgroundColor: 'rgba(40,59,86,0.25)',
+                      border: '2px dashed #283B56',
+                    }}
+                  />
+                )}
+
+                {/* Hour lines (pointer-events-none — purely visual) */}
+                {Array.from({ length: TOTAL_HOURS }, (_, i) => (
+                  <div
+                    key={i}
+                    className="pointer-events-none border-t"
+                    style={{ height: hourHeight, borderColor: 'var(--border-secondary)' }}
+                  />
+                ))}
+
+                {/* Now indicator */}
+                <div
+                  ref={nowLineRef}
+                  className="pointer-events-none absolute left-0 right-0 z-20 flex items-center"
+                  style={{ top: nowTop }}
+                >
+                  <div
+                    className="h-2.5 w-2.5 -ml-[5px] rounded-full"
+                    style={{ backgroundColor: '#EC1E2A' }}
+                  />
+                  <div className="flex-1 border-t-2" style={{ borderColor: '#EC1E2A' }} />
+                  <span className="ml-1 text-[10px] font-semibold" style={{ color: '#EC1E2A' }}>
+                    {nowLabel}
                   </span>
                 </div>
-              )
-            })}
-          </div>
 
-          {/* Grid + events */}
-          <div
-            ref={gridRef}
-            className="relative flex-1 cursor-crosshair"
-          >
-            {/* Backdrop for drag-to-create (behind task/event blocks) */}
-            <div className="absolute inset-0 z-0 cursor-crosshair" onMouseDown={handleBackdropMouseDown} />
+                {/* Timed tasks */}
+                {timedTasks.map((task) => {
+                  const layout = timedLayout.get(task.id)
+                  return (
+                    <TaskTooltip key={task.id} task={task}>
+                      <TimedTaskBlock task={task} col={layout?.col} totalCols={layout?.totalCols} />
+                    </TaskTooltip>
+                  )
+                })}
 
-            {/* Creation ghost preview during drag */}
-            {createDrag && (
-              <div
-                className="pointer-events-none absolute left-1 right-1 z-20 rounded-md"
-                style={{
-                  top: (createDrag.startHour - START_HOUR) * hourHeight,
-                  height: Math.max(MIN_DURATION / 60, createDrag.currentHour - createDrag.startHour) * hourHeight,
-                  backgroundColor: 'rgba(40,59,86,0.25)',
-                  border: '2px dashed #283B56',
-                }}
-              />
-            )}
+                {/* Timed calendar events (draggable) */}
+                {timedEvents.map((event) => {
+                  const layout = timedLayout.get(event.id)
+                  return (
+                    <TimedEventBlock
+                      key={event.id}
+                      event={event}
+                      onEdit={() => setEditingEvent(event)}
+                      col={layout?.col}
+                      totalCols={layout?.totalCols}
+                    />
+                  )
+                })}
 
-            {/* Hour lines (pointer-events-none — purely visual) */}
-            {Array.from({ length: TOTAL_HOURS }, (_, i) => (
-              <div
-                key={i}
-                className="pointer-events-none border-t"
-                style={{ height: hourHeight, borderColor: 'var(--border-secondary)' }}
-              />
-            ))}
+                {/* Scheduled habit blocks */}
+                {scheduledHabits.map((habit) => {
+                  const scheduledTime = getScheduledTimeForDate(habit, habitSchedules, today)!
+                  const layout = timedLayout.get(habit.id)
+                  return (
+                    <TimedHabitBlock
+                      key={habit.id}
+                      habit={habit}
+                      scheduledTime={scheduledTime}
+                      date={today}
+                      completions={habitCompletions}
+                      hourHeight={hourHeight}
+                      onReschedule={(time) =>
+                        upsertHabitSchedule.mutate({ habitId: habit.id, date: todayDateStr, time })
+                      }
+                      onToggle={() =>
+                        toggleHabitCompletion.mutate({ habitId: habit.id, date: today })
+                      }
+                      onEdit={() => setSelectedHabit(habit.id, todayDateStr)}
+                      col={layout?.col}
+                      totalCols={layout?.totalCols}
+                    />
+                  )
+                })}
 
-            {/* Now indicator */}
-            <div
-              ref={nowLineRef}
-              className="pointer-events-none absolute left-0 right-0 z-20 flex items-center"
-              style={{ top: nowTop }}
-            >
-              <div
-                className="h-2.5 w-2.5 -ml-[5px] rounded-full"
-                style={{ backgroundColor: '#EC1E2A' }}
-              />
-              <div className="flex-1 border-t-2" style={{ borderColor: '#EC1E2A' }} />
-              <span
-                className="ml-1 text-[10px] font-semibold"
-                style={{ color: '#EC1E2A' }}
-              >
-                {nowLabel}
-              </span>
-            </div>
-
-            {/* Timed tasks */}
-            {timedTasks.map((task) => {
-              const layout = timedLayout.get(task.id)
-              return (
-                <TaskTooltip key={task.id} task={task}>
-                  <TimedTaskBlock task={task} col={layout?.col} totalCols={layout?.totalCols} />
-                </TaskTooltip>
-              )
-            })}
-
-            {/* Timed calendar events (draggable) */}
-            {timedEvents.map((event) => {
-              const layout = timedLayout.get(event.id)
-              return (
-                <TimedEventBlock
-                  key={event.id}
-                  event={event}
-                  onEdit={() => setEditingEvent(event)}
-                  col={layout?.col}
-                  totalCols={layout?.totalCols}
-                />
-              )
-            })}
-
-            {/* Scheduled habit blocks */}
-            {scheduledHabits.map((habit) => {
-              const scheduledTime = getScheduledTimeForDate(habit, habitSchedules, today)!
-              const layout = timedLayout.get(habit.id)
-              return (
-                <TimedHabitBlock
-                  key={habit.id}
-                  habit={habit}
-                  scheduledTime={scheduledTime}
-                  date={today}
-                  completions={habitCompletions}
-                  hourHeight={hourHeight}
-                  onReschedule={(time) => upsertHabitSchedule.mutate({ habitId: habit.id, date: todayDateStr, time })}
-                  onToggle={() => toggleHabitCompletion.mutate({ habitId: habit.id, date: today })}
-                  onEdit={() => setSelectedHabit(habit.id, todayDateStr)}
-                  col={layout?.col}
-                  totalCols={layout?.totalCols}
-                />
-              )
-            })}
-
-            {/* Ghost preview while dragging a habit chip */}
-            {habitDrag?.ghostHour !== null && habitDrag?.ghostHour !== undefined && (
-              <div
-                className="pointer-events-none absolute left-1 right-1 z-20 rounded-md border-l-2"
-                style={{
-                  top: (habitDrag.ghostHour - START_HOUR) * hourHeight,
-                  height: (habitDrag.habit.duration_minutes / 60) * hourHeight,
-                  backgroundColor: `${habitDrag.habit.color}25`,
-                  borderLeftColor: habitDrag.habit.color,
-                  opacity: 0.8,
-                }}
-              >
-                <p className="truncate px-2 py-0.5 text-xs font-medium" style={{ color: habitDrag.habit.color }}>
-                  {habitDrag.habit.icon && `${habitDrag.habit.icon} `}{stripHtmlTags(habitDrag.habit.name)}
-                </p>
+                {/* Ghost preview while dragging a habit chip */}
+                {habitDrag?.ghostHour !== null && habitDrag?.ghostHour !== undefined && (
+                  <div
+                    className="pointer-events-none absolute left-1 right-1 z-20 rounded-md border-l-2"
+                    style={{
+                      top: (habitDrag.ghostHour - START_HOUR) * hourHeight,
+                      height: (habitDrag.habit.duration_minutes / 60) * hourHeight,
+                      backgroundColor: `${habitDrag.habit.color}25`,
+                      borderLeftColor: habitDrag.habit.color,
+                      opacity: 0.8,
+                    }}
+                  >
+                    <p
+                      className="truncate px-2 py-0.5 text-xs font-medium"
+                      style={{ color: habitDrag.habit.color }}
+                    >
+                      {habitDrag.habit.icon && `${habitDrag.habit.icon} `}
+                      {stripHtmlTags(habitDrag.habit.name)}
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Calendar event editor */}
-      {editingEvent && (
-        <CalendarEventEditor
-          event={editingEvent}
-          variant="panel"
-          onClose={() => setEditingEvent(null)}
-        />
-      )}
-      {creatingEventInfo && (
-        <CalendarEventEditor
-          defaultDate={creatingEventInfo.date}
-          defaultHour={creatingEventInfo.hour}
-          defaultDurationMinutes={creatingEventInfo.durationMinutes}
-          onClose={() => setCreatingEventInfo(null)}
-        />
-      )}
+        {/* Calendar event editor */}
+        {editingEvent && (
+          <CalendarEventEditor
+            event={editingEvent}
+            variant="panel"
+            onClose={() => setEditingEvent(null)}
+          />
+        )}
+        {creatingEventInfo && (
+          <CalendarEventEditor
+            defaultDate={creatingEventInfo.date}
+            defaultHour={creatingEventInfo.hour}
+            defaultDurationMinutes={creatingEventInfo.durationMinutes}
+            onClose={() => setCreatingEventInfo(null)}
+          />
+        )}
 
-      {/* Task editor from calendar */}
-      {creatingTaskInfo && (
-        <TaskEditor
-          open
-          defaultDate={creatingTaskInfo.date}
-          defaultTime={creatingTaskInfo.time}
-          defaultDurationMinutes={creatingTaskInfo.durationMinutes}
-          onClose={() => setCreatingTaskInfo(null)}
-        />
-      )}
+        {/* Task editor from calendar */}
+        {creatingTaskInfo && (
+          <TaskEditor
+            open
+            defaultDate={creatingTaskInfo.date}
+            defaultTime={creatingTaskInfo.time}
+            defaultDurationMinutes={creatingTaskInfo.durationMinutes}
+            onClose={() => setCreatingTaskInfo(null)}
+          />
+        )}
 
-      {/* Type picker popup after drag */}
-      {typePicker && createPortal(
-        <CreationTypePicker
-          startHour={typePicker.startHour}
-          durationMinutes={typePicker.durationMinutes}
-          screenX={typePicker.screenX}
-          screenY={typePicker.screenY}
-          onEvent={() => {
-            setCreatingEventInfo({ date: new Date(), hour: typePicker.startHour, durationMinutes: typePicker.durationMinutes })
-            setTypePicker(null)
-          }}
-          onTask={() => {
-            const h = Math.floor(typePicker.startHour)
-            const m = Math.round((typePicker.startHour - h) * 60)
-            const dateStr = format(new Date(), 'yyyy-MM-dd')
-            setCreatingTaskInfo({ date: dateStr, time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`, durationMinutes: typePicker.durationMinutes })
-            setTypePicker(null)
-          }}
-          onClose={() => setTypePicker(null)}
-        />,
-        document.body,
-      )}
-    </>
+        {/* Type picker popup after drag */}
+        {typePicker &&
+          createPortal(
+            <CreationTypePicker
+              startHour={typePicker.startHour}
+              durationMinutes={typePicker.durationMinutes}
+              screenX={typePicker.screenX}
+              screenY={typePicker.screenY}
+              onEvent={() => {
+                setCreatingEventInfo({
+                  date: new Date(),
+                  hour: typePicker.startHour,
+                  durationMinutes: typePicker.durationMinutes,
+                })
+                setTypePicker(null)
+              }}
+              onTask={() => {
+                const h = Math.floor(typePicker.startHour)
+                const m = Math.round((typePicker.startHour - h) * 60)
+                const dateStr = format(new Date(), 'yyyy-MM-dd')
+                setCreatingTaskInfo({
+                  date: dateStr,
+                  time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
+                  durationMinutes: typePicker.durationMinutes,
+                })
+                setTypePicker(null)
+              }}
+              onClose={() => setTypePicker(null)}
+            />,
+            document.body,
+          )}
+      </>
     </HourHeightCtx.Provider>
   )
 }
@@ -609,11 +682,27 @@ function CreationTypePicker({
         width: W,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, paddingLeft: 4 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 6,
+          paddingLeft: 4,
+        }}
+      >
         <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>{timeLabel}</span>
         <button
           onClick={onClose}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, borderRadius: 4, lineHeight: 1, color: 'var(--text-muted)' }}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 2,
+            borderRadius: 4,
+            lineHeight: 1,
+            color: 'var(--text-muted)',
+          }}
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
         >
@@ -624,10 +713,19 @@ function CreationTypePicker({
         <button
           onClick={onEvent}
           style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '6px 8px', borderRadius: 8, border: 'none',
-            backgroundColor: 'transparent', cursor: 'pointer',
-            color: 'var(--text-primary)', fontSize: 13, fontWeight: 500, width: '100%', textAlign: 'left',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '6px 8px',
+            borderRadius: 8,
+            border: 'none',
+            backgroundColor: 'transparent',
+            cursor: 'pointer',
+            color: 'var(--text-primary)',
+            fontSize: 13,
+            fontWeight: 500,
+            width: '100%',
+            textAlign: 'left',
           }}
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
@@ -638,10 +736,19 @@ function CreationTypePicker({
         <button
           onClick={onTask}
           style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '6px 8px', borderRadius: 8, border: 'none',
-            backgroundColor: 'transparent', cursor: 'pointer',
-            color: 'var(--text-primary)', fontSize: 13, fontWeight: 500, width: '100%', textAlign: 'left',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '6px 8px',
+            borderRadius: 8,
+            border: 'none',
+            backgroundColor: 'transparent',
+            cursor: 'pointer',
+            color: 'var(--text-primary)',
+            fontSize: 13,
+            fontWeight: 500,
+            width: '100%',
+            textAlign: 'left',
           }}
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
@@ -721,10 +828,7 @@ function TimedTaskBlock({
   const displayHours = pxToHours(currentTop, HOUR_HEIGHT)
   const displayH = Math.floor(displayHours)
   const displayM = Math.round((displayHours - displayH) * 60)
-  const displayDurationMin = Math.max(
-    MIN_DURATION,
-    Math.round((currentHeight / HOUR_HEIGHT) * 60),
-  )
+  const displayDurationMin = Math.max(MIN_DURATION, Math.round((currentHeight / HOUR_HEIGHT) * 60))
   const endHours = displayHours + displayDurationMin / 60
   const endH = Math.floor(endHours)
   const endM = Math.round((endHours - endH) * 60)
@@ -879,11 +983,20 @@ function TimedTaskBlock({
         <div className="min-w-0 flex-1">
           {/* Title row — always shows time inline when block is short */}
           <div className="flex items-center gap-1">
-            <p className={cn('truncate text-xs font-medium flex-1 min-w-0', task.is_completed && 'line-through')} style={{ color: 'var(--text-primary)' }}>
+            <p
+              className={cn(
+                'truncate text-xs font-medium flex-1 min-w-0',
+                task.is_completed && 'line-through',
+              )}
+              style={{ color: 'var(--text-primary)' }}
+            >
               {stripLabelTokensFromText(stripHtmlTags(task.title))}
             </p>
             {!showTimeSeparate && (
-              <span className="shrink-0 text-[10px] whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
+              <span
+                className="shrink-0 text-[10px] whitespace-nowrap"
+                style={{ color: 'var(--text-muted)' }}
+              >
                 {timeStart}
                 {task.is_recurring && <span className="ml-0.5">↻</span>}
               </span>
@@ -898,20 +1011,33 @@ function TimedTaskBlock({
           )}
           {/* Description */}
           {showDescription && (
-            <p className="truncate text-[10px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>{description}</p>
+            <p className="truncate text-[10px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+              {description}
+            </p>
           )}
           {/* Project */}
           {showProject && (
             <div className="flex items-center gap-1 mt-0.5">
-              <span className="inline-block h-2 w-2 rounded-sm shrink-0" style={{ backgroundColor: project.color }} />
-              <span className="truncate text-[10px]" style={{ color: 'var(--text-muted)' }}>{project.name}</span>
+              <span
+                className="inline-block h-2 w-2 rounded-sm shrink-0"
+                style={{ backgroundColor: project.color }}
+              />
+              <span className="truncate text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                {project.name}
+              </span>
             </div>
           )}
           {/* Labels */}
           {showLabels && (
             <div className="flex items-center gap-1 mt-0.5 flex-wrap">
               {labels.slice(0, 2).map((label) => (
-                <span key={label.id} className="rounded px-1 py-px text-[9px] font-medium" style={{ backgroundColor: label.color + '20', color: label.color }}>{label.name}</span>
+                <span
+                  key={label.id}
+                  className="rounded px-1 py-px text-[9px] font-medium"
+                  style={{ backgroundColor: label.color + '20', color: label.color }}
+                >
+                  {label.name}
+                </span>
               ))}
             </div>
           )}
@@ -925,10 +1051,7 @@ function TimedTaskBlock({
         style={{ height: 8 }}
         onMouseDown={handleResizeStart}
       >
-        <div
-          className="h-1 w-8 rounded-full"
-          style={{ backgroundColor: color }}
-        />
+        <div className="h-1 w-8 rounded-full" style={{ backgroundColor: color }} />
       </div>
     </div>
   )
@@ -958,8 +1081,10 @@ function TimedEventBlock({
   todayMidnight.setHours(0, 0, 0, 0)
   const effectiveStart = event.start < todayMidnight ? todayMidnight : event.start
   const serverStartHour = effectiveStart.getHours() + effectiveStart.getMinutes() / 60
-  const serverDuration =
-    Math.max((event.end.getTime() - effectiveStart.getTime()) / 60_000, MIN_DURATION)
+  const serverDuration = Math.max(
+    (event.end.getTime() - effectiveStart.getTime()) / 60_000,
+    MIN_DURATION,
+  )
 
   // Local optimistic overrides
   const [localStartHour, setLocalStartHour] = useState<number | null>(null)
@@ -1059,9 +1184,10 @@ function TimedEventBlock({
             })
           } catch (err) {
             setLocalStartHour(null)
-            const msg = err instanceof Error && err.message === 'PERMISSION_DENIED'
-              ? 'Sin permiso para editar este evento. Reconecta Google Calendar con permisos de escritura.'
-              : 'No se pudo mover el evento. Intenta de nuevo.'
+            const msg =
+              err instanceof Error && err.message === 'PERMISSION_DENIED'
+                ? 'Sin permiso para editar este evento. Reconecta Google Calendar con permisos de escritura.'
+                : 'No se pudo mover el evento. Intenta de nuevo.'
             toast.error(msg)
           }
         }
@@ -1095,7 +1221,10 @@ function TimedEventBlock({
 
         if (Math.abs(latestDelta) < 4) return
 
-        const newPx = Math.max((MIN_DURATION / 60) * HOUR_HEIGHT, (baseDuration / 60) * HOUR_HEIGHT + latestDelta)
+        const newPx = Math.max(
+          (MIN_DURATION / 60) * HOUR_HEIGHT,
+          (baseDuration / 60) * HOUR_HEIGHT + latestDelta,
+        )
         const snapped = Math.max(MIN_DURATION, snapMinutes(Math.round((newPx / HOUR_HEIGHT) * 60)))
         setLocalDuration(snapped)
 
@@ -1110,9 +1239,10 @@ function TimedEventBlock({
             })
           } catch (err) {
             setLocalDuration(null)
-            const msg = err instanceof Error && err.message === 'PERMISSION_DENIED'
-              ? 'Sin permiso para editar este evento. Reconecta Google Calendar con permisos de escritura.'
-              : 'No se pudo cambiar la duración del evento. Intenta de nuevo.'
+            const msg =
+              err instanceof Error && err.message === 'PERMISSION_DENIED'
+                ? 'Sin permiso para editar este evento. Reconecta Google Calendar con permisos de escritura.'
+                : 'No se pudo cambiar la duración del evento. Intenta de nuevo.'
             toast.error(msg)
           }
         }
@@ -1192,7 +1322,9 @@ function AllDayEventChip({ event, onEdit }: { event: CalendarEvent; onEdit: () =
         onClick={onEdit}
       >
         <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
-        <span className="truncate min-w-0 flex-1" style={{ color: 'var(--text-primary)' }}>{event.title}</span>
+        <span className="truncate min-w-0 flex-1" style={{ color: 'var(--text-primary)' }}>
+          {event.title}
+        </span>
         <span className="ml-auto shrink-0 text-[10px] font-normal" style={{ color: `${color}BB` }}>
           {calendarName}
         </span>
@@ -1212,9 +1344,7 @@ function OverdueTaskCard({ task }: { task: Task }) {
     ? format(new Date(task.due_date + 'T12:00:00'), "d 'de' MMM", { locale: es })
     : ''
   const timeLabel =
-    task.has_time && task.due_datetime
-      ? format(new Date(task.due_datetime), 'HH:mm')
-      : null
+    task.has_time && task.due_datetime ? format(new Date(task.due_datetime), 'HH:mm') : null
 
   return (
     <div
@@ -1269,50 +1399,63 @@ function HabitChip({
   onEdit?: () => void
 }) {
   const completed = isCompletedOnDate(completions, habit.id, date)
-  const { tooltipHandlers, tooltipPortal } = useHabitTooltip({ habit, completions, date, scheduledTime: null })
+  const { tooltipHandlers, tooltipPortal } = useHabitTooltip({
+    habit,
+    completions,
+    date,
+    scheduledTime: null,
+  })
 
   return (
     <>
-    <div
-      className="group mb-1 flex items-center gap-1.5 overflow-hidden rounded-md px-2 py-1 text-xs font-medium select-none"
-      style={{
-        backgroundColor: `${habit.color}15`,
-        borderLeft: `2px solid ${habit.color}`,
-        opacity: completed ? 0.6 : 1,
-        cursor: 'grab',
-      }}
-      onMouseDown={onDragStart}
-      {...tooltipHandlers}
-      title="Arrastrá al horario para programar"
-    >
-      <HabitCheckbox
-        completed={completed}
-        color={habit.color}
-        onChange={onToggle}
-        size="sm"
-      />
-      {habit.icon && <span className="shrink-0">{habit.icon}</span>}
-      <span className="truncate min-w-0 flex-1" style={{ color: 'var(--text-primary)', textDecoration: completed ? 'line-through' : 'none' }}>
-        {stripHtmlTags(habit.name)}
-      </span>
-      <span className="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ backgroundColor: `${habit.color}22`, color: habit.color }}>
-        Hábito
-      </span>
-      <span className="ml-auto shrink-0 text-[10px]" style={{ color: `${habit.color}BB` }}>
-        {habit.duration_minutes} min
-      </span>
-      {onEdit && (
-        <button
-          className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity rounded p-0.5"
-          style={{ color: 'var(--text-muted)', cursor: 'pointer' }}
-          onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onEdit() }}
-          title="Editar hábito"
+      <div
+        className="group mb-1 flex items-center gap-1.5 overflow-hidden rounded-md px-2 py-1 text-xs font-medium select-none"
+        style={{
+          backgroundColor: `${habit.color}15`,
+          borderLeft: `2px solid ${habit.color}`,
+          opacity: completed ? 0.6 : 1,
+          cursor: 'grab',
+        }}
+        onMouseDown={onDragStart}
+        {...tooltipHandlers}
+        title="Arrastrá al horario para programar"
+      >
+        <HabitCheckbox completed={completed} color={habit.color} onChange={onToggle} size="sm" />
+        {habit.icon && <span className="shrink-0">{habit.icon}</span>}
+        <span
+          className="truncate min-w-0 flex-1"
+          style={{
+            color: 'var(--text-primary)',
+            textDecoration: completed ? 'line-through' : 'none',
+          }}
         >
-          <Pencil size={11} />
-        </button>
-      )}
-    </div>
-    {tooltipPortal}
+          {stripHtmlTags(habit.name)}
+        </span>
+        <span
+          className="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
+          style={{ backgroundColor: `${habit.color}22`, color: habit.color }}
+        >
+          Hábito
+        </span>
+        <span className="ml-auto shrink-0 text-[10px]" style={{ color: `${habit.color}BB` }}>
+          {habit.duration_minutes} min
+        </span>
+        {onEdit && (
+          <button
+            className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity rounded p-0.5"
+            style={{ color: 'var(--text-muted)', cursor: 'pointer' }}
+            onMouseDown={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              onEdit()
+            }}
+            title="Editar hábito"
+          >
+            <Pencil size={11} />
+          </button>
+        )}
+      </div>
+      {tooltipPortal}
     </>
   )
 }
@@ -1385,142 +1528,173 @@ function TimedHabitBlock({
   const showTimeSeparate = renderHeight >= 42
 
   // Drag to move
-  const handleDragStart = useCallback((e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('[data-resize-handle]')) return
-    if ((e.target as HTMLElement).closest('button')) return
-    e.preventDefault()
-    e.stopPropagation()
-    didMove.current = false
-    setInteracting(true)
-    const startY = e.clientY
+  const handleDragStart = useCallback(
+    (e: React.MouseEvent) => {
+      if ((e.target as HTMLElement).closest('[data-resize-handle]')) return
+      if ((e.target as HTMLElement).closest('button')) return
+      e.preventDefault()
+      e.stopPropagation()
+      didMove.current = false
+      setInteracting(true)
+      const startY = e.clientY
 
-    const onMove = (ev: MouseEvent) => {
-      const delta = ev.clientY - startY
-      if (Math.abs(delta) > 3) didMove.current = true
-      setDragOffset(delta)
-    }
-
-    const onUp = () => {
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
-      setInteracting(false)
-
-      if (!didMove.current) {
-        onEdit?.()
-        return
+      const onMove = (ev: MouseEvent) => {
+        const delta = ev.clientY - startY
+        if (Math.abs(delta) > 3) didMove.current = true
+        setDragOffset(delta)
       }
 
-      setDragOffset((prev) => {
-        if (Math.abs(prev) < 4) return 0
-        const newHours = pxToHours((baseHour - START_HOUR) * hourHeight + prev, hourHeight)
-        const totalMin = snapMinutes(Math.round(newHours * 60))
-        const clampedMin = Math.max(0, Math.min(totalMin, 24 * 60 - baseDuration))
-        const snappedHour = clampedMin / 60
-        setLocalHour(snappedHour)
-        onReschedule(hourToTimeStr(snappedHour))
-        return 0
-      })
-    }
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+        setInteracting(false)
 
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
-  }, [baseHour, baseDuration, hourHeight, onReschedule, onEdit])
+        if (!didMove.current) {
+          onEdit?.()
+          return
+        }
+
+        setDragOffset((prev) => {
+          if (Math.abs(prev) < 4) return 0
+          const newHours = pxToHours((baseHour - START_HOUR) * hourHeight + prev, hourHeight)
+          const totalMin = snapMinutes(Math.round(newHours * 60))
+          const clampedMin = Math.max(0, Math.min(totalMin, 24 * 60 - baseDuration))
+          const snappedHour = clampedMin / 60
+          setLocalHour(snappedHour)
+          onReschedule(hourToTimeStr(snappedHour))
+          return 0
+        })
+      }
+
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
+    },
+    [baseHour, baseDuration, hourHeight, onReschedule, onEdit],
+  )
 
   // Resize to change duration (global update via parent)
-  const handleResizeStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setInteracting(true)
-    const startY = e.clientY
+  const handleResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setInteracting(true)
+      const startY = e.clientY
 
-    const onMove = (ev: MouseEvent) => setResizeDelta(ev.clientY - startY)
+      const onMove = (ev: MouseEvent) => setResizeDelta(ev.clientY - startY)
 
-    const onUp = () => {
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
-      setInteracting(false)
-      setResizeDelta((prev) => {
-        if (Math.abs(prev) < 4) return 0
-        const newPx = Math.max((MIN_DURATION / 60) * hourHeight, (baseDuration / 60) * hourHeight + prev)
-        const snapped = Math.max(MIN_DURATION, snapMinutes(Math.round((newPx / hourHeight) * 60)))
-        setLocalDuration(snapped)
-        // Duration is global — caller should update habit.duration_minutes via useUpdateHabit
-        // Here we just keep local state; parent handles persistence via onReschedule pattern
-        return 0
-      })
-    }
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+        setInteracting(false)
+        setResizeDelta((prev) => {
+          if (Math.abs(prev) < 4) return 0
+          const newPx = Math.max(
+            (MIN_DURATION / 60) * hourHeight,
+            (baseDuration / 60) * hourHeight + prev,
+          )
+          const snapped = Math.max(MIN_DURATION, snapMinutes(Math.round((newPx / hourHeight) * 60)))
+          setLocalDuration(snapped)
+          // Duration is global — caller should update habit.duration_minutes via useUpdateHabit
+          // Here we just keep local state; parent handles persistence via onReschedule pattern
+          return 0
+        })
+      }
 
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
-  }, [baseDuration, hourHeight])
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
+    },
+    [baseDuration, hourHeight],
+  )
 
   return (
     <>
-    <div
-      className={cn(
-        'group absolute z-10 select-none overflow-hidden rounded-md border-l-3 px-2 py-1',
-        completed && 'opacity-50',
-        interacting ? 'shadow-lg z-30' : 'cursor-pointer',
-      )}
-      style={{
-        top: currentTop,
-        height: renderHeight,
-        borderLeftColor: habit.color,
-        backgroundColor: `${habit.color}18`,
-        transition: interacting ? 'none' : 'top 0.15s ease, height 0.15s ease',
-        ...overlapPos(col, totalCols),
-      }}
-      onMouseDown={handleDragStart}
-      {...tooltipHandlers}
-    >
-      <div className="flex items-start gap-1.5">
-        <div className="mt-0.5 shrink-0">
-          <HabitCheckbox completed={completed} color={habit.color} onChange={onToggle} size="sm" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1">
-            {habit.icon && <span className="shrink-0 text-xs">{habit.icon}</span>}
-            <p
-              className={cn('truncate text-xs font-medium flex-1 min-w-0', completed && 'line-through')}
-              style={{ color: 'var(--text-primary)' }}
-            >
-              {stripHtmlTags(habit.name)}
-            </p>
-            <span className="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ backgroundColor: `${habit.color}22`, color: habit.color }}>
-              Hábito
-            </span>
-            {!showTimeSeparate && (
-              <span className="shrink-0 text-[10px] whitespace-nowrap" style={{ color: `${habit.color}BB` }}>
-                {timeStart}
+      <div
+        className={cn(
+          'group absolute z-10 select-none overflow-hidden rounded-md border-l-3 px-2 py-1',
+          completed && 'opacity-50',
+          interacting ? 'shadow-lg z-30' : 'cursor-pointer',
+        )}
+        style={{
+          top: currentTop,
+          height: renderHeight,
+          borderLeftColor: habit.color,
+          backgroundColor: `${habit.color}18`,
+          transition: interacting ? 'none' : 'top 0.15s ease, height 0.15s ease',
+          ...overlapPos(col, totalCols),
+        }}
+        onMouseDown={handleDragStart}
+        {...tooltipHandlers}
+      >
+        <div className="flex items-start gap-1.5">
+          <div className="mt-0.5 shrink-0">
+            <HabitCheckbox
+              completed={completed}
+              color={habit.color}
+              onChange={onToggle}
+              size="sm"
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1">
+              {habit.icon && <span className="shrink-0 text-xs">{habit.icon}</span>}
+              <p
+                className={cn(
+                  'truncate text-xs font-medium flex-1 min-w-0',
+                  completed && 'line-through',
+                )}
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {stripHtmlTags(habit.name)}
+              </p>
+              <span
+                className="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
+                style={{ backgroundColor: `${habit.color}22`, color: habit.color }}
+              >
+                Hábito
               </span>
+              {!showTimeSeparate && (
+                <span
+                  className="shrink-0 text-[10px] whitespace-nowrap"
+                  style={{ color: `${habit.color}BB` }}
+                >
+                  {timeStart}
+                </span>
+              )}
+            </div>
+            {showTimeSeparate && (
+              <p className="text-[10px]" style={{ color: `${habit.color}BB` }}>
+                {timeStart}–{timeEnd}
+              </p>
             )}
           </div>
-          {showTimeSeparate && (
-            <p className="text-[10px]" style={{ color: `${habit.color}BB` }}>
-              {timeStart}–{timeEnd}
-            </p>
-          )}
+        </div>
+
+        {/* Resize handle */}
+        <div
+          data-resize-handle
+          className="absolute bottom-0 left-0 right-0 flex cursor-s-resize items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
+          style={{ height: 8 }}
+          onMouseDown={handleResizeStart}
+        >
+          <div className="h-1 w-8 rounded-full" style={{ backgroundColor: habit.color }} />
         </div>
       </div>
-
-      {/* Resize handle */}
-      <div
-        data-resize-handle
-        className="absolute bottom-0 left-0 right-0 flex cursor-s-resize items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
-        style={{ height: 8 }}
-        onMouseDown={handleResizeStart}
-      >
-        <div className="h-1 w-8 rounded-full" style={{ backgroundColor: habit.color }} />
-      </div>
-    </div>
-    {tooltipPortal}
+      {tooltipPortal}
     </>
   )
 }
 
 /* ── All-day task card ──────────────────────────── */
 
-function TimelineTaskCard({ task, onMouseEnter, onMouseLeave }: { task: Task; onMouseEnter?: (e: React.MouseEvent) => void; onMouseLeave?: (e: React.MouseEvent) => void }) {
+function TimelineTaskCard({
+  task,
+  onMouseEnter,
+  onMouseLeave,
+}: {
+  task: Task
+  onMouseEnter?: (e: React.MouseEvent) => void
+  onMouseLeave?: (e: React.MouseEvent) => void
+}) {
   const completeTask = useCompleteTask()
   const { setSelectedTaskId } = useAppStore()
   const color = PRIORITY_COLORS[task.priority] ?? PRIORITY_COLORS[4]
@@ -1542,10 +1716,7 @@ function TimelineTaskCard({ task, onMouseEnter, onMouseLeave }: { task: Task; on
         onChange={(completed) => completeTask.mutate({ id: task.id, completed })}
       />
       <span
-        className={cn(
-          'truncate text-xs font-medium',
-          task.is_completed && 'line-through',
-        )}
+        className={cn('truncate text-xs font-medium', task.is_completed && 'line-through')}
         style={{ color: 'var(--text-primary)' }}
       >
         {stripLabelTokensFromText(stripHtmlTags(task.title))}

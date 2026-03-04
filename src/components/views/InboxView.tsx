@@ -59,7 +59,8 @@ export function InboxView() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable) return
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable)
+        return
       if (e.key === 's' || e.key === 'S') {
         e.preventDefault()
         setSectionEditorOpen(true)
@@ -127,7 +128,11 @@ export function InboxView() {
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-14 animate-pulse rounded-lg" style={{ backgroundColor: 'var(--bg-secondary)' }} />
+          <div
+            key={i}
+            className="h-14 animate-pulse rounded-lg"
+            style={{ backgroundColor: 'var(--bg-secondary)' }}
+          />
         ))}
       </div>
     )
@@ -151,12 +156,7 @@ export function InboxView() {
 
     // Calendar view
     if (opts.viewStyle === 'calendar') {
-      return (
-        <CalendarView
-          calendarMode={opts.calendarMode}
-          onAddTask={() => setEditorOpen(true)}
-        />
-      )
+      return <CalendarView calendarMode={opts.calendarMode} onAddTask={() => setEditorOpen(true)} />
     }
 
     // List view (default)
@@ -213,18 +213,23 @@ export function InboxView() {
           Entrada
         </h1>
         <div className="flex items-center gap-2">
-          {opts.viewStyle !== 'panel' && opts.viewStyle !== 'calendar' && !isSelectMode && visibleTasks.length > 0 && (
-            <button
-              onClick={enter}
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
-              style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
-            >
-              <ListChecks size={14} />
-              Seleccionar
-            </button>
-          )}
+          {opts.viewStyle !== 'panel' &&
+            opts.viewStyle !== 'calendar' &&
+            !isSelectMode &&
+            visibleTasks.length > 0 && (
+              <button
+                onClick={enter}
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
+                style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')
+                }
+              >
+                <ListChecks size={14} />
+                Seleccionar
+              </button>
+            )}
           <ViewOptionsBar viewId={VIEW_ID} />
         </div>
       </div>

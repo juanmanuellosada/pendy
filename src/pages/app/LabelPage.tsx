@@ -75,7 +75,11 @@ export default function LabelPage() {
     return (
       <div className="space-y-3">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-14 animate-pulse rounded-lg" style={{ backgroundColor: 'var(--bg-secondary)' }} />
+          <div
+            key={i}
+            className="h-14 animate-pulse rounded-lg"
+            style={{ backgroundColor: 'var(--bg-secondary)' }}
+          />
         ))}
       </div>
     )
@@ -120,7 +124,10 @@ export default function LabelPage() {
           </p>
         </div>
       ) : (
-        <div className="divide-y rounded-lg border" style={{ borderColor: 'var(--border-secondary)' }}>
+        <div
+          className="divide-y rounded-lg border"
+          style={{ borderColor: 'var(--border-secondary)' }}
+        >
           {visibleTasks.map((task) => (
             <TaskItem
               key={task.id}

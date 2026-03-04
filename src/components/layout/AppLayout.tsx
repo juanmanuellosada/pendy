@@ -15,7 +15,16 @@ import { cn } from '@/lib/utils'
 import { useEffect } from 'react'
 
 export function AppLayout() {
-  const { sidebarOpen, sidebarCollapsed, taskDetailOpen, habitDetailOpen, setQuickAddOpen, eventEditorOpen, setEventEditorOpen, selectedTaskId } = useAppStore()
+  const {
+    sidebarOpen,
+    sidebarCollapsed,
+    taskDetailOpen,
+    habitDetailOpen,
+    setQuickAddOpen,
+    eventEditorOpen,
+    setEventEditorOpen,
+    selectedTaskId,
+  } = useAppStore()
   const { getViewOptions } = useUIStore()
   const { data: integrations = [] } = useCalendarIntegrations()
   usePushNotifications() // registers SW and syncs subscription on login
@@ -29,7 +38,8 @@ export function AppLayout() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName
-      const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable
+      const isInput =
+        tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable
 
       if (isInput) return
 
@@ -85,14 +95,18 @@ export function AppLayout() {
       }
     }
 
-
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [navigate, setQuickAddOpen, setEventEditorOpen, isCalendarConnected])
 
   // En mobile, redirigir el panel de TaskDetail a la vista fullscreen
   useEffect(() => {
-    if (isMobile && taskDetailOpen && selectedTaskId && !location.pathname.startsWith('/app/task/')) {
+    if (
+      isMobile &&
+      taskDetailOpen &&
+      selectedTaskId &&
+      !location.pathname.startsWith('/app/task/')
+    ) {
       navigate(`/app/task/${selectedTaskId}`)
     }
   }, [isMobile, taskDetailOpen, selectedTaskId, location.pathname, navigate])
@@ -157,13 +171,10 @@ export function AppLayout() {
       {habitDetailOpen && !isMobile && <HabitDetail />}
 
       {/* Global calendar event editor */}
-      {eventEditorOpen && (
-        <CalendarEventEditor onClose={() => setEventEditorOpen(false)} />
-      )}
+      {eventEditorOpen && <CalendarEventEditor onClose={() => setEventEditorOpen(false)} />}
 
       {/* Mobile bottom nav */}
       <MobileNav />
     </div>
   )
 }
-

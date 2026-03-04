@@ -16,11 +16,7 @@ export const habitService = {
   },
 
   async createHabit(habit: Omit<Habit, 'id' | 'created_at' | 'updated_at'>): Promise<Habit> {
-    const { data, error } = await supabase
-      .from('habits')
-      .insert(habit)
-      .select()
-      .single()
+    const { data, error } = await supabase.from('habits').insert(habit).select().single()
 
     if (error) throw error
     return data
@@ -121,10 +117,7 @@ export const habitService = {
 
     if (existing) {
       // Delete (toggle off)
-      const { error } = await supabase
-        .from('habit_completions')
-        .delete()
-        .eq('id', existing.id)
+      const { error } = await supabase.from('habit_completions').delete().eq('id', existing.id)
       if (error) throw error
       return { completed: false, completion: null }
     } else {

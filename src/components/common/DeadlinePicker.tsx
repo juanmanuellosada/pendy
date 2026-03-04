@@ -27,7 +27,12 @@ interface DeadlinePickerProps {
   inline?: boolean
 }
 
-export function DeadlinePicker({ deadline, onDeadlineChange, shortcutKey, inline = false }: DeadlinePickerProps) {
+export function DeadlinePicker({
+  deadline,
+  onDeadlineChange,
+  shortcutKey,
+  inline = false,
+}: DeadlinePickerProps) {
   const [open, setOpen] = useState(inline)
   const [viewMonth, setViewMonth] = useState<Date>(() =>
     deadline ? parseLocalDate(deadline) : new Date(),
@@ -131,7 +136,10 @@ export function DeadlinePicker({ deadline, onDeadlineChange, shortcutKey, inline
           {shortcutKey && (
             <span
               className="rounded px-1 py-0.5 font-mono text-[9px] leading-none"
-              style={{ backgroundColor: deadline ? 'rgba(59,130,246,0.15)' : 'var(--bg-primary)', color: 'var(--text-muted)' }}
+              style={{
+                backgroundColor: deadline ? 'rgba(59,130,246,0.15)' : 'var(--bg-primary)',
+                color: 'var(--text-muted)',
+              }}
             >
               {shortcutKey}
             </span>
@@ -145,7 +153,9 @@ export function DeadlinePicker({ deadline, onDeadlineChange, shortcutKey, inline
           style={{
             ...(inline ? {} : floatingStyle),
             backgroundColor: 'var(--bg-primary)',
-            ...(inline ? {} : { borderColor: 'var(--border-primary)', boxShadow: 'var(--shadow-lg)' }),
+            ...(inline
+              ? {}
+              : { borderColor: 'var(--border-primary)', boxShadow: 'var(--shadow-lg)' }),
           }}
         >
           {/* NLP input */}
@@ -185,12 +195,8 @@ export function DeadlinePicker({ deadline, onDeadlineChange, shortcutKey, inline
                 }}
                 className="flex w-full items-center gap-2.5 px-3 py-2 text-sm transition-colors"
                 style={{ color: 'var(--text-primary)' }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = 'transparent')
-                }
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
                 <CalendarDays size={14} style={{ color: 'var(--text-muted)' }} />
                 <span className="flex-1 text-left">{s.label}</span>
@@ -216,12 +222,8 @@ export function DeadlinePicker({ deadline, onDeadlineChange, shortcutKey, inline
                   onClick={() => setViewMonth((prev) => subMonths(prev, 1))}
                   className="rounded p-1 transition-colors"
                   style={{ color: 'var(--text-muted)' }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = 'transparent')
-                  }
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   <ChevronLeft size={14} />
                 </button>
@@ -229,12 +231,8 @@ export function DeadlinePicker({ deadline, onDeadlineChange, shortcutKey, inline
                   onClick={() => setViewMonth(new Date())}
                   className="rounded px-1.5 py-0.5 text-xs transition-colors"
                   style={{ color: 'var(--text-muted)' }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = 'transparent')
-                  }
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   ○
                 </button>
@@ -242,12 +240,8 @@ export function DeadlinePicker({ deadline, onDeadlineChange, shortcutKey, inline
                   onClick={() => setViewMonth((prev) => addMonths(prev, 1))}
                   className="rounded p-1 transition-colors"
                   style={{ color: 'var(--text-muted)' }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = 'transparent')
-                  }
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   <ChevronRight size={14} />
                 </button>
@@ -294,13 +288,13 @@ export function DeadlinePicker({ deadline, onDeadlineChange, shortcutKey, inline
                       fontWeight: isToday || isSelected ? 700 : 400,
                     }}
                     onMouseEnter={(e) => {
-                      if (!isSelected)
-                        e.currentTarget.style.backgroundColor = 'var(--bg-hover)'
+                      if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--bg-hover)'
                     }}
                     onMouseLeave={(e) => {
                       if (!isSelected)
-                        e.currentTarget.style.backgroundColor =
-                          isToday ? 'var(--bg-hover)' : 'transparent'
+                        e.currentTarget.style.backgroundColor = isToday
+                          ? 'var(--bg-hover)'
+                          : 'transparent'
                     }}
                   >
                     {format(day, 'd')}

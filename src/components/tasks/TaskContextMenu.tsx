@@ -75,8 +75,12 @@ export function TaskContextMenu({ task, x, y, onClose }: TaskContextMenuProps) {
   const [localHasTime, setLocalHasTime] = useState(task.has_time)
   const [localDuration, setLocalDuration] = useState<number | null>(task.duration_minutes)
   const [localIsRecurring, setLocalIsRecurring] = useState(task.is_recurring)
-  const [localRecurrenceRule, setLocalRecurrenceRule] = useState<string | null>(task.recurrence_rule ?? null)
-  const [localRecurrenceFrom, setLocalRecurrenceFrom] = useState<'due_date' | 'completion_date'>(task.recurrence_from ?? 'due_date')
+  const [localRecurrenceRule, setLocalRecurrenceRule] = useState<string | null>(
+    task.recurrence_rule ?? null,
+  )
+  const [localRecurrenceFrom, setLocalRecurrenceFrom] = useState<'due_date' | 'completion_date'>(
+    task.recurrence_from ?? 'due_date',
+  )
   const [localDeadline, setLocalDeadline] = useState<string | null>(task.deadline ?? null)
 
   // Adjust position so menu doesn't go off-screen
@@ -235,11 +239,18 @@ export function TaskContextMenu({ task, x, y, onClose }: TaskContextMenuProps) {
     updateTask.mutate({ id: task.id, updates: { duration_minutes: min } })
   }
 
-  const handleInlineRecurrenceChange = (recurring: boolean, rule: string | null, from: 'due_date' | 'completion_date') => {
+  const handleInlineRecurrenceChange = (
+    recurring: boolean,
+    rule: string | null,
+    from: 'due_date' | 'completion_date',
+  ) => {
     setLocalIsRecurring(recurring)
     setLocalRecurrenceRule(rule)
     setLocalRecurrenceFrom(from)
-    updateTask.mutate({ id: task.id, updates: { is_recurring: recurring, recurrence_rule: rule, recurrence_from: from } })
+    updateTask.mutate({
+      id: task.id,
+      updates: { is_recurring: recurring, recurrence_rule: rule, recurrence_from: from },
+    })
   }
 
   const handleInlineDeadlineChange = (dl: string | null) => {
@@ -267,7 +278,14 @@ export function TaskContextMenu({ task, x, y, onClose }: TaskContextMenuProps) {
 
   const regularProjects = projects.filter((p) => !p.is_archived)
 
-  const panelTitle = activePanel === 'date' ? 'Fecha' : activePanel === 'deadline' ? 'Fecha límite' : activePanel === 'reminder' ? 'Recordatorios' : ''
+  const panelTitle =
+    activePanel === 'date'
+      ? 'Fecha'
+      : activePanel === 'deadline'
+        ? 'Fecha límite'
+        : activePanel === 'reminder'
+          ? 'Recordatorios'
+          : ''
   const menuWidth = activePanel === 'reminder' ? 340 : activePanel ? 288 : 256
 
   const menu = (
@@ -378,7 +396,9 @@ export function TaskContextMenu({ task, x, y, onClose }: TaskContextMenuProps) {
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = color + '22')}
                   onMouseLeave={(e) =>
                     (e.currentTarget.style.backgroundColor =
-                      task.due_date === date && date !== null ? color + '22' : 'var(--bg-secondary)')
+                      task.due_date === date && date !== null
+                        ? color + '22'
+                        : 'var(--bg-secondary)')
                   }
                 >
                   <Icon size={15} style={{ color }} />
@@ -390,7 +410,9 @@ export function TaskContextMenu({ task, x, y, onClose }: TaskContextMenuProps) {
                 className="flex flex-1 items-center justify-center rounded-lg p-2 transition-colors"
                 style={{ backgroundColor: 'var(--bg-secondary)' }}
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')
+                }
               >
                 <MoreHorizontal size={15} style={{ color: 'var(--text-muted)' }} />
               </button>
@@ -419,9 +441,7 @@ export function TaskContextMenu({ task, x, y, onClose }: TaskContextMenuProps) {
                   className="flex flex-1 items-center justify-center rounded-lg p-2 transition-colors relative"
                   style={{
                     backgroundColor:
-                      task.priority === p
-                        ? PRIORITY_COLORS[p] + '22'
-                        : 'var(--bg-secondary)',
+                      task.priority === p ? PRIORITY_COLORS[p] + '22' : 'var(--bg-secondary)',
                   }}
                   onMouseEnter={(e) =>
                     (e.currentTarget.style.backgroundColor = PRIORITY_COLORS[p] + '22')
@@ -449,7 +469,11 @@ export function TaskContextMenu({ task, x, y, onClose }: TaskContextMenuProps) {
           <div className="my-1 mx-2 border-t" style={{ borderColor: 'var(--border-primary)' }} />
 
           {/* ── Fecha límite ── */}
-          <MenuItem icon={AlarmClock} label="Fecha límite" onClick={() => setActivePanel('deadline')} />
+          <MenuItem
+            icon={AlarmClock}
+            label="Fecha límite"
+            onClick={() => setActivePanel('deadline')}
+          />
 
           {/* ── Recordatorios ── */}
           <MenuItem icon={Bell} label="Recordatorios" onClick={() => setActivePanel('reminder')} />
@@ -592,7 +616,10 @@ function MoveSubmenu({
         marginLeft: 4,
       }}
     >
-      <p className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+      <p
+        className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider"
+        style={{ color: 'var(--text-muted)' }}
+      >
         Proyectos
       </p>
       {flattenProjectTree(buildProjectTree(projects)).map((project) => (
@@ -620,9 +647,7 @@ function MoveSubmenu({
               style={{ backgroundColor: project.color }}
             />
             <span className="flex-1 truncate text-left">{project.name}</span>
-            {task.project_id === project.id && (
-              <Check size={12} style={{ color: '#283B56' }} />
-            )}
+            {task.project_id === project.id && <Check size={12} style={{ color: '#283B56' }} />}
             <SectionIndicator projectId={project.id} />
           </button>
           {showSectionSubmenu === project.id && (

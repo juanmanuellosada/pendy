@@ -13,11 +13,7 @@ export const labelService = {
     return data ?? []
   },
 
-  async createLabel(label: {
-    user_id: string
-    name: string
-    color?: string
-  }): Promise<Label> {
+  async createLabel(label: { user_id: string; name: string; color?: string }): Promise<Label> {
     const { data: maxOrder } = await supabase
       .from('labels')
       .select('sort_order')
@@ -36,7 +32,10 @@ export const labelService = {
     return data
   },
 
-  async updateLabel(id: string, updates: Partial<Pick<Label, 'name' | 'color' | 'is_favorite'>>): Promise<Label> {
+  async updateLabel(
+    id: string,
+    updates: Partial<Pick<Label, 'name' | 'color' | 'is_favorite'>>,
+  ): Promise<Label> {
     const { data, error } = await supabase
       .from('labels')
       .update(updates)
@@ -80,7 +79,9 @@ export const labelService = {
   async getAllTaskLabelsMap(userId: string): Promise<Map<string, Label[]>> {
     const { data, error } = await supabase
       .from('task_labels')
-      .select('task_id, labels!inner(id, user_id, name, color, is_favorite, sort_order, created_at)')
+      .select(
+        'task_id, labels!inner(id, user_id, name, color, is_favorite, sort_order, created_at)',
+      )
       .eq('labels.user_id', userId)
 
     if (error) throw error

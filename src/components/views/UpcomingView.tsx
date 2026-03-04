@@ -4,7 +4,12 @@ import { Plus, CalendarDays, ListChecks } from 'lucide-react'
 import { useUpcomingTasks, useDeleteTask, useUpdateTask } from '@/hooks/useTasks'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { useUpcomingCalendarEvents } from '@/hooks/useCalendarEvents'
-import { useHabits, useHabitCompletions, useHabitSchedules, useToggleHabitCompletion } from '@/hooks/useHabits'
+import {
+  useHabits,
+  useHabitCompletions,
+  useHabitSchedules,
+  useToggleHabitCompletion,
+} from '@/hooks/useHabits'
 import { TaskItem } from '@/components/tasks/TaskItem'
 import { TaskEditor } from '@/components/tasks/TaskEditor'
 import { CalendarEventItem } from '@/components/common/CalendarEventItem'
@@ -65,7 +70,13 @@ export function UpcomingView() {
   }, [tasks, opts, labelsMap])
 
   const groupedDays = useMemo(() => {
-    const groups: { date: Date; label: string; tasks: Task[]; events: CalendarEvent[]; habits: typeof habits }[] = []
+    const groups: {
+      date: Date
+      label: string
+      tasks: Task[]
+      events: CalendarEvent[]
+      habits: typeof habits
+    }[] = []
     const today = startOfDay(new Date())
 
     for (let i = 0; i < upcomingDays; i++) {
@@ -74,7 +85,8 @@ export function UpcomingView() {
         (t) => t.due_date && isSameDay(parseLocalDate(t.due_date), date),
       )
       const dayEvents = calendarEvents.filter((e) => isSameDay(e.start, date))
-      const dayHabits = (opts.showHabits ?? true) ? habits.filter((h) => habitAppearsOnDate(h, date)) : []
+      const dayHabits =
+        (opts.showHabits ?? true) ? habits.filter((h) => habitAppearsOnDate(h, date)) : []
 
       if (dayTasks.length > 0 || dayEvents.length > 0 || dayHabits.length > 0) {
         let label: string
@@ -134,7 +146,11 @@ export function UpcomingView() {
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-14 animate-pulse rounded-lg" style={{ backgroundColor: 'var(--bg-secondary)' }} />
+          <div
+            key={i}
+            className="h-14 animate-pulse rounded-lg"
+            style={{ backgroundColor: 'var(--bg-secondary)' }}
+          />
         ))}
       </div>
     )
@@ -156,13 +172,7 @@ export function UpcomingView() {
 
     // Panel / Board view — columns = days
     if (opts.viewStyle === 'panel') {
-      return (
-        <DateBoardView
-          tasks={visibleTasks}
-          days={upcomingDays}
-          onAddTask={handleAddTask}
-        />
-      )
+      return <DateBoardView tasks={visibleTasks} days={upcomingDays} onAddTask={handleAddTask} />
     }
 
     // List view (default)
@@ -190,72 +200,88 @@ export function UpcomingView() {
 
     return (
       <div className="space-y-6">
-        {groupedDays.map(({ date, label, tasks: dayTasks, events: dayEvents, habits: dayHabits }) => (
-          <div key={date.toISOString()}>
-            <div className="mb-2 flex items-center justify-between group">
-              <h2
-                className="text-sm font-semibold capitalize"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                {label}
-                {dayTasks.length > 0 && (
-                  <span className="ml-2 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>
-                    {dayTasks.length} {dayTasks.length === 1 ? 'tarea' : 'tareas'}
-                  </span>
-                )}
-                {dayEvents.length > 0 && (
-                  <span className="ml-1 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>
-                    · {dayEvents.length} {dayEvents.length === 1 ? 'evento' : 'eventos'}
-                  </span>
-                )}
-                {dayHabits.length > 0 && (
-                  <span className="ml-1 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>
-                    · {dayHabits.length} {dayHabits.length === 1 ? 'hábito' : 'hábitos'}
-                  </span>
-                )}
-              </h2>
-              {!isSelectMode && (
-                <button
-                  onClick={() => handleAddTask(format(date, 'yyyy-MM-dd'))}
-                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-all opacity-0 group-hover:opacity-100"
-                  style={{ color: 'var(--text-muted)' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                  title={`Agregar tarea para ${label}`}
+        {groupedDays.map(
+          ({ date, label, tasks: dayTasks, events: dayEvents, habits: dayHabits }) => (
+            <div key={date.toISOString()}>
+              <div className="mb-2 flex items-center justify-between group">
+                <h2
+                  className="text-sm font-semibold capitalize"
+                  style={{ color: 'var(--text-primary)' }}
                 >
-                  <Plus size={13} />
-                </button>
-              )}
+                  {label}
+                  {dayTasks.length > 0 && (
+                    <span
+                      className="ml-2 text-xs font-normal"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      {dayTasks.length} {dayTasks.length === 1 ? 'tarea' : 'tareas'}
+                    </span>
+                  )}
+                  {dayEvents.length > 0 && (
+                    <span
+                      className="ml-1 text-xs font-normal"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      · {dayEvents.length} {dayEvents.length === 1 ? 'evento' : 'eventos'}
+                    </span>
+                  )}
+                  {dayHabits.length > 0 && (
+                    <span
+                      className="ml-1 text-xs font-normal"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      · {dayHabits.length} {dayHabits.length === 1 ? 'hábito' : 'hábitos'}
+                    </span>
+                  )}
+                </h2>
+                {!isSelectMode && (
+                  <button
+                    onClick={() => handleAddTask(format(date, 'yyyy-MM-dd'))}
+                    className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-all opacity-0 group-hover:opacity-100"
+                    style={{ color: 'var(--text-muted)' }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                    }
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    title={`Agregar tarea para ${label}`}
+                  >
+                    <Plus size={13} />
+                  </button>
+                )}
+              </div>
+              <div
+                className="divide-y rounded-lg border overflow-hidden"
+                style={{ borderColor: 'var(--border-secondary)' }}
+              >
+                {dayTasks.map((task) => (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    labels={labelsMap?.get(task.id)}
+                    showProject
+                    isSelectMode={isSelectMode}
+                    isSelected={selectedIds.has(task.id)}
+                    onToggleSelect={() => toggle(task.id)}
+                  />
+                ))}
+                {dayEvents.map((event) => (
+                  <CalendarEventItem key={event.id} event={event} />
+                ))}
+                {dayHabits.map((habit) => (
+                  <HabitItem
+                    key={habit.id}
+                    habit={habit}
+                    completions={habitCompletions}
+                    schedules={habitSchedules}
+                    date={date}
+                    onToggle={(habitId, d) => toggleHabitCompletion.mutate({ habitId, date: d })}
+                    isPending={toggleHabitCompletion.isPending}
+                  />
+                ))}
+              </div>
             </div>
-            <div className="divide-y rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border-secondary)' }}>
-              {dayTasks.map((task) => (
-                <TaskItem
-                  key={task.id}
-                  task={task}
-                  labels={labelsMap?.get(task.id)}
-                  showProject
-                  isSelectMode={isSelectMode}
-                  isSelected={selectedIds.has(task.id)}
-                  onToggleSelect={() => toggle(task.id)}
-                />
-              ))}
-              {dayEvents.map((event) => (
-                <CalendarEventItem key={event.id} event={event} />
-              ))}
-              {dayHabits.map((habit) => (
-                <HabitItem
-                  key={habit.id}
-                  habit={habit}
-                  completions={habitCompletions}
-                  schedules={habitSchedules}
-                  date={date}
-                  onToggle={(habitId, d) => toggleHabitCompletion.mutate({ habitId, date: d })}
-                  isPending={toggleHabitCompletion.isPending}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
+          ),
+        )}
       </div>
     )
   }

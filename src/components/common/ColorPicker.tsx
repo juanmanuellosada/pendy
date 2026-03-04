@@ -5,14 +5,20 @@ import { LABEL_COLORS } from '@/hooks/useLabels'
 // ── Color conversion helpers ────────────────────────────────────────────────
 
 function hsvToRgb(h: number, s: number, v: number): [number, number, number] {
-  s /= 100; v /= 100
+  s /= 100
+  v /= 100
   const i = Math.floor(h / 60) % 6
   const f = h / 60 - Math.floor(h / 60)
   const p = v * (1 - s)
   const q = v * (1 - f * s)
   const t = v * (1 - (1 - f) * s)
   const cases: [number, number, number][] = [
-    [v, t, p], [q, v, p], [p, v, t], [p, q, v], [t, p, v], [v, p, q],
+    [v, t, p],
+    [q, v, p],
+    [p, v, t],
+    [p, q, v],
+    [t, p, v],
+    [v, p, q],
   ]
   return cases[i]!.map((x) => Math.round(x * 255)) as [number, number, number]
 }
@@ -27,8 +33,11 @@ function hexToRgb(hex: string): [number, number, number] | null {
 }
 
 function rgbToHsv(r: number, g: number, b: number): [number, number, number] {
-  r /= 255; g /= 255; b /= 255
-  const max = Math.max(r, g, b), min = Math.min(r, g, b)
+  r /= 255
+  g /= 255
+  b /= 255
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b)
   const v = max
   const s = max === 0 ? 0 : (max - min) / max
   let h = 0
@@ -82,52 +91,75 @@ export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) 
   const currentHex = hsvToHex(...hsv)
 
   // Emit on every HSV change
-  const applyHsv = useCallback((newHsv: [number, number, number]) => {
-    setHsv(newHsv)
-    const hex = hsvToHex(...newHsv)
-    setHexInput(hex)
-    onChange(hex)
-  }, [onChange])
+  const applyHsv = useCallback(
+    (newHsv: [number, number, number]) => {
+      setHsv(newHsv)
+      const hex = hsvToHex(...newHsv)
+      setHexInput(hex)
+      onChange(hex)
+    },
+    [onChange],
+  )
 
   // ── Picker area (sat + val) ─────────────────────────────────────────────
   const pickerRef = useRef<HTMLDivElement>(null)
   const draggingPicker = useRef(false)
 
-  const handlePickerPointer = useCallback((clientX: number, clientY: number) => {
-    const el = pickerRef.current
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    const x = clamp((clientX - rect.left) / rect.width, 0, 1)
-    const y = clamp((clientY - rect.top) / rect.height, 0, 1)
-    applyHsv([hsv[0], x * 100, (1 - y) * 100])
-  }, [hsv, applyHsv])
+  const handlePickerPointer = useCallback(
+    (clientX: number, clientY: number) => {
+      const el = pickerRef.current
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      const x = clamp((clientX - rect.left) / rect.width, 0, 1)
+      const y = clamp((clientY - rect.top) / rect.height, 0, 1)
+      applyHsv([hsv[0], x * 100, (1 - y) * 100])
+    },
+    [hsv, applyHsv],
+  )
 
   useEffect(() => {
-    const onMove = (e: PointerEvent) => { if (draggingPicker.current) handlePickerPointer(e.clientX, e.clientY) }
-    const onUp = () => { draggingPicker.current = false }
+    const onMove = (e: PointerEvent) => {
+      if (draggingPicker.current) handlePickerPointer(e.clientX, e.clientY)
+    }
+    const onUp = () => {
+      draggingPicker.current = false
+    }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
-    return () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp) }
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
   }, [handlePickerPointer])
 
   // ── Hue slider ─────────────────────────────────────────────────────────
   const hueRef = useRef<HTMLDivElement>(null)
   const draggingHue = useRef(false)
 
-  const handleHuePointer = useCallback((clientX: number) => {
-    const el = hueRef.current
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    const x = clamp((clientX - rect.left) / rect.width, 0, 1)
-    applyHsv([x * 360, hsv[1], hsv[2]])
-  }, [hsv, applyHsv])
+  const handleHuePointer = useCallback(
+    (clientX: number) => {
+      const el = hueRef.current
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      const x = clamp((clientX - rect.left) / rect.width, 0, 1)
+      applyHsv([x * 360, hsv[1], hsv[2]])
+    },
+    [hsv, applyHsv],
+  )
 
   useEffect(() => {
-    const onMove = (e: PointerEvent) => { if (draggingHue.current) handleHuePointer(e.clientX) }
-    const onUp = () => { draggingHue.current = false }
+    const onMove = (e: PointerEvent) => {
+      if (draggingHue.current) handleHuePointer(e.clientX)
+    }
+    const onUp = () => {
+      draggingHue.current = false
+    }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
-    return () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp) }
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
   }, [handleHuePointer])
 
   // ── Hex input ──────────────────────────────────────────────────────────
@@ -148,9 +180,10 @@ export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) 
       // Flip upward if not enough space below
       const spaceBelow = window.innerHeight - rect.bottom
       const popupH = 360 // approximate
-      const top = spaceBelow >= popupH
-        ? rect.bottom + window.scrollY + 8
-        : rect.top + window.scrollY - popupH - 8
+      const top =
+        spaceBelow >= popupH
+          ? rect.bottom + window.scrollY + 8
+          : rect.top + window.scrollY - popupH - 8
       // Clamp horizontally so popup stays within viewport
       const popupW = Math.min(248, window.innerWidth - 16)
       const left = Math.max(8, Math.min(rect.left, window.innerWidth - popupW - 8))
@@ -174,7 +207,10 @@ export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) 
     const close = () => setOpen(false)
     window.addEventListener('scroll', close, true)
     window.addEventListener('resize', close)
-    return () => { window.removeEventListener('scroll', close, true); window.removeEventListener('resize', close) }
+    return () => {
+      window.removeEventListener('scroll', close, true)
+      window.removeEventListener('resize', close)
+    }
   }, [open])
 
   // ── Derived values for rendering ───────────────────────────────────────
@@ -238,8 +274,7 @@ export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) 
               ref={hueRef}
               className="relative mb-3 h-3 w-full cursor-pointer select-none rounded-full"
               style={{
-                background:
-                  'linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)',
+                background: 'linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)',
               }}
               onPointerDown={(e) => {
                 draggingHue.current = true
@@ -281,10 +316,7 @@ export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) 
             </div>
 
             {/* ── Swatches ── */}
-            <div
-              className="border-t pt-3"
-              style={{ borderColor: 'var(--border-primary)' }}
-            >
+            <div className="border-t pt-3" style={{ borderColor: 'var(--border-primary)' }}>
               <div className="grid grid-cols-5 gap-1.5">
                 {LABEL_COLORS.map((color) => {
                   const active = value.toLowerCase() === color.toLowerCase()
@@ -300,7 +332,9 @@ export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) 
                       className="relative h-7 w-full rounded-md transition-transform hover:scale-110 focus:outline-none"
                       style={{
                         backgroundColor: color,
-                        boxShadow: active ? `0 0 0 2px var(--bg-primary), 0 0 0 4px ${color}` : 'none',
+                        boxShadow: active
+                          ? `0 0 0 2px var(--bg-primary), 0 0 0 4px ${color}`
+                          : 'none',
                       }}
                       title={color}
                     />

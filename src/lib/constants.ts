@@ -29,9 +29,21 @@ export const PRIORITY_LABELS: Record<number, string> = {
 }
 
 export const PROJECT_COLORS = [
-  '#283B56', '#EC1E2A', '#F59E0B', '#22C55E', '#3B82F6',
-  '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#6366F1',
-  '#84CC16', '#06B6D4', '#E11D48', '#7C3AED', '#0EA5E9',
+  '#283B56',
+  '#EC1E2A',
+  '#F59E0B',
+  '#22C55E',
+  '#3B82F6',
+  '#8B5CF6',
+  '#EC4899',
+  '#14B8A6',
+  '#F97316',
+  '#6366F1',
+  '#84CC16',
+  '#06B6D4',
+  '#E11D48',
+  '#7C3AED',
+  '#0EA5E9',
 ] as const
 
 export const DEFAULT_PROJECT_COLOR = '#283B56'

@@ -53,11 +53,17 @@ export default function ForgotPasswordPage() {
       />
       <div
         className="absolute top-0 right-0 w-[400px] h-[400px]"
-        style={{ background: 'radial-gradient(ellipse at top right, rgba(236,30,42,0.09) 0%, transparent 65%)' }}
+        style={{
+          background:
+            'radial-gradient(ellipse at top right, rgba(236,30,42,0.09) 0%, transparent 65%)',
+        }}
       />
       <div
         className="absolute bottom-0 left-0 w-[350px] h-[350px]"
-        style={{ background: 'radial-gradient(ellipse at bottom left, rgba(40,59,86,0.35) 0%, transparent 65%)' }}
+        style={{
+          background:
+            'radial-gradient(ellipse at bottom left, rgba(40,59,86,0.35) 0%, transparent 65%)',
+        }}
       />
     </div>
   )
@@ -87,7 +93,11 @@ export default function ForgotPasswordPage() {
           </h1>
           <p
             className="text-sm mb-8"
-            style={{ color: 'rgba(255,255,255,0.45)', fontFamily: '"DM Sans", system-ui', lineHeight: 1.6 }}
+            style={{
+              color: 'rgba(255,255,255,0.45)',
+              fontFamily: '"DM Sans", system-ui',
+              lineHeight: 1.6,
+            }}
           >
             Revisa tu bandeja de entrada. Te enviamos un enlace para restablecer tu contraseña.
           </p>
@@ -155,10 +165,7 @@ export default function ForgotPasswordPage() {
             >
               Recuperar contraseña
             </h1>
-            <p
-              className="text-sm text-white/45"
-              style={{ fontFamily: '"DM Sans", system-ui' }}
-            >
+            <p className="text-sm text-white/45" style={{ fontFamily: '"DM Sans", system-ui' }}>
               Te enviamos un enlace a tu email
             </p>
           </div>
@@ -200,11 +207,20 @@ export default function ForgotPasswordPage() {
                   border: `1px solid ${errors.email ? 'rgba(236,30,42,0.5)' : 'rgba(255,255,255,0.08)'}`,
                   fontFamily: '"DM Sans", system-ui',
                 }}
-                onFocus={(e) => { e.target.style.borderColor = 'rgba(255,255,255,0.2)' }}
-                onBlur={(e) => { e.target.style.borderColor = errors.email ? 'rgba(236,30,42,0.5)' : 'rgba(255,255,255,0.08)' }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'rgba(255,255,255,0.2)'
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = errors.email
+                    ? 'rgba(236,30,42,0.5)'
+                    : 'rgba(255,255,255,0.08)'
+                }}
               />
               {errors.email && (
-                <p className="mt-1.5 text-xs" style={{ color: '#f87171', fontFamily: '"DM Sans", system-ui' }}>
+                <p
+                  className="mt-1.5 text-xs"
+                  style={{ color: '#f87171', fontFamily: '"DM Sans", system-ui' }}
+                >
                   {errors.email.message}
                 </p>
               )}

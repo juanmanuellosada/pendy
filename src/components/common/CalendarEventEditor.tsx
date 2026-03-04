@@ -69,8 +69,18 @@ const ALL_DAYS: DayCode[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU']
 const DOW_TO_CODE: DayCode[] = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA']
 
 const MONTH_NAMES_ES = [
-  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
 ]
 
 // ── RRULE parsing ──────────────────────────────────────────────────────────────
@@ -173,15 +183,19 @@ function buildPhotonLabel(p: PhotonFeature['properties']): string {
   return parts.join(', ')
 }
 
-async function fetchLocationSuggestions(query: string): Promise<{ description: string; place_id: string }[]> {
+async function fetchLocationSuggestions(
+  query: string,
+): Promise<{ description: string; place_id: string }[]> {
   const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=en`
   const res = await fetch(url)
   if (!res.ok) return []
-  const data = await res.json() as { features: PhotonFeature[] }
-  return data.features.map((f, i) => ({
-    description: buildPhotonLabel(f.properties),
-    place_id: String(f.properties.osm_id ?? i),
-  })).filter((s) => s.description.length > 0)
+  const data = (await res.json()) as { features: PhotonFeature[] }
+  return data.features
+    .map((f, i) => ({
+      description: buildPhotonLabel(f.properties),
+      place_id: String(f.properties.osm_id ?? i),
+    }))
+    .filter((s) => s.description.length > 0)
 }
 
 // ── Time options ───────────────────────────────────────────────────────────────
@@ -303,12 +317,9 @@ function CustomSelect({
                 className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-sm text-left"
                 style={{
                   color: 'var(--text-primary)',
-                  backgroundColor:
-                    value === opt.value ? 'var(--bg-hover)' : 'transparent',
+                  backgroundColor: value === opt.value ? 'var(--bg-hover)' : 'transparent',
                 }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
-                }
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
                 onMouseLeave={(e) =>
                   (e.currentTarget.style.backgroundColor =
                     value === opt.value ? 'var(--bg-hover)' : 'transparent')
@@ -406,12 +417,16 @@ function CustomDatePicker({
   }
 
   const prevMonth = () => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1) }
-    else setViewMonth((m) => m - 1)
+    if (viewMonth === 0) {
+      setViewMonth(11)
+      setViewYear((y) => y - 1)
+    } else setViewMonth((m) => m - 1)
   }
   const nextMonth = () => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear((y) => y + 1) }
-    else setViewMonth((m) => m + 1)
+    if (viewMonth === 11) {
+      setViewMonth(0)
+      setViewYear((y) => y + 1)
+    } else setViewMonth((m) => m + 1)
   }
 
   const displayLabel = parsed
@@ -430,8 +445,12 @@ function CustomDatePicker({
           color: parsed ? 'var(--text-primary)' : 'var(--text-muted)',
           backgroundColor: 'var(--bg-primary)',
         }}
-        onMouseEnter={(e) => { if (!open) e.currentTarget.style.borderColor = '#283B56' }}
-        onMouseLeave={(e) => { if (!open) e.currentTarget.style.borderColor = 'var(--border-secondary)' }}
+        onMouseEnter={(e) => {
+          if (!open) e.currentTarget.style.borderColor = '#283B56'
+        }}
+        onMouseLeave={(e) => {
+          if (!open) e.currentTarget.style.borderColor = 'var(--border-secondary)'
+        }}
       >
         <span>{displayLabel}</span>
         <ChevronDown
@@ -603,8 +622,12 @@ function CustomTimePicker({
           color: 'var(--text-primary)',
           backgroundColor: 'var(--bg-primary)',
         }}
-        onMouseEnter={(e) => { if (!open) e.currentTarget.style.borderColor = '#283B56' }}
-        onMouseLeave={(e) => { if (!open) e.currentTarget.style.borderColor = 'var(--border-secondary)' }}
+        onMouseEnter={(e) => {
+          if (!open) e.currentTarget.style.borderColor = '#283B56'
+        }}
+        onMouseLeave={(e) => {
+          if (!open) e.currentTarget.style.borderColor = 'var(--border-secondary)'
+        }}
       >
         <span>{value || '00:00'}</span>
         <ChevronDown
@@ -758,9 +781,7 @@ function RecurrenceSection({
               <CustomSelect
                 value={custom.freq}
                 options={freqOptions}
-                onChange={(v) =>
-                  onCustomChange({ ...custom, freq: v as CustomRec['freq'] })
-                }
+                onChange={(v) => onCustomChange({ ...custom, freq: v as CustomRec['freq'] })}
               />
             </div>
           </div>
@@ -775,9 +796,7 @@ function RecurrenceSection({
                   onClick={() => toggleDay(day)}
                   className="h-7 w-7 rounded-full text-xs font-medium transition-colors"
                   style={{
-                    backgroundColor: custom.days.includes(day)
-                      ? '#283B56'
-                      : 'var(--bg-hover)',
+                    backgroundColor: custom.days.includes(day) ? '#283B56' : 'var(--bg-hover)',
                     color: custom.days.includes(day) ? '#fff' : 'var(--text-secondary)',
                   }}
                 >
@@ -796,9 +815,7 @@ function RecurrenceSection({
               <CustomSelect
                 value={custom.endType}
                 options={endOptions}
-                onChange={(v) =>
-                  onCustomChange({ ...custom, endType: v as CustomRec['endType'] })
-                }
+                onChange={(v) => onCustomChange({ ...custom, endType: v as CustomRec['endType'] })}
               />
             </div>
             {custom.endType === 'count' && (
@@ -873,9 +890,7 @@ function RemindersSection({
   }
 
   const updateReminder = (idx: number, patch: Partial<CalendarEventReminder>) => {
-    onChange(
-      reminders.map((r, i) => (i === idx ? { ...r, ...patch } : r)),
-    )
+    onChange(reminders.map((r, i) => (i === idx ? { ...r, ...patch } : r)))
   }
 
   return (
@@ -984,15 +999,19 @@ export function CalendarEventEditor({
 
   // ── Form state ───────────────────────────────────────────────────────────────
 
-  const initStart = event?.start ?? (() => {
-    const d = defaultDate ? new Date(defaultDate) : new Date()
-    d.setHours(defaultHour, 0, 0, 0)
-    return d
-  })()
-  const initEnd = event?.end ?? (() => {
-    const d = new Date(initStart.getTime() + (defaultDurationMinutes ?? 60) * 60_000)
-    return d
-  })()
+  const initStart =
+    event?.start ??
+    (() => {
+      const d = defaultDate ? new Date(defaultDate) : new Date()
+      d.setHours(defaultHour, 0, 0, 0)
+      return d
+    })()
+  const initEnd =
+    event?.end ??
+    (() => {
+      const d = new Date(initStart.getTime() + (defaultDurationMinutes ?? 60) * 60_000)
+      return d
+    })()
 
   const [title, setTitle] = useState(event?.title ?? '')
   const [description, setDescription] = useState(event?.description ?? '')
@@ -1236,329 +1255,330 @@ export function CalendarEventEditor({
 
   const cardInner = (
     <>
-        {/* Header */}
+      {/* Header */}
+      <div
+        className="flex items-center justify-between border-b px-5 py-4"
+        style={{ borderColor: 'var(--border-primary)' }}
+      >
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          {isEditing ? 'Editar evento' : 'Nuevo evento'}
+        </h2>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setFullscreen((f) => !f)}
+            className="rounded-lg p-1.5 transition-colors"
+            style={{ color: 'var(--text-muted)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            title={fullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+            aria-label={fullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+          >
+            {fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+          </button>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1.5 transition-colors"
+            style={{ color: 'var(--text-muted)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            aria-label="Cerrar"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
+        {/* Recurring event notice */}
+        {isEditing && event?.recurringEventId && (
+          <div
+            className="rounded-lg px-3 py-2 text-xs"
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              color: 'var(--text-secondary)',
+              border: '1px solid var(--border-secondary)',
+            }}
+          >
+            <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
+              Evento recurrente.
+            </span>{' '}
+            Solo se editará esta ocurrencia.
+          </div>
+        )}
+
+        {/* Title */}
+        <div>
+          <input
+            ref={titleRef}
+            type="text"
+            placeholder="Título del evento"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm font-medium outline-none transition-colors"
+            style={{
+              borderColor: 'var(--border-primary)',
+              color: 'var(--text-primary)',
+            }}
+            onFocus={(e) => (e.currentTarget.style.borderColor = '#283B56')}
+            onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border-primary)')}
+          />
+        </div>
+
+        {/* Description */}
+        <div className="flex items-start gap-2.5">
+          <AlignLeft size={14} className="mt-2 shrink-0" style={{ color: 'var(--text-muted)' }} />
+          <textarea
+            placeholder="Descripción (opcional)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={2}
+            className="w-full resize-none rounded-lg border bg-transparent px-3 py-2 text-sm outline-none transition-colors"
+            style={{ borderColor: 'var(--border-secondary)', color: 'var(--text-primary)' }}
+            onFocus={(e) => (e.currentTarget.style.borderColor = '#283B56')}
+            onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border-secondary)')}
+          />
+        </div>
+
+        {/* Location with custom autocomplete */}
+        <div className="flex items-center gap-2.5">
+          <MapPin size={14} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
+          <input
+            ref={locationInputRef}
+            type="text"
+            placeholder="Ubicación (opcional)"
+            value={location}
+            onChange={(e) => handleLocationChange(e.target.value)}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-secondary)'
+              setTimeout(() => setShowLocationDrop(false), 150)
+            }}
+            className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none transition-colors"
+            style={{ borderColor: 'var(--border-secondary)', color: 'var(--text-primary)' }}
+            onFocus={(e) => (e.currentTarget.style.borderColor = '#283B56')}
+            autoComplete="off"
+          />
+        </div>
+
+        {/* Location suggestions dropdown */}
+        {showLocationDrop &&
+          locationSuggestions.length > 0 &&
+          createPortal(
+            <div
+              ref={locationDropRef}
+              style={{
+                ...locationDropStyle,
+                backgroundColor: 'var(--bg-primary)',
+                border: '1px solid var(--border-primary)',
+                borderRadius: 10,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+                maxHeight: 220,
+                overflowY: 'auto',
+                padding: 4,
+              }}
+            >
+              {locationSuggestions.map((s) => (
+                <button
+                  key={s.place_id}
+                  type="button"
+                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-left"
+                  style={{ color: 'var(--text-primary)' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  onMouseDown={(e) => {
+                    e.preventDefault() // prevent input blur
+                    setLocation(s.description)
+                    setLocationSuggestions([])
+                    setShowLocationDrop(false)
+                  }}
+                >
+                  <MapPin size={12} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
+                  <span className="truncate">{s.description}</span>
+                </button>
+              ))}
+            </div>,
+            document.body,
+          )}
+
+        {/* Date + all-day toggle */}
+        <div className="flex items-center gap-2.5">
+          <Calendar size={14} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
+          <div className="flex-1">
+            <CustomDatePicker value={dateValue} onChange={setDateValue} />
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsAllDay(!isAllDay)}
+            className="flex items-center gap-1.5 cursor-pointer select-none text-xs whitespace-nowrap"
+            style={{
+              color: 'var(--text-secondary)',
+              background: 'none',
+              border: 'none',
+              padding: 0,
+            }}
+          >
+            <span
+              className="flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-all"
+              style={{
+                borderColor: isAllDay ? '#283B56' : 'var(--border-primary)',
+                backgroundColor: isAllDay ? '#283B56' : 'transparent',
+              }}
+            >
+              {isAllDay && <Check size={10} className="text-white" strokeWidth={3} />}
+            </span>
+            Todo el día
+          </button>
+        </div>
+
+        {/* Time pickers */}
+        {!isAllDay && (
+          <div className="flex items-center gap-2.5">
+            <Clock size={14} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
+            <div className="flex items-center gap-2 flex-1">
+              <div className="flex-1">
+                <CustomTimePicker value={startTime} onChange={setStartTime} />
+              </div>
+              <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)' }}>
+                –
+              </span>
+              <div className="flex-1">
+                <CustomTimePicker value={endTime} onChange={setEndTime} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Recurrence (hidden for recurring instances) */}
+        {!event?.recurringEventId && (
+          <RecurrenceSection
+            preset={recurrencePreset}
+            custom={customRec}
+            eventDate={new Date(dateValue + 'T00:00:00')}
+            onPresetChange={setRecurrencePreset}
+            onCustomChange={setCustomRec}
+          />
+        )}
+
+        {/* Reminders */}
+        <RemindersSection reminders={reminders} onChange={setReminders} />
+
+        {/* Calendar selector */}
+        {calendarOptions.length > 1 && (
+          <div className="flex items-center gap-2.5">
+            <span
+              className="h-3 w-3 shrink-0 rounded-full"
+              style={{
+                backgroundColor:
+                  calendarOptions.find((c) => c.value === calendarId)?.color ?? '#4285F4',
+              }}
+            />
+            <div className="flex-1">
+              <CustomSelect
+                value={calendarId}
+                options={calendarOptions}
+                onChange={handleCalendarChange}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Calendar move notice */}
+        {calendarChanged && (
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            El evento se moverá al calendario seleccionado.
+          </p>
+        )}
+
+        {/* Error */}
+        {error && (
+          <p className="text-xs font-medium" style={{ color: '#EC1E2A' }}>
+            {error}
+          </p>
+        )}
+
+        {/* Actions */}
         <div
-          className="flex items-center justify-between border-b px-5 py-4"
-          style={{ borderColor: 'var(--border-primary)' }}
+          className="flex items-center justify-between border-t pt-3"
+          style={{ borderColor: 'var(--border-secondary)' }}
         >
-          <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {isEditing ? 'Editar evento' : 'Nuevo evento'}
-          </h2>
-          <div className="flex items-center gap-1">
+          {/* Delete */}
+          {isEditing ? (
+            confirmDelete ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  ¿Confirmar?
+                </span>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={isLoading}
+                  className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+                  style={{ backgroundColor: '#EC1E2A', color: '#fff' }}
+                >
+                  {deleteEvent.isPending ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    'Eliminar'
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(false)}
+                  className="text-xs"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  Cancelar
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs transition-colors"
+                style={{ color: '#EC1E2A' }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#EC1E2A18')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <Trash2 size={13} />
+                Eliminar evento
+              </button>
+            )
+          ) : (
+            <div />
+          )}
+
+          {/* Cancel + Save */}
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setFullscreen((f) => !f)}
-              className="rounded-lg p-1.5 transition-colors"
-              style={{ color: 'var(--text-muted)' }}
+              onClick={onClose}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+              style={{
+                border: '1px solid var(--border-primary)',
+                color: 'var(--text-secondary)',
+              }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              title={fullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
-              aria-label={fullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
             >
-              {fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              Cancelar
             </button>
             <button
-              onClick={onClose}
-              className="rounded-lg p-1.5 transition-colors"
-              style={{ color: 'var(--text-muted)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              aria-label="Cerrar"
+              type="submit"
+              disabled={isLoading || !title.trim()}
+              className={cn(
+                'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all',
+                (isLoading || !title.trim()) && 'opacity-60 cursor-not-allowed',
+              )}
+              style={{ backgroundColor: '#283B56', color: '#fff' }}
             >
-              <X size={16} />
+              {(createEvent.isPending || updateEvent.isPending || moveEvent.isPending) && (
+                <Loader2 size={12} className="animate-spin" />
+              )}
+              {isEditing ? 'Guardar cambios' : 'Crear evento'}
             </button>
           </div>
         </div>
-
-        <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
-          {/* Recurring event notice */}
-          {isEditing && event?.recurringEventId && (
-            <div
-              className="rounded-lg px-3 py-2 text-xs"
-              style={{
-                backgroundColor: 'var(--bg-secondary)',
-                color: 'var(--text-secondary)',
-                border: '1px solid var(--border-secondary)',
-              }}
-            >
-              <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
-                Evento recurrente.
-              </span>{' '}
-              Solo se editará esta ocurrencia.
-            </div>
-          )}
-
-          {/* Title */}
-          <div>
-            <input
-              ref={titleRef}
-              type="text"
-              placeholder="Título del evento"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm font-medium outline-none transition-colors"
-              style={{
-                borderColor: 'var(--border-primary)',
-                color: 'var(--text-primary)',
-              }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = '#283B56')}
-              onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border-primary)')}
-            />
-          </div>
-
-          {/* Description */}
-          <div className="flex items-start gap-2.5">
-            <AlignLeft size={14} className="mt-2 shrink-0" style={{ color: 'var(--text-muted)' }} />
-            <textarea
-              placeholder="Descripción (opcional)"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              className="w-full resize-none rounded-lg border bg-transparent px-3 py-2 text-sm outline-none transition-colors"
-              style={{ borderColor: 'var(--border-secondary)', color: 'var(--text-primary)' }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = '#283B56')}
-              onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border-secondary)')}
-            />
-          </div>
-
-          {/* Location with custom autocomplete */}
-          <div className="flex items-center gap-2.5">
-            <MapPin size={14} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
-            <input
-              ref={locationInputRef}
-              type="text"
-              placeholder="Ubicación (opcional)"
-              value={location}
-              onChange={(e) => handleLocationChange(e.target.value)}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border-secondary)'
-                setTimeout(() => setShowLocationDrop(false), 150)
-              }}
-              className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none transition-colors"
-              style={{ borderColor: 'var(--border-secondary)', color: 'var(--text-primary)' }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = '#283B56')}
-              autoComplete="off"
-            />
-          </div>
-
-          {/* Location suggestions dropdown */}
-          {showLocationDrop &&
-            locationSuggestions.length > 0 &&
-            createPortal(
-              <div
-                ref={locationDropRef}
-                style={{
-                  ...locationDropStyle,
-                  backgroundColor: 'var(--bg-primary)',
-                  border: '1px solid var(--border-primary)',
-                  borderRadius: 10,
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
-                  maxHeight: 220,
-                  overflowY: 'auto',
-                  padding: 4,
-                }}
-              >
-                {locationSuggestions.map((s) => (
-                  <button
-                    key={s.place_id}
-                    type="button"
-                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-left"
-                    style={{ color: 'var(--text-primary)' }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = 'transparent')
-                    }
-                    onMouseDown={(e) => {
-                      e.preventDefault() // prevent input blur
-                      setLocation(s.description)
-                      setLocationSuggestions([])
-                      setShowLocationDrop(false)
-                    }}
-                  >
-                    <MapPin size={12} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
-                    <span className="truncate">{s.description}</span>
-                  </button>
-                ))}
-              </div>,
-              document.body,
-            )}
-
-          {/* Date + all-day toggle */}
-          <div className="flex items-center gap-2.5">
-            <Calendar size={14} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
-            <div className="flex-1">
-              <CustomDatePicker value={dateValue} onChange={setDateValue} />
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsAllDay(!isAllDay)}
-              className="flex items-center gap-1.5 cursor-pointer select-none text-xs whitespace-nowrap"
-              style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', padding: 0 }}
-            >
-              <span
-                className="flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-all"
-                style={{
-                  borderColor: isAllDay ? '#283B56' : 'var(--border-primary)',
-                  backgroundColor: isAllDay ? '#283B56' : 'transparent',
-                }}
-              >
-                {isAllDay && <Check size={10} className="text-white" strokeWidth={3} />}
-              </span>
-              Todo el día
-            </button>
-          </div>
-
-          {/* Time pickers */}
-          {!isAllDay && (
-            <div className="flex items-center gap-2.5">
-              <Clock size={14} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
-              <div className="flex items-center gap-2 flex-1">
-                <div className="flex-1">
-                  <CustomTimePicker value={startTime} onChange={setStartTime} />
-                </div>
-                <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)' }}>
-                  –
-                </span>
-                <div className="flex-1">
-                  <CustomTimePicker value={endTime} onChange={setEndTime} />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Recurrence (hidden for recurring instances) */}
-          {!event?.recurringEventId && (
-            <RecurrenceSection
-              preset={recurrencePreset}
-              custom={customRec}
-              eventDate={new Date(dateValue + 'T00:00:00')}
-              onPresetChange={setRecurrencePreset}
-              onCustomChange={setCustomRec}
-            />
-          )}
-
-          {/* Reminders */}
-          <RemindersSection reminders={reminders} onChange={setReminders} />
-
-          {/* Calendar selector */}
-          {calendarOptions.length > 1 && (
-            <div className="flex items-center gap-2.5">
-              <span
-                className="h-3 w-3 shrink-0 rounded-full"
-                style={{
-                  backgroundColor:
-                    calendarOptions.find((c) => c.value === calendarId)?.color ?? '#4285F4',
-                }}
-              />
-              <div className="flex-1">
-                <CustomSelect
-                  value={calendarId}
-                  options={calendarOptions}
-                  onChange={handleCalendarChange}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Calendar move notice */}
-          {calendarChanged && (
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              El evento se moverá al calendario seleccionado.
-            </p>
-          )}
-
-          {/* Error */}
-          {error && (
-            <p className="text-xs font-medium" style={{ color: '#EC1E2A' }}>
-              {error}
-            </p>
-          )}
-
-          {/* Actions */}
-          <div
-            className="flex items-center justify-between border-t pt-3"
-            style={{ borderColor: 'var(--border-secondary)' }}
-          >
-            {/* Delete */}
-            {isEditing ? (
-              confirmDelete ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    ¿Confirmar?
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={isLoading}
-                    className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
-                    style={{ backgroundColor: '#EC1E2A', color: '#fff' }}
-                  >
-                    {deleteEvent.isPending ? (
-                      <Loader2 size={12} className="animate-spin" />
-                    ) : (
-                      'Eliminar'
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmDelete(false)}
-                    className="text-xs"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirmDelete(true)}
-                  className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs transition-colors"
-                  style={{ color: '#EC1E2A' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#EC1E2A18')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                >
-                  <Trash2 size={13} />
-                  Eliminar evento
-                </button>
-              )
-            ) : (
-              <div />
-            )}
-
-            {/* Cancel + Save */}
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
-                style={{
-                  border: '1px solid var(--border-primary)',
-                  color: 'var(--text-secondary)',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading || !title.trim()}
-                className={cn(
-                  'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all',
-                  (isLoading || !title.trim()) && 'opacity-60 cursor-not-allowed',
-                )}
-                style={{ backgroundColor: '#283B56', color: '#fff' }}
-              >
-                {(createEvent.isPending || updateEvent.isPending || moveEvent.isPending) && (
-                  <Loader2 size={12} className="animate-spin" />
-                )}
-                {isEditing ? 'Guardar cambios' : 'Crear evento'}
-              </button>
-            </div>
-          </div>
-        </form>
+      </form>
     </>
   )
 

@@ -105,8 +105,13 @@ export function useUpdateTask() {
   const { user } = useAuth()
 
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<Task> & { label_ids?: string[] } }) =>
-      taskService.updateTask(id, updates),
+    mutationFn: ({
+      id,
+      updates,
+    }: {
+      id: string
+      updates: Partial<Task> & { label_ids?: string[] }
+    }) => taskService.updateTask(id, updates),
     onMutate: async ({ id, updates }) => {
       await queryClient.cancelQueries({ queryKey: taskKeys.all })
       const queries = queryClient.getQueriesData<Task[]>({ queryKey: taskKeys.all })
@@ -151,7 +156,11 @@ export function useCompleteTask() {
             key,
             data.map((t) =>
               t.id === id
-                ? { ...t, is_completed: completed, completed_at: completed ? new Date().toISOString() : null }
+                ? {
+                    ...t,
+                    is_completed: completed,
+                    completed_at: completed ? new Date().toISOString() : null,
+                  }
                 : t,
             ),
           )
@@ -213,8 +222,12 @@ export function useReorderTasks() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ updates }: { projectId: string; updates: { id: string; sort_order: number }[] }) =>
-      taskService.reorderTasks(updates),
+    mutationFn: ({
+      updates,
+    }: {
+      projectId: string
+      updates: { id: string; sort_order: number }[]
+    }) => taskService.reorderTasks(updates),
     onMutate: async ({ projectId, updates }) => {
       await queryClient.cancelQueries({ queryKey: taskKeys.project(projectId) })
       const prev = queryClient.getQueryData<Task[]>(taskKeys.project(projectId))

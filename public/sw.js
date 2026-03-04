@@ -7,9 +7,7 @@ const SHELL_URLS = ['/']
 
 // ── Install: cache the app shell ─────────────────────────────────────────────
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_URLS))
-  )
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_URLS)))
   // Activate immediately without waiting for old tabs to close
   self.skipWaiting()
 })
@@ -20,8 +18,8 @@ self.addEventListener('activate', (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-      )
+        Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))),
+      ),
   )
   // Take control of all open clients immediately
   self.clients.claim()
@@ -35,9 +33,7 @@ self.addEventListener('fetch', (event) => {
 
   // For navigation requests (loading the app), serve network then fall back to shell
   if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match('/'))
-    )
+    event.respondWith(fetch(event.request).catch(() => caches.match('/')))
     return
   }
 
@@ -70,7 +66,7 @@ self.addEventListener('push', (event) => {
       if (data.badge_count != null && 'setAppBadge' in self.navigator) {
         return self.navigator.setAppBadge(data.badge_count)
       }
-    })
+    }),
   )
 })
 
@@ -96,19 +92,17 @@ self.addEventListener('notificationclick', (event) => {
   const fullUrl = new URL(url, self.location.origin).href
 
   event.waitUntil(
-    clients
-      .matchAll({ type: 'window', includeUncontrolled: true })
-      .then((clientList) => {
-        // If the PWA is already open, focus it and navigate
-        for (const client of clientList) {
-          if ('focus' in client) {
-            client.focus()
-            if ('navigate' in client) client.navigate(fullUrl)
-            return
-          }
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // If the PWA is already open, focus it and navigate
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.focus()
+          if ('navigate' in client) client.navigate(fullUrl)
+          return
         }
-        // Otherwise open a new window
-        if (clients.openWindow) return clients.openWindow(fullUrl)
-      })
+      }
+      // Otherwise open a new window
+      if (clients.openWindow) return clients.openWindow(fullUrl)
+    }),
   )
 })

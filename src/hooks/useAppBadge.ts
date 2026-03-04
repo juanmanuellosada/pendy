@@ -21,14 +21,11 @@ export function useAppBadge() {
   const pendingHabitsCount = showHabitsInToday
     ? todayHabits.filter(
         (h) =>
-          !habitCompletions.some(
-            (c) => c.habit_id === h.id && c.completed_date === todayDateKey,
-          ),
+          !habitCompletions.some((c) => c.habit_id === h.id && c.completed_date === todayDateKey),
       ).length
     : 0
 
-  const todayCount =
-    todayTasks.filter((t) => !t.is_completed).length + pendingHabitsCount
+  const todayCount = todayTasks.filter((t) => !t.is_completed).length + pendingHabitsCount
 
   useEffect(() => {
     // 1. Try Badging API from main thread (works on desktop + Android)

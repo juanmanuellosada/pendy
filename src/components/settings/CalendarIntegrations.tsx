@@ -1,5 +1,18 @@
 import { useState } from 'react'
-import { CalendarDays, Link2Off, Loader2, AlertCircle, ChevronDown, ChevronUp, Check, Lock, Plus, X, Pencil, Trash2 } from 'lucide-react'
+import {
+  CalendarDays,
+  Link2Off,
+  Loader2,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  Check,
+  Lock,
+  Plus,
+  X,
+  Pencil,
+  Trash2,
+} from 'lucide-react'
 import {
   useCalendarIntegrations,
   useConnectCalendar,
@@ -16,9 +29,18 @@ import { useUIStore } from '@/stores/uiStore'
 const GOOGLE_COLOR = '#4285F4'
 
 const CALENDAR_COLORS = [
-  '#D50000', '#E67C73', '#F4511E', '#F6BF26',
-  '#33B679', '#0B8043', '#039BE5', '#3F51B5',
-  '#7986CB', '#8E24AA', '#616161', '#4285F4',
+  '#D50000',
+  '#E67C73',
+  '#F4511E',
+  '#F6BF26',
+  '#33B679',
+  '#0B8043',
+  '#039BE5',
+  '#3F51B5',
+  '#7986CB',
+  '#8E24AA',
+  '#616161',
+  '#4285F4',
 ]
 
 interface CalendarIntegrationsProps {
@@ -39,7 +61,8 @@ export function CalendarIntegrations({
 
   // ── Calendar picker state ──────────────────────────────────────────────────
   const [showPicker, setShowPicker] = useState(false)
-  const { data: calendarList = [], isLoading: loadingCals } = useGoogleCalendarList(googleIntegration)
+  const { data: calendarList = [], isLoading: loadingCals } =
+    useGoogleCalendarList(googleIntegration)
   const updateSelection = useUpdateCalendarSelection()
   const createCalendar = useCreateGoogleCalendar()
   const renameCalendar = useRenameGoogleCalendar()
@@ -57,7 +80,8 @@ export function CalendarIntegrations({
   const handleDisconnect = () => {
     showConfirmDialog({
       title: 'Desconectar Google Calendar',
-      message: '¿Desconectar tu cuenta de Google Calendar? Los eventos dejarán de aparecer en Hoy y Próximos.',
+      message:
+        '¿Desconectar tu cuenta de Google Calendar? Los eventos dejarán de aparecer en Hoy y Próximos.',
       confirmLabel: 'Desconectar',
       onConfirm: () => disconnect.mutate(),
     })
@@ -84,19 +108,31 @@ export function CalendarIntegrations({
   const handleRename = async (calendarId: string) => {
     if (!editingName.trim() || !googleIntegration) return
     try {
-      await renameCalendar.mutateAsync({ integration: googleIntegration, calendarId, name: editingName.trim() })
+      await renameCalendar.mutateAsync({
+        integration: googleIntegration,
+        calendarId,
+        name: editingName.trim(),
+      })
       cancelEditing()
-    } catch { /* silencioso */ }
+    } catch {
+      /* silencioso */
+    }
   }
 
   const handleCreateCalendar = async () => {
     if (!newName.trim() || !googleIntegration) return
     try {
-      await createCalendar.mutateAsync({ integration: googleIntegration, name: newName.trim(), backgroundColor: newColor })
+      await createCalendar.mutateAsync({
+        integration: googleIntegration,
+        name: newName.trim(),
+        backgroundColor: newColor,
+      })
       setNewName('')
       setNewColor(CALENDAR_COLORS[5])
       setShowNewForm(false)
-    } catch { /* silencioso */ }
+    } catch {
+      /* silencioso */
+    }
   }
 
   const handleDeleteCalendar = (calendarId: string, name: string) => {
@@ -110,10 +146,7 @@ export function CalendarIntegrations({
   }
 
   return (
-    <section
-      className="rounded-xl border p-4"
-      style={{ borderColor: 'var(--border-primary)' }}
-    >
+    <section className="rounded-xl border p-4" style={{ borderColor: 'var(--border-primary)' }}>
       <div className="flex items-center gap-2 mb-1">
         <CalendarDays size={16} style={{ color: 'var(--text-secondary)' }} />
         <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
@@ -127,7 +160,9 @@ export function CalendarIntegrations({
       {isLoading ? (
         <div className="flex items-center gap-2 py-2">
           <Loader2 size={16} className="animate-spin" style={{ color: 'var(--text-muted)' }} />
-          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Cargando...</span>
+          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            Cargando...
+          </span>
         </div>
       ) : (
         <div className="rounded-lg border" style={{ borderColor: 'var(--border-primary)' }}>
@@ -162,7 +197,9 @@ export function CalendarIntegrations({
                     onClick={() => setShowPicker((v) => !v)}
                     className="flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors"
                     style={{ borderColor: 'var(--border-primary)', color: 'var(--text-secondary)' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                    }
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
                     {showPicker ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -182,7 +219,11 @@ export function CalendarIntegrations({
                       e.currentTarget.style.color = 'var(--text-secondary)'
                     }}
                   >
-                    {disconnect.isPending ? <Loader2 size={12} className="animate-spin" /> : <Link2Off size={12} />}
+                    {disconnect.isPending ? (
+                      <Loader2 size={12} className="animate-spin" />
+                    ) : (
+                      <Link2Off size={12} />
+                    )}
                     Desconectar
                   </button>
                 </div>
@@ -208,13 +249,19 @@ export function CalendarIntegrations({
                   </p>
                   <div className="flex items-center gap-2">
                     {updateSelection.isPending && (
-                      <Loader2 size={12} className="animate-spin" style={{ color: 'var(--text-muted)' }} />
+                      <Loader2
+                        size={12}
+                        className="animate-spin"
+                        style={{ color: 'var(--text-muted)' }}
+                      />
                     )}
                     <button
                       onClick={() => setShowNewForm((v) => !v)}
                       className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors"
                       style={{ color: 'var(--text-secondary)' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                      }
                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                       title="Crear nuevo calendario"
                     >
@@ -226,8 +273,14 @@ export function CalendarIntegrations({
 
                 {loadingCals ? (
                   <div className="flex items-center gap-2 px-3 pb-3">
-                    <Loader2 size={14} className="animate-spin" style={{ color: 'var(--text-muted)' }} />
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Cargando calendarios...</span>
+                    <Loader2
+                      size={14}
+                      className="animate-spin"
+                      style={{ color: 'var(--text-muted)' }}
+                    />
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      Cargando calendarios...
+                    </span>
                   </div>
                 ) : (
                   <div className="flex flex-col pb-1">
@@ -235,7 +288,10 @@ export function CalendarIntegrations({
                     {showNewForm && (
                       <div
                         className="mx-3 mb-2 mt-1 rounded-lg p-3 space-y-3"
-                        style={{ backgroundColor: 'var(--bg-hover)', border: '1px solid var(--border-secondary)' }}
+                        style={{
+                          backgroundColor: 'var(--bg-hover)',
+                          border: '1px solid var(--border-secondary)',
+                        }}
                       >
                         <input
                           type="text"
@@ -276,15 +332,26 @@ export function CalendarIntegrations({
                             className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
                             style={{ backgroundColor: newColor }}
                           >
-                            {createCalendar.isPending ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+                            {createCalendar.isPending ? (
+                              <Loader2 size={11} className="animate-spin" />
+                            ) : (
+                              <Check size={11} />
+                            )}
                             Crear
                           </button>
                           <button
-                            onClick={() => { setShowNewForm(false); setNewName('') }}
+                            onClick={() => {
+                              setShowNewForm(false)
+                              setNewName('')
+                            }}
                             className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs transition-colors"
                             style={{ color: 'var(--text-muted)' }}
-                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.backgroundColor = 'transparent')
+                            }
                           >
                             <X size={11} />
                             Cancelar
@@ -296,7 +363,8 @@ export function CalendarIntegrations({
                     {calendarList.map((cal) => {
                       const isChecked = selectedIds.includes(cal.id)
                       const dotColor = cal.backgroundColor ?? GOOGLE_COLOR
-                      const isReadOnly = cal.accessRole === 'reader' || cal.accessRole === 'freeBusyReader'
+                      const isReadOnly =
+                        cal.accessRole === 'reader' || cal.accessRole === 'freeBusyReader'
                       const isOwner = cal.accessRole === 'owner'
                       const isRenaming = editingCalendarId === cal.id
                       const isSaving = renameCalendar.isPending && editingCalendarId === cal.id
@@ -304,14 +372,21 @@ export function CalendarIntegrations({
                       if (isRenaming) {
                         return (
                           <div key={cal.id} className="flex items-center gap-2 px-3 py-1.5">
-                            <span className="h-3 w-3 flex-shrink-0 rounded-full" style={{ backgroundColor: dotColor }} />
+                            <span
+                              className="h-3 w-3 flex-shrink-0 rounded-full"
+                              style={{ backgroundColor: dotColor }}
+                            />
                             <input
                               type="text"
                               value={editingName}
                               onChange={(e) => setEditingName(e.target.value)}
                               autoFocus
                               className="flex-1 rounded-md border px-2 py-1 text-sm outline-none"
-                              style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)', color: 'var(--text-primary)' }}
+                              style={{
+                                backgroundColor: 'var(--bg-primary)',
+                                borderColor: 'var(--border-primary)',
+                                color: 'var(--text-primary)',
+                              }}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleRename(cal.id)
                                 if (e.key === 'Escape') cancelEditing()
@@ -322,17 +397,29 @@ export function CalendarIntegrations({
                               disabled={!editingName.trim() || isSaving}
                               className="flex-shrink-0 rounded-md p-1.5 disabled:opacity-40"
                               style={{ color: '#22C55E' }}
-                              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.backgroundColor = 'transparent')
+                              }
                             >
-                              {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                              {isSaving ? (
+                                <Loader2 size={13} className="animate-spin" />
+                              ) : (
+                                <Check size={13} />
+                              )}
                             </button>
                             <button
                               onClick={cancelEditing}
                               className="flex-shrink-0 rounded-md p-1.5"
                               style={{ color: 'var(--text-muted)' }}
-                              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.backgroundColor = 'transparent')
+                              }
                             >
                               <X size={13} />
                             </button>
@@ -345,25 +432,44 @@ export function CalendarIntegrations({
                           <div
                             className="group flex items-center gap-3 px-3 py-2 transition-colors"
                             style={{ color: 'var(--text-primary)' }}
-                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.backgroundColor = 'transparent')
+                            }
                           >
                             {isOwner ? (
                               <button
-                                onClick={() => setColorPickerCalendarId(colorPickerCalendarId === cal.id ? null : cal.id)}
+                                onClick={() =>
+                                  setColorPickerCalendarId(
+                                    colorPickerCalendarId === cal.id ? null : cal.id,
+                                  )
+                                }
                                 className="h-3 w-3 flex-shrink-0 rounded-full ring-offset-1 transition-all hover:ring-2"
                                 style={{ backgroundColor: dotColor }}
                                 title="Cambiar color"
                               />
                             ) : (
-                              <span className="h-3 w-3 flex-shrink-0 rounded-full" style={{ backgroundColor: dotColor }} />
+                              <span
+                                className="h-3 w-3 flex-shrink-0 rounded-full"
+                                style={{ backgroundColor: dotColor }}
+                              />
                             )}
 
-                            <button className="flex-1 min-w-0 text-left" onClick={() => handleToggleCalendar(cal.id)}>
+                            <button
+                              className="flex-1 min-w-0 text-left"
+                              onClick={() => handleToggleCalendar(cal.id)}
+                            >
                               <span className="truncate text-sm block">
                                 {cal.summary}
                                 {cal.primary && (
-                                  <span className="ml-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>(principal)</span>
+                                  <span
+                                    className="ml-1.5 text-xs"
+                                    style={{ color: 'var(--text-muted)' }}
+                                  >
+                                    (principal)
+                                  </span>
                                 )}
                               </span>
                             </button>
@@ -371,7 +477,10 @@ export function CalendarIntegrations({
                             {isReadOnly && (
                               <span
                                 className="flex items-center gap-1 flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium"
-                                style={{ backgroundColor: 'var(--bg-hover)', color: 'var(--text-muted)' }}
+                                style={{
+                                  backgroundColor: 'var(--bg-hover)',
+                                  color: 'var(--text-muted)',
+                                }}
                               >
                                 <Lock size={9} />
                                 Solo lectura
@@ -385,8 +494,12 @@ export function CalendarIntegrations({
                                   className="rounded-md p-1 transition-colors"
                                   style={{ color: 'var(--text-muted)' }}
                                   title="Renombrar"
-                                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                  onMouseEnter={(e) =>
+                                    (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                                  }
+                                  onMouseLeave={(e) =>
+                                    (e.currentTarget.style.backgroundColor = 'transparent')
+                                  }
                                 >
                                   <Pencil size={12} />
                                 </button>
@@ -406,13 +519,20 @@ export function CalendarIntegrations({
                                       e.currentTarget.style.color = 'var(--text-muted)'
                                     }}
                                   >
-                                    {deleteCalendar.isPending ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                                    {deleteCalendar.isPending ? (
+                                      <Loader2 size={12} className="animate-spin" />
+                                    ) : (
+                                      <Trash2 size={12} />
+                                    )}
                                   </button>
                                 )}
                               </div>
                             )}
 
-                            <button onClick={() => handleToggleCalendar(cal.id)} className="flex-shrink-0">
+                            <button
+                              onClick={() => handleToggleCalendar(cal.id)}
+                              className="flex-shrink-0"
+                            >
                               <div
                                 className="h-4 w-4 rounded flex items-center justify-center border transition-colors"
                                 style={{
@@ -429,7 +549,10 @@ export function CalendarIntegrations({
                           {colorPickerCalendarId === cal.id && (
                             <div
                               className="mx-3 mb-2 rounded-lg p-2.5"
-                              style={{ backgroundColor: 'var(--bg-hover)', border: '1px solid var(--border-secondary)' }}
+                              style={{
+                                backgroundColor: 'var(--bg-hover)',
+                                border: '1px solid var(--border-secondary)',
+                              }}
                             >
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 {CALENDAR_COLORS.map((color) => (
@@ -437,7 +560,11 @@ export function CalendarIntegrations({
                                     key={color}
                                     onClick={async () => {
                                       if (!googleIntegration) return
-                                      await setColor.mutateAsync({ integration: googleIntegration, calendarId: cal.id, backgroundColor: color })
+                                      await setColor.mutateAsync({
+                                        integration: googleIntegration,
+                                        calendarId: cal.id,
+                                        backgroundColor: color,
+                                      })
                                       setColorPickerCalendarId(null)
                                     }}
                                     disabled={setColor.isPending}
@@ -465,7 +592,10 @@ export function CalendarIntegrations({
 
       {/* Error al conectar */}
       {connectError && (
-        <div className="mt-3 flex items-start gap-2 rounded-lg p-3" style={{ backgroundColor: 'rgba(236,30,42,0.08)' }}>
+        <div
+          className="mt-3 flex items-start gap-2 rounded-lg p-3"
+          style={{ backgroundColor: 'rgba(236,30,42,0.08)' }}
+        >
           <AlertCircle size={14} className="mt-0.5 flex-shrink-0" style={{ color: '#EC1E2A' }} />
           <p className="text-xs" style={{ color: '#EC1E2A' }}>
             {connectError}

@@ -4,9 +4,9 @@ export function playCompletionSound() {
     const ctx = new AudioContext()
 
     const notes = [
-      { freq: 523.25, start: 0, duration: 0.12 },   // C5
-      { freq: 659.25, start: 0.1, duration: 0.12 },  // E5
-      { freq: 783.99, start: 0.2, duration: 0.22 },  // G5
+      { freq: 523.25, start: 0, duration: 0.12 }, // C5
+      { freq: 659.25, start: 0.1, duration: 0.12 }, // E5
+      { freq: 783.99, start: 0.2, duration: 0.22 }, // G5
     ]
 
     notes.forEach(({ freq, start, duration }) => {
@@ -39,8 +39,8 @@ export function playUncompleteSound() {
     const ctx = new AudioContext()
 
     const notes = [
-      { freq: 587.33, start: 0, duration: 0.1 },    // D5
-      { freq: 440.0, start: 0.08, duration: 0.15 },  // A4
+      { freq: 587.33, start: 0, duration: 0.1 }, // D5
+      { freq: 440.0, start: 0.08, duration: 0.15 }, // A4
     ]
 
     notes.forEach(({ freq, start, duration }) => {

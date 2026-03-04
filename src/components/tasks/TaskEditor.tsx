@@ -1,11 +1,35 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { ChevronDown, X, Check, Plus, Trash2, Pencil, Flag, Tag, Maximize2, Minimize2 } from 'lucide-react'
+import {
+  ChevronDown,
+  X,
+  Check,
+  Plus,
+  Trash2,
+  Pencil,
+  Flag,
+  Tag,
+  Maximize2,
+  Minimize2,
+} from 'lucide-react'
 import { ColorPicker } from '@/components/common/ColorPicker'
 import { useCreateTask, useUpdateTask, useSubtasks } from '@/hooks/useTasks'
-import { useProjects, useInboxProject, useCreateProject, useUpdateProject, useDeleteProject } from '@/hooks/useProjects'
+import {
+  useProjects,
+  useInboxProject,
+  useCreateProject,
+  useUpdateProject,
+  useDeleteProject,
+} from '@/hooks/useProjects'
 import { useAllSections } from '@/hooks/useSections'
 import { useAuth } from '@/hooks/useAuth'
-import { useLabels, useTaskLabels, useCreateLabel, useDeleteLabel, useUpdateLabel, LABEL_COLORS } from '@/hooks/useLabels'
+import {
+  useLabels,
+  useTaskLabels,
+  useCreateLabel,
+  useDeleteLabel,
+  useUpdateLabel,
+  LABEL_COLORS,
+} from '@/hooks/useLabels'
 import { useCreateReminder } from '@/hooks/useReminders'
 import { useUIStore } from '@/stores/uiStore'
 import { useAppStore } from '@/stores/appStore'
@@ -35,7 +59,17 @@ interface TaskEditorProps {
   inline?: boolean
 }
 
-export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate, defaultTime, defaultDurationMinutes, defaultSectionId, inline }: TaskEditorProps) {
+export function TaskEditor({
+  open,
+  onClose,
+  task,
+  defaultProjectId,
+  defaultDate,
+  defaultTime,
+  defaultDurationMinutes,
+  defaultSectionId,
+  inline,
+}: TaskEditorProps) {
   const { sidebarCollapsed } = useAppStore()
   const isMobile = useIsMobile()
   const { user } = useAuth()
@@ -101,7 +135,13 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
   const [atHighlightIdx, setAtHighlightIdx] = useState(0)
   const titleEditorRef = useRef<Editor | null>(null)
   // Track which fields were set by live NLP so we can clear them when the token is removed
-  const nlpAppliedRef = useRef({ date: false, time: false, duration: false, recurrence: false, priority: false })
+  const nlpAppliedRef = useRef({
+    date: false,
+    time: false,
+    duration: false,
+    recurrence: false,
+    priority: false,
+  })
   // Priority value before any NLP override (used to restore when token is removed)
   const initialPriorityRef = useRef<1 | 2 | 3 | 4>(4)
   const [fullscreen, setFullscreen] = useState(false)
@@ -154,8 +194,23 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
     setHashQuery(null)
     setAtQuery(null)
     initialPriorityRef.current = (task ? task.priority : 4) as 1 | 2 | 3 | 4
-    nlpAppliedRef.current = { date: false, time: false, duration: false, recurrence: false, priority: false }
-  }, [task?.id, open, defaultProjectId, defaultDate, defaultTime, defaultDurationMinutes, inboxProject?.id, existingLabels.length])
+    nlpAppliedRef.current = {
+      date: false,
+      time: false,
+      duration: false,
+      recurrence: false,
+      priority: false,
+    }
+  }, [
+    task?.id,
+    open,
+    defaultProjectId,
+    defaultDate,
+    defaultTime,
+    defaultDurationMinutes,
+    inboxProject?.id,
+    existingLabels.length,
+  ])
 
   // â”€â”€ Helper: remove a #labelname token from HTML via DOM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const removeLabelToken = useCallback((html: string, labelName: string) => {
@@ -212,8 +267,22 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
 
   // â”€â”€ Confirm a project from at autocomplete â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   type AtItem =
-    | { kind: 'project'; id: string; name: string; color: string; icon?: string | null; depth: number }
-    | { kind: 'section'; id: string; name: string; projectId: string; projectColor: string; depth: number }
+    | {
+        kind: 'project'
+        id: string
+        name: string
+        color: string
+        icon?: string | null
+        depth: number
+      }
+    | {
+        kind: 'section'
+        id: string
+        name: string
+        projectId: string
+        projectColor: string
+        depth: number
+      }
 
   const confirmAtItem = (item: AtItem) => {
     const editor = titleEditorRef.current
@@ -244,10 +313,16 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
     })
     const tokenColor = item.kind === 'project' ? item.color : item.projectColor
     if (fromPos && toPos) {
-      editor.chain().focus()
+      editor
+        .chain()
+        .focus()
         .deleteRange({ from: fromPos, to: toPos })
         .insertContentAt(fromPos, [
-          { type: 'text', text: token, marks: [{ type: 'textStyle', attrs: { color: tokenColor } }] },
+          {
+            type: 'text',
+            text: token,
+            marks: [{ type: 'textStyle', attrs: { color: tokenColor } }],
+          },
           { type: 'text', text: ' ' },
         ])
         .run()
@@ -299,10 +374,16 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
       return fromPos === 0 || toPos === 0
     })
     if (fromPos && toPos) {
-      editor.chain().focus()
+      editor
+        .chain()
+        .focus()
         .deleteRange({ from: fromPos, to: toPos })
         .insertContentAt(fromPos, [
-          { type: 'text', text: token, marks: [{ type: 'textStyle', attrs: { color: label.color } }] },
+          {
+            type: 'text',
+            text: token,
+            marks: [{ type: 'textStyle', attrs: { color: label.color } }],
+          },
           { type: 'text', text: ' ' },
         ])
         .run()
@@ -615,7 +696,9 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
   )
   const filteredProjects = flattenProjectTree(
     buildProjectTree(
-      projects.filter((p) => !p.is_archived && p.name.toLowerCase().includes(projectSearch.toLowerCase())),
+      projects.filter(
+        (p) => !p.is_archived && p.name.toLowerCase().includes(projectSearch.toLowerCase()),
+      ),
     ),
   )
 
@@ -635,10 +718,26 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
     const flat = flattenProjectTree(buildProjectTree(projects.filter((p) => !p.is_archived)))
     const result: AtItem[] = []
     for (const proj of flat) {
-      result.push({ kind: 'project', id: proj.id, name: proj.name, color: proj.color, icon: proj.icon, depth: proj.depth })
-      const sections = (sectionsMap?.get(proj.id) ?? []).slice().sort((a, b) => a.sort_order - b.sort_order)
+      result.push({
+        kind: 'project',
+        id: proj.id,
+        name: proj.name,
+        color: proj.color,
+        icon: proj.icon,
+        depth: proj.depth,
+      })
+      const sections = (sectionsMap?.get(proj.id) ?? [])
+        .slice()
+        .sort((a, b) => a.sort_order - b.sort_order)
       for (const sec of sections) {
-        result.push({ kind: 'section', id: sec.id, name: sec.name, projectId: proj.id, projectColor: proj.color, depth: proj.depth + 1 })
+        result.push({
+          kind: 'section',
+          id: sec.id,
+          name: sec.name,
+          projectId: proj.id,
+          projectColor: proj.color,
+          depth: proj.depth + 1,
+        })
       }
     }
     return result
@@ -652,977 +751,1066 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
   const editorCard = (
     <>
       {/* Title with hash autocomplete */}
-          <div className="relative">
-            <TitleEditor
-              content={title}
-              onChange={setTitle}
-              onSubmit={() => {
-                if (hashQuery !== null && hashTotalItems > 0) {
-                  if (hashHighlightIdx < hashFilteredLabels.length) {
-                    confirmHashLabel(hashFilteredLabels[hashHighlightIdx]!)
-                  } else if (showHashCreate && hashQuery?.trim()) {
-                    createAndConfirmHash(hashQuery.trim())
-                  }
-                } else if (atQuery !== null && atTotalItems > 0) {
-                  confirmAtItem(atFilteredItems[atHighlightIdx]!)
-                } else {
-                  handleSubmit()
-                }
-              }}
-              onEscape={() => {
-                if (hashQuery !== null) {
-                  setHashQuery(null)
-                } else if (atQuery !== null) {
-                  setAtQuery(null)
-                } else {
-                  onClose()
-                }
-              }}
-              autoFocus
-              editorRef={titleEditorRef}
-              onUpdate={handleTitleUpdate}
-              onKeyDown={(event) => {
-                // Auto-confirm p1-p4 priority tokens on Space
-                if (event.key === ' ') {
-                  const ed = titleEditorRef.current
-                  if (ed) {
-                    const { anchor } = ed.state.selection
-                    const textBeforeCursor = ed.state.doc.textBetween(0, anchor, '')
-                    const pMatch = textBeforeCursor.match(/(^|\s)(p[1-4])$/i)
-                    if (pMatch) {
-                      event.preventDefault()
-                      const pNum = parseInt(pMatch[2]![1]!) as 1 | 2 | 3 | 4
-                      const tokenLen = 2
-                      const tokenStartPlain = textBeforeCursor.length - tokenLen
-                      const tokenEndPlain = textBeforeCursor.length
+      <div className="relative">
+        <TitleEditor
+          content={title}
+          onChange={setTitle}
+          onSubmit={() => {
+            if (hashQuery !== null && hashTotalItems > 0) {
+              if (hashHighlightIdx < hashFilteredLabels.length) {
+                confirmHashLabel(hashFilteredLabels[hashHighlightIdx]!)
+              } else if (showHashCreate && hashQuery?.trim()) {
+                createAndConfirmHash(hashQuery.trim())
+              }
+            } else if (atQuery !== null && atTotalItems > 0) {
+              confirmAtItem(atFilteredItems[atHighlightIdx]!)
+            } else {
+              handleSubmit()
+            }
+          }}
+          onEscape={() => {
+            if (hashQuery !== null) {
+              setHashQuery(null)
+            } else if (atQuery !== null) {
+              setAtQuery(null)
+            } else {
+              onClose()
+            }
+          }}
+          autoFocus
+          editorRef={titleEditorRef}
+          onUpdate={handleTitleUpdate}
+          onKeyDown={(event) => {
+            // Auto-confirm p1-p4 priority tokens on Space
+            if (event.key === ' ') {
+              const ed = titleEditorRef.current
+              if (ed) {
+                const { anchor } = ed.state.selection
+                const textBeforeCursor = ed.state.doc.textBetween(0, anchor, '')
+                const pMatch = textBeforeCursor.match(/(^|\s)(p[1-4])$/i)
+                if (pMatch) {
+                  event.preventDefault()
+                  const pNum = parseInt(pMatch[2]![1]!) as 1 | 2 | 3 | 4
+                  const tokenLen = 2
+                  const tokenStartPlain = textBeforeCursor.length - tokenLen
+                  const tokenEndPlain = textBeforeCursor.length
 
-                      const doc = ed.state.doc
-                      let textSeen = 0
-                      let fromPos = 0
-                      let toPos = 0
-                      doc.descendants((node, nodePos) => {
-                        if (node.isText) {
-                          const ns = textSeen
-                          const ne = textSeen + node.text!.length
-                          if (fromPos === 0 && tokenStartPlain >= ns && tokenStartPlain < ne) {
-                            fromPos = nodePos + (tokenStartPlain - ns)
-                          }
-                          if (toPos === 0 && tokenEndPlain >= ns && tokenEndPlain <= ne) {
-                            toPos = nodePos + (tokenEndPlain - ns)
-                          }
-                          textSeen = ne
-                        }
-                        return fromPos === 0 || toPos === 0
-                      })
-
-                      if (fromPos && toPos) {
-                        ed.chain().focus()
-                          .deleteRange({ from: fromPos, to: toPos })
-                          .insertContentAt(fromPos, [
-                            { type: 'text', text: pMatch[2]!.toLowerCase(), marks: [{ type: 'textStyle', attrs: { color: PRIORITY_COLORS[pNum] } }] },
-                            { type: 'text', text: ' ' },
-                          ])
-                          .run()
+                  const doc = ed.state.doc
+                  let textSeen = 0
+                  let fromPos = 0
+                  let toPos = 0
+                  doc.descendants((node, nodePos) => {
+                    if (node.isText) {
+                      const ns = textSeen
+                      const ne = textSeen + node.text!.length
+                      if (fromPos === 0 && tokenStartPlain >= ns && tokenStartPlain < ne) {
+                        fromPos = nodePos + (tokenStartPlain - ns)
                       }
-
-                      setPriority(pNum)
-                      return true
+                      if (toPos === 0 && tokenEndPlain >= ns && tokenEndPlain <= ne) {
+                        toPos = nodePos + (tokenEndPlain - ns)
+                      }
+                      textSeen = ne
                     }
-                  }
-                }
-                if (hashQuery !== null && hashTotalItems > 0) {
-                  if (event.key === 'ArrowDown') {
-                    event.preventDefault()
-                    setHashHighlightIdx((prev) => (prev + 1) % hashTotalItems)
-                    return true
-                  }
-                  if (event.key === 'ArrowUp') {
-                    event.preventDefault()
-                    setHashHighlightIdx((prev) => (prev - 1 + hashTotalItems) % hashTotalItems)
-                    return true
-                  }
-                }
-                if (atQuery !== null && atTotalItems > 0) {
-                  if (event.key === 'ArrowDown') {
-                    event.preventDefault()
-                    setAtHighlightIdx((prev) => (prev + 1) % atTotalItems)
-                    return true
-                  }
-                  if (event.key === 'ArrowUp') {
-                    event.preventDefault()
-                    setAtHighlightIdx((prev) => (prev - 1 + atTotalItems) % atTotalItems)
-                    return true
-                  }
-                }
-                return false
-              }}
-            />
+                    return fromPos === 0 || toPos === 0
+                  })
 
-            {/* Hash autocomplete dropdown */}
-            {hashQuery !== null && hashTotalItems > 0 && (
-              <div
-                className="absolute left-0 top-full z-30 mt-1 w-52 overflow-hidden rounded-lg border py-1 shadow-lg"
+                  if (fromPos && toPos) {
+                    ed.chain()
+                      .focus()
+                      .deleteRange({ from: fromPos, to: toPos })
+                      .insertContentAt(fromPos, [
+                        {
+                          type: 'text',
+                          text: pMatch[2]!.toLowerCase(),
+                          marks: [{ type: 'textStyle', attrs: { color: PRIORITY_COLORS[pNum] } }],
+                        },
+                        { type: 'text', text: ' ' },
+                      ])
+                      .run()
+                  }
+
+                  setPriority(pNum)
+                  return true
+                }
+              }
+            }
+            if (hashQuery !== null && hashTotalItems > 0) {
+              if (event.key === 'ArrowDown') {
+                event.preventDefault()
+                setHashHighlightIdx((prev) => (prev + 1) % hashTotalItems)
+                return true
+              }
+              if (event.key === 'ArrowUp') {
+                event.preventDefault()
+                setHashHighlightIdx((prev) => (prev - 1 + hashTotalItems) % hashTotalItems)
+                return true
+              }
+            }
+            if (atQuery !== null && atTotalItems > 0) {
+              if (event.key === 'ArrowDown') {
+                event.preventDefault()
+                setAtHighlightIdx((prev) => (prev + 1) % atTotalItems)
+                return true
+              }
+              if (event.key === 'ArrowUp') {
+                event.preventDefault()
+                setAtHighlightIdx((prev) => (prev - 1 + atTotalItems) % atTotalItems)
+                return true
+              }
+            }
+            return false
+          }}
+        />
+
+        {/* Hash autocomplete dropdown */}
+        {hashQuery !== null && hashTotalItems > 0 && (
+          <div
+            className="absolute left-0 top-full z-30 mt-1 w-52 overflow-hidden rounded-lg border py-1 shadow-lg"
+            style={{
+              backgroundColor: 'var(--bg-primary)',
+              borderColor: 'var(--border-primary)',
+              boxShadow: 'var(--shadow-lg)',
+            }}
+          >
+            {hashFilteredLabels.map((label, idx) => (
+              <button
+                key={label.id}
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  confirmHashLabel(label)
+                }}
+                onMouseEnter={() => setHashHighlightIdx(idx)}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-sm"
                 style={{
-                  backgroundColor: 'var(--bg-primary)',
-                  borderColor: 'var(--border-primary)',
-                  boxShadow: 'var(--shadow-lg)',
+                  backgroundColor: idx === hashHighlightIdx ? 'var(--bg-hover)' : 'transparent',
+                  color: 'var(--text-primary)',
                 }}
               >
-                {hashFilteredLabels.map((label, idx) => (
-                  <button
-                    key={label.id}
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault()
-                      confirmHashLabel(label)
-                    }}
-                    onMouseEnter={() => setHashHighlightIdx(idx)}
-                    className="flex w-full items-center gap-2 px-3 py-1.5 text-sm"
-                    style={{
-                      backgroundColor: idx === hashHighlightIdx ? 'var(--bg-hover)' : 'transparent',
-                      color: 'var(--text-primary)',
-                    }}
-                  >
-                    <span
-                      className="h-3 w-3 flex-shrink-0 rounded-full"
-                      style={{ backgroundColor: label.color }}
-                    />
-                    <span className="flex-1 text-left">{label.name}</span>
-                    {selectedLabelIds.includes(label.id) && (
-                      <Check size={11} style={{ color: 'var(--text-primary)' }} />
-                    )}
-                  </button>
-                ))}
-                {showHashCreate && (
-                  <div className="border-t" style={{ borderColor: 'var(--border-primary)' }}>
-                    <button
-                      type="button"
-                      onMouseDown={(e) => {
-                        e.preventDefault()
-                        createAndConfirmHash(hashQuery.trim())
-                      }}
-                      onMouseEnter={() => setHashHighlightIdx(hashFilteredLabels.length)}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium"
-                      style={{
-                        backgroundColor:
-                          hashHighlightIdx === hashFilteredLabels.length
-                            ? 'var(--bg-hover)'
-                            : 'var(--bg-secondary)',
-                        color: 'var(--text-primary)',
-                      }}
-                    >
-                      <Plus size={14} strokeWidth={2.5} />
-                      Crear «<span className="font-semibold">{hashQuery.trim()}</span>»
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* At autocomplete dropdown (@projects + sections) */}
-            {atQuery !== null && atTotalItems > 0 && (
-              <div
-                className="absolute left-0 top-full z-30 mt-1 max-h-56 w-64 overflow-y-auto overflow-x-hidden rounded-lg border py-1 shadow-lg"
-                style={{
-                  backgroundColor: 'var(--bg-primary)',
-                  borderColor: 'var(--border-primary)',
-                  boxShadow: 'var(--shadow-lg)',
-                }}
-              >
-                {atFilteredItems.map((item, idx) => (
-                  <button
-                    key={item.kind + '-' + item.id}
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault()
-                      confirmAtItem(item)
-                    }}
-                    onMouseEnter={() => setAtHighlightIdx(idx)}
-                    className="flex w-full items-center gap-1.5 py-1.5 pr-3 text-sm"
-                    style={{
-                      paddingLeft: `${8 + item.depth * 14}px`,
-                      backgroundColor: idx === atHighlightIdx ? 'var(--bg-hover)' : 'transparent',
-                      color: item.kind === 'section' ? 'var(--text-secondary)' : 'var(--text-primary)',
-                    }}
-                  >
-                    {item.kind === 'project' ? (
-                      <span
-                        className="h-2.5 w-2.5 flex-shrink-0 rounded-sm"
-                        style={{ backgroundColor: item.color }}
-                      />
-                    ) : (
-                      <span className="flex-shrink-0 text-xs leading-none" style={{ color: 'var(--text-muted)' }}>
-                        —
-                      </span>
-                    )}
-                    <span className="flex-1 truncate text-left">{item.name}</span>
-                    {item.kind === 'project' && projectId === item.id && sectionId === null && (
-                      <Check size={11} style={{ color: 'var(--text-primary)' }} />
-                    )}
-                    {item.kind === 'section' && sectionId === item.id && (
-                      <Check size={11} style={{ color: 'var(--text-primary)' }} />
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Description with Markdown */}
-          <div className="mt-3">
-            <p className="mb-1.5 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-              Descripción
-            </p>
-            <MarkdownEditor
-              content={description}
-              onChange={setDescription}
-              placeholder="Agregar descripción..."
-              minHeight={72}
-            />
-          </div>
-
-          {/* Subtasks */}
-          <div className="mt-3">
-            {/* Existing subtasks (edit mode) */}
-            {existingSubtasks.length > 0 && (
-              <div className="mb-1.5 space-y-0.5">
-                <p className="mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-                  Subtareas existentes ({existingSubtasks.length})
-                </p>
-                {existingSubtasks.map((sub) => (
-                  <div key={sub.id} className="flex items-center gap-2 rounded-lg px-2 py-1" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                    <div
-                      className="h-3.5 w-3.5 flex-shrink-0 rounded-full border-2 flex items-center justify-center"
-                      style={{
-                        borderColor: sub.is_completed ? '#22C55E' : 'var(--border-primary)',
-                        backgroundColor: sub.is_completed ? '#22C55E' : 'transparent',
-                      }}
-                    >
-                      {sub.is_completed && <Check size={8} color="white" strokeWidth={3} />}
-                    </div>
-                    <span
-                      className="flex-1 truncate text-xs"
-                      style={{
-                        color: sub.is_completed ? 'var(--text-muted)' : 'var(--text-primary)',
-                        textDecoration: sub.is_completed ? 'line-through' : 'none',
-                      }}
-                    >
-                      {sub.title}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Pending subtasks */}
-            {pendingSubtasks.length > 0 && (
-              <div className="mb-1 space-y-0.5">
-                {existingSubtasks.length === 0 && (
-                  <p className="mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-                    Subtareas ({pendingSubtasks.length})
-                  </p>
-                )}
-                {pendingSubtasks.map((sub) => (
-                  <div
-                    key={sub.id}
-                    className="group flex items-center gap-2 rounded-lg px-2 py-1 transition-colors"
-                    style={{ backgroundColor: 'var(--bg-secondary)' }}
-                  >
-                    <div
-                      className="h-3.5 w-3.5 flex-shrink-0 rounded-full border-2"
-                      style={{ borderColor: 'var(--border-primary)' }}
-                    />
-                    <input
-                      ref={(el) => {
-                        if (el && justAddedSubtaskRef.current === sub.id) {
-                          el.focus()
-                          justAddedSubtaskRef.current = null
-                        }
-                      }}
-                      value={sub.title}
-                      onChange={(e) =>
-                        setPendingSubtasks((prev) =>
-                          prev.map((s) => (s.id === sub.id ? { ...s, title: e.target.value } : s)),
-                        )
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          const id = `tmp-${Date.now()}`
-                          justAddedSubtaskRef.current = id
-                          setPendingSubtasks((prev) => {
-                            const idx = prev.findIndex((s) => s.id === sub.id)
-                            const next = [...prev]
-                            next.splice(idx + 1, 0, { id, title: '' })
-                            return next
-                          })
-                        }
-                        if (e.key === 'Backspace' && !sub.title) {
-                          e.preventDefault()
-                          setPendingSubtasks((prev) => prev.filter((s) => s.id !== sub.id))
-                          newSubtaskRef.current?.focus()
-                        }
-                      }}
-                      placeholder="Nombre de la subtarea..."
-                      className="flex-1 bg-transparent text-xs outline-none"
-                      style={{ color: 'var(--text-primary)' }}
-                    />
-                    <button
-                      onClick={() =>
-                        setPendingSubtasks((prev) => prev.filter((s) => s.id !== sub.id))
-                      }
-                      className="flex-shrink-0 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100"
-                      style={{ color: 'var(--text-muted)' }}
-                      title="Eliminar subtarea"
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Add subtask input */}
-            <div className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors"
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-            >
-              <Plus size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-              <input
-                ref={newSubtaskRef}
-                value={newSubtaskText}
-                onChange={(e) => setNewSubtaskText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && newSubtaskText.trim()) {
-                    e.preventDefault()
-                    const id = `tmp-${Date.now()}`
-                    justAddedSubtaskRef.current = id
-                    setPendingSubtasks((prev) => [...prev, { id, title: newSubtaskText.trim() }])
-                    setNewSubtaskText('')
-                  }
-                }}
-                placeholder="Agregar subtarea..."
-                className="flex-1 bg-transparent text-xs outline-none"
-                style={{ color: 'var(--text-secondary)' }}
-                onFocus={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
-                onBlur={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
-              />
-              {newSubtaskText.trim() && (
-                <button
-                  onClick={() => {
-                    const id = `tmp-${Date.now()}`
-                    justAddedSubtaskRef.current = id
-                    setPendingSubtasks((prev) => [...prev, { id, title: newSubtaskText.trim() }])
-                    setNewSubtaskText('')
-                    newSubtaskRef.current?.focus()
-                  }}
-                  className="flex-shrink-0 rounded px-1.5 py-0.5 text-xs font-medium text-white"
-                  style={{ backgroundColor: '#283B56' }}
-                >
-                  ↵
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Selected labels */}
-          {selectedLabels.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {selectedLabels.map((label) => (
                 <span
-                  key={label.id}
-                  className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
-                  style={{ backgroundColor: label.color + '22', color: label.color }}
+                  className="h-3 w-3 flex-shrink-0 rounded-full"
+                  style={{ backgroundColor: label.color }}
+                />
+                <span className="flex-1 text-left">{label.name}</span>
+                {selectedLabelIds.includes(label.id) && (
+                  <Check size={11} style={{ color: 'var(--text-primary)' }} />
+                )}
+              </button>
+            ))}
+            {showHashCreate && (
+              <div className="border-t" style={{ borderColor: 'var(--border-primary)' }}>
+                <button
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    createAndConfirmHash(hashQuery.trim())
+                  }}
+                  onMouseEnter={() => setHashHighlightIdx(hashFilteredLabels.length)}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium"
+                  style={{
+                    backgroundColor:
+                      hashHighlightIdx === hashFilteredLabels.length
+                        ? 'var(--bg-hover)'
+                        : 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                  }}
                 >
-                  {label.name}
-                  <button onClick={() => removeLabel(label.id)}>
-                    <X size={10} />
-                  </button>
+                  <Plus size={14} strokeWidth={2.5} />
+                  Crear «<span className="font-semibold">{hashQuery.trim()}</span>»
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* At autocomplete dropdown (@projects + sections) */}
+        {atQuery !== null && atTotalItems > 0 && (
+          <div
+            className="absolute left-0 top-full z-30 mt-1 max-h-56 w-64 overflow-y-auto overflow-x-hidden rounded-lg border py-1 shadow-lg"
+            style={{
+              backgroundColor: 'var(--bg-primary)',
+              borderColor: 'var(--border-primary)',
+              boxShadow: 'var(--shadow-lg)',
+            }}
+          >
+            {atFilteredItems.map((item, idx) => (
+              <button
+                key={item.kind + '-' + item.id}
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  confirmAtItem(item)
+                }}
+                onMouseEnter={() => setAtHighlightIdx(idx)}
+                className="flex w-full items-center gap-1.5 py-1.5 pr-3 text-sm"
+                style={{
+                  paddingLeft: `${8 + item.depth * 14}px`,
+                  backgroundColor: idx === atHighlightIdx ? 'var(--bg-hover)' : 'transparent',
+                  color: item.kind === 'section' ? 'var(--text-secondary)' : 'var(--text-primary)',
+                }}
+              >
+                {item.kind === 'project' ? (
+                  <span
+                    className="h-2.5 w-2.5 flex-shrink-0 rounded-sm"
+                    style={{ backgroundColor: item.color }}
+                  />
+                ) : (
+                  <span
+                    className="flex-shrink-0 text-xs leading-none"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    —
+                  </span>
+                )}
+                <span className="flex-1 truncate text-left">{item.name}</span>
+                {item.kind === 'project' && projectId === item.id && sectionId === null && (
+                  <Check size={11} style={{ color: 'var(--text-primary)' }} />
+                )}
+                {item.kind === 'section' && sectionId === item.id && (
+                  <Check size={11} style={{ color: 'var(--text-primary)' }} />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Description with Markdown */}
+      <div className="mt-3">
+        <p className="mb-1.5 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+          Descripción
+        </p>
+        <MarkdownEditor
+          content={description}
+          onChange={setDescription}
+          placeholder="Agregar descripción..."
+          minHeight={72}
+        />
+      </div>
+
+      {/* Subtasks */}
+      <div className="mt-3">
+        {/* Existing subtasks (edit mode) */}
+        {existingSubtasks.length > 0 && (
+          <div className="mb-1.5 space-y-0.5">
+            <p className="mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+              Subtareas existentes ({existingSubtasks.length})
+            </p>
+            {existingSubtasks.map((sub) => (
+              <div
+                key={sub.id}
+                className="flex items-center gap-2 rounded-lg px-2 py-1"
+                style={{ backgroundColor: 'var(--bg-secondary)' }}
+              >
+                <div
+                  className="h-3.5 w-3.5 flex-shrink-0 rounded-full border-2 flex items-center justify-center"
+                  style={{
+                    borderColor: sub.is_completed ? '#22C55E' : 'var(--border-primary)',
+                    backgroundColor: sub.is_completed ? '#22C55E' : 'transparent',
+                  }}
+                >
+                  {sub.is_completed && <Check size={8} color="white" strokeWidth={3} />}
+                </div>
+                <span
+                  className="flex-1 truncate text-xs"
+                  style={{
+                    color: sub.is_completed ? 'var(--text-muted)' : 'var(--text-primary)',
+                    textDecoration: sub.is_completed ? 'line-through' : 'none',
+                  }}
+                >
+                  {sub.title}
                 </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Pending subtasks */}
+        {pendingSubtasks.length > 0 && (
+          <div className="mb-1 space-y-0.5">
+            {existingSubtasks.length === 0 && (
+              <p className="mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                Subtareas ({pendingSubtasks.length})
+              </p>
+            )}
+            {pendingSubtasks.map((sub) => (
+              <div
+                key={sub.id}
+                className="group flex items-center gap-2 rounded-lg px-2 py-1 transition-colors"
+                style={{ backgroundColor: 'var(--bg-secondary)' }}
+              >
+                <div
+                  className="h-3.5 w-3.5 flex-shrink-0 rounded-full border-2"
+                  style={{ borderColor: 'var(--border-primary)' }}
+                />
+                <input
+                  ref={(el) => {
+                    if (el && justAddedSubtaskRef.current === sub.id) {
+                      el.focus()
+                      justAddedSubtaskRef.current = null
+                    }
+                  }}
+                  value={sub.title}
+                  onChange={(e) =>
+                    setPendingSubtasks((prev) =>
+                      prev.map((s) => (s.id === sub.id ? { ...s, title: e.target.value } : s)),
+                    )
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      const id = `tmp-${Date.now()}`
+                      justAddedSubtaskRef.current = id
+                      setPendingSubtasks((prev) => {
+                        const idx = prev.findIndex((s) => s.id === sub.id)
+                        const next = [...prev]
+                        next.splice(idx + 1, 0, { id, title: '' })
+                        return next
+                      })
+                    }
+                    if (e.key === 'Backspace' && !sub.title) {
+                      e.preventDefault()
+                      setPendingSubtasks((prev) => prev.filter((s) => s.id !== sub.id))
+                      newSubtaskRef.current?.focus()
+                    }
+                  }}
+                  placeholder="Nombre de la subtarea..."
+                  className="flex-1 bg-transparent text-xs outline-none"
+                  style={{ color: 'var(--text-primary)' }}
+                />
+                <button
+                  onClick={() => setPendingSubtasks((prev) => prev.filter((s) => s.id !== sub.id))}
+                  className="flex-shrink-0 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100"
+                  style={{ color: 'var(--text-muted)' }}
+                  title="Eliminar subtarea"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add subtask input */}
+        <div
+          className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors"
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+        >
+          <Plus size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+          <input
+            ref={newSubtaskRef}
+            value={newSubtaskText}
+            onChange={(e) => setNewSubtaskText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && newSubtaskText.trim()) {
+                e.preventDefault()
+                const id = `tmp-${Date.now()}`
+                justAddedSubtaskRef.current = id
+                setPendingSubtasks((prev) => [...prev, { id, title: newSubtaskText.trim() }])
+                setNewSubtaskText('')
+              }
+            }}
+            placeholder="Agregar subtarea..."
+            className="flex-1 bg-transparent text-xs outline-none"
+            style={{ color: 'var(--text-secondary)' }}
+            onFocus={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+            onBlur={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+          />
+          {newSubtaskText.trim() && (
+            <button
+              onClick={() => {
+                const id = `tmp-${Date.now()}`
+                justAddedSubtaskRef.current = id
+                setPendingSubtasks((prev) => [...prev, { id, title: newSubtaskText.trim() }])
+                setNewSubtaskText('')
+                newSubtaskRef.current?.focus()
+              }}
+              className="flex-shrink-0 rounded px-1.5 py-0.5 text-xs font-medium text-white"
+              style={{ backgroundColor: '#283B56' }}
+            >
+              ↵
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Selected labels */}
+      {selectedLabels.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {selectedLabels.map((label) => (
+            <span
+              key={label.id}
+              className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+              style={{ backgroundColor: label.color + '22', color: label.color }}
+            >
+              {label.name}
+              <button onClick={() => removeLabel(label.id)}>
+                <X size={10} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Action bar */}
+      <div className="mt-3 pb-3 flex flex-wrap items-center gap-2">
+        {/* Date/time picker */}
+        <DateTimePicker
+          date={dueDate}
+          time={dueTime}
+          hasTime={hasTime}
+          durationMinutes={durationMinutes}
+          isRecurring={isRecurring}
+          recurrenceRule={recurrenceRule}
+          recurrenceFrom={recurrenceFrom}
+          onDateChange={setDueDate}
+          onTimeChange={setDueTime}
+          onHasTimeChange={setHasTime}
+          onDurationChange={setDurationMinutes}
+          onRecurrenceChange={(recurring, rule, from) => {
+            setIsRecurring(recurring)
+            setRecurrenceRule(rule)
+            setRecurrenceFrom(from)
+          }}
+        />
+
+        {/* Deadline */}
+        <DeadlinePicker deadline={deadline} onDeadlineChange={setDeadline} />
+
+        {/* Priority */}
+        <div className="relative">
+          <button
+            onClick={() => setShowPriorityMenu(!showPriorityMenu)}
+            className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
+            style={{
+              backgroundColor:
+                priority < 4 ? PRIORITY_COLORS[priority] + '15' : 'var(--bg-secondary)',
+              borderColor:
+                priority < 4 ? PRIORITY_COLORS[priority] + '40' : 'var(--border-primary)',
+              color: priority < 4 ? PRIORITY_COLORS[priority] : 'var(--text-primary)',
+            }}
+          >
+            <Flag size={14} />
+            Prioridad
+            <ChevronDown size={12} />
+          </button>
+          {showPriorityMenu && (
+            <div
+              className="absolute left-0 top-full z-20 mt-1 w-36 rounded-lg border py-1 shadow-lg"
+              style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}
+            >
+              {([1, 2, 3, 4] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => {
+                    setPriority(p)
+                    setShowPriorityMenu(false)
+                  }}
+                  className={cn(
+                    'flex w-full items-center gap-2 px-3 py-1.5 text-sm transition-colors',
+                  )}
+                  style={{ color: 'var(--text-primary)' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                >
+                  <span
+                    className="h-3 w-3 rounded-sm"
+                    style={{ backgroundColor: PRIORITY_COLORS[p] }}
+                  />
+                  {PRIORITY_LABELS[p]}
+                  {priority === p && (
+                    <Check size={12} className="ml-auto" style={{ color: '#283B56' }} />
+                  )}
+                </button>
               ))}
             </div>
           )}
+        </div>
 
-          {/* Action bar */}
-          <div className="mt-3 pb-3 flex flex-wrap items-center gap-2">
-            {/* Date/time picker */}
-            <DateTimePicker
-              date={dueDate}
-              time={dueTime}
-              hasTime={hasTime}
-              durationMinutes={durationMinutes}
-              isRecurring={isRecurring}
-              recurrenceRule={recurrenceRule}
-              recurrenceFrom={recurrenceFrom}
-              onDateChange={setDueDate}
-              onTimeChange={setDueTime}
-              onHasTimeChange={setHasTime}
-              onDurationChange={setDurationMinutes}
-              onRecurrenceChange={(recurring, rule, from) => {
-                setIsRecurring(recurring)
-                setRecurrenceRule(rule)
-                setRecurrenceFrom(from)
-              }}
+        {/* Project */}
+        <div className="relative">
+          <button
+            onClick={() => setShowProjectMenu(!showProjectMenu)}
+            className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              borderColor: 'var(--border-primary)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            <span
+              className="h-2.5 w-2.5 rounded-sm flex-shrink-0"
+              style={{ backgroundColor: selectedProject?.color ?? '#283B56' }}
             />
-
-            {/* Deadline */}
-            <DeadlinePicker
-              deadline={deadline}
-              onDeadlineChange={setDeadline}
-            />
-
-            {/* Priority */}
-            <div className="relative">
-              <button
-                onClick={() => setShowPriorityMenu(!showPriorityMenu)}
-                className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
-                style={{
-                  backgroundColor: priority < 4 ? PRIORITY_COLORS[priority] + '15' : 'var(--bg-secondary)',
-                  borderColor: priority < 4 ? PRIORITY_COLORS[priority] + '40' : 'var(--border-primary)',
-                  color: priority < 4 ? PRIORITY_COLORS[priority] : 'var(--text-primary)',
-                }}
-              >
-                <Flag size={14} />
-                Prioridad
-                <ChevronDown size={12} />
-              </button>
-              {showPriorityMenu && (
-                <div
-                  className="absolute left-0 top-full z-20 mt-1 w-36 rounded-lg border py-1 shadow-lg"
-                  style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}
-                >
-                  {([1, 2, 3, 4] as const).map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => { setPriority(p); setShowPriorityMenu(false) }}
-                      className={cn('flex w-full items-center gap-2 px-3 py-1.5 text-sm transition-colors')}
-                      style={{ color: 'var(--text-primary)' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                    >
-                      <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: PRIORITY_COLORS[p] }} />
-                      {PRIORITY_LABELS[p]}
-                      {priority === p && <Check size={12} className="ml-auto" style={{ color: '#283B56' }} />}
-                    </button>
-                  ))}
-                </div>
+            <span className="truncate max-w-[140px]">
+              {selectedProject?.name ?? 'Entrada'}
+              {selectedSection && (
+                <span style={{ color: 'var(--text-muted)' }}> / {selectedSection.name}</span>
               )}
-            </div>
-
-            {/* Project */}
-            <div className="relative">
-              <button
-                onClick={() => setShowProjectMenu(!showProjectMenu)}
-                className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
-                style={{
-                  backgroundColor: 'var(--bg-secondary)',
-                  borderColor: 'var(--border-primary)',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                <span className="h-2.5 w-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: selectedProject?.color ?? '#283B56' }} />
-                <span className="truncate max-w-[140px]">
-                  {selectedProject?.name ?? 'Entrada'}
-                  {selectedSection && (
-                    <span style={{ color: 'var(--text-muted)' }}> / {selectedSection.name}</span>
-                  )}
-                </span>
-                <ChevronDown size={12} />
-              </button>
-              {showProjectMenu && (
-                <div
-                  className="absolute left-0 top-full z-20 mt-1 w-56 rounded-lg border shadow-lg"
-                  style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}
-                >
-                  <div className="p-2">
-                    <input
-                      autoFocus
-                      value={projectSearch}
-                      onChange={(e) => setProjectSearch(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          const trimmed = projectSearch.trim()
-                          if (!trimmed) return
-                          const exact = projects.find(
-                            (p) => p.name.toLowerCase() === trimmed.toLowerCase(),
-                          )
-                          if (exact) {
-                            setProjectId(exact.id)
+            </span>
+            <ChevronDown size={12} />
+          </button>
+          {showProjectMenu && (
+            <div
+              className="absolute left-0 top-full z-20 mt-1 w-56 rounded-lg border shadow-lg"
+              style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}
+            >
+              <div className="p-2">
+                <input
+                  autoFocus
+                  value={projectSearch}
+                  onChange={(e) => setProjectSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      const trimmed = projectSearch.trim()
+                      if (!trimmed) return
+                      const exact = projects.find(
+                        (p) => p.name.toLowerCase() === trimmed.toLowerCase(),
+                      )
+                      if (exact) {
+                        setProjectId(exact.id)
+                        setProjectSearch('')
+                        setShowProjectMenu(false)
+                      } else if (user) {
+                        const color =
+                          PROJECT_COLORS[Math.floor(Math.random() * PROJECT_COLORS.length)]
+                        createProject
+                          .mutateAsync({ user_id: user.id, name: trimmed, color })
+                          .then((p) => {
+                            setProjectId(p.id)
                             setProjectSearch('')
                             setShowProjectMenu(false)
-                          } else if (user) {
-                            const color = PROJECT_COLORS[Math.floor(Math.random() * PROJECT_COLORS.length)]
-                            createProject.mutateAsync({ user_id: user.id, name: trimmed, color }).then((p) => {
+                          })
+                      }
+                    }
+                    if (e.key === 'Escape') setShowProjectMenu(false)
+                  }}
+                  placeholder="Buscar o crear proyecto..."
+                  className="w-full rounded-lg border px-2 py-1.5 text-xs outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-secondary)',
+                    borderColor: 'var(--border-primary)',
+                    color: 'var(--text-primary)',
+                  }}
+                />
+              </div>
+              <div className="max-h-44 overflow-y-auto py-1">
+                {filteredProjects.map((p) => {
+                  const active = projectId === p.id
+                  const hovered = hoveredProjectId === p.id
+                  const editing = editingProjectId === p.id
+
+                  if (editing) {
+                    return (
+                      <div key={p.id} className="flex items-center gap-1.5 px-2 py-1.5">
+                        <ColorPicker
+                          size="sm"
+                          value={editingProjectColor}
+                          onChange={setEditingProjectColor}
+                        />
+                        <input
+                          autoFocus
+                          value={editingProjectName}
+                          onChange={(e) => setEditingProjectName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              const name = editingProjectName.trim()
+                              if (name)
+                                updateProject.mutate({
+                                  id: p.id,
+                                  updates: { name, color: editingProjectColor },
+                                })
+                              setEditingProjectId(null)
+                            }
+                            if (e.key === 'Escape') setEditingProjectId(null)
+                          }}
+                          onBlur={(e) => {
+                            if (e.relatedTarget) return
+                            const name = editingProjectName.trim()
+                            if (name)
+                              updateProject.mutate({
+                                id: p.id,
+                                updates: { name, color: editingProjectColor },
+                              })
+                            setEditingProjectId(null)
+                          }}
+                          className="flex-1 rounded border px-2 py-0.5 text-xs outline-none"
+                          style={{
+                            backgroundColor: 'var(--bg-secondary)',
+                            borderColor: 'var(--border-primary)',
+                            color: 'var(--text-primary)',
+                          }}
+                        />
+                      </div>
+                    )
+                  }
+
+                  const pSections = sectionsMap?.get(p.id) ?? []
+                  const activeRoot = active && !sectionId
+
+                  return (
+                    <div key={p.id}>
+                      <div
+                        className="flex items-center"
+                        onMouseEnter={() => setHoveredProjectId(p.id)}
+                        onMouseLeave={() => setHoveredProjectId(null)}
+                        style={{
+                          paddingLeft: 8 + p.depth * 12,
+                          paddingRight: 8,
+                          backgroundColor: hovered ? 'var(--bg-hover)' : 'transparent',
+                        }}
+                      >
+                        <button
+                          onClick={() => {
+                            setProjectId(p.id)
+                            setSectionId(null)
+                            setShowProjectMenu(false)
+                          }}
+                          className="flex flex-1 items-center gap-2 py-1.5 text-sm"
+                          style={{ color: 'var(--text-primary)' }}
+                        >
+                          <span
+                            className="h-2.5 w-2.5 rounded-sm flex-shrink-0"
+                            style={{ backgroundColor: p.color }}
+                          />
+                          <span className="flex-1 text-left truncate">{p.name}</span>
+                          {activeRoot && !hovered && (
+                            <Check size={12} style={{ color: 'var(--text-primary)' }} />
+                          )}
+                        </button>
+                        {hovered && !p.is_inbox && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setEditingProjectId(p.id)
+                                setEditingProjectName(p.name)
+                                setEditingProjectColor(p.color)
+                              }}
+                              className="rounded p-1 transition-all"
+                              style={{ color: 'var(--text-muted)', backgroundColor: 'transparent' }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = 'var(--bg-active)'
+                                e.currentTarget.style.color = 'var(--text-primary)'
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent'
+                                e.currentTarget.style.color = 'var(--text-muted)'
+                              }}
+                              title="Editar proyecto"
+                            >
+                              <Pencil size={12} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                showConfirmDialog({
+                                  title: 'Eliminar proyecto',
+                                  message: `¿Eliminar el proyecto «${p.name}»? Las tareas dentro serán movidas a Entrada.`,
+                                  confirmLabel: 'Eliminar',
+                                  onConfirm: () => {
+                                    deleteProject.mutate(p.id)
+                                    if (projectId === p.id) setProjectId(inboxProject?.id ?? '')
+                                    setHoveredProjectId(null)
+                                  },
+                                })
+                              }}
+                              className="rounded p-1 transition-all"
+                              style={{ color: '#EC1E2A', backgroundColor: 'transparent' }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = 'rgba(236,30,42,0.1)'
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent'
+                              }}
+                              title="Eliminar proyecto"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Secciones del proyecto */}
+                      {pSections.map((s) => {
+                        const sActive = active && sectionId === s.id
+                        return (
+                          <button
+                            key={s.id}
+                            onClick={() => {
+                              setProjectId(p.id)
+                              setSectionId(s.id)
+                              setShowProjectMenu(false)
+                            }}
+                            className="flex w-full items-center gap-2 py-1 pr-3 text-xs transition-colors"
+                            style={{
+                              paddingLeft: 28 + p.depth * 12,
+                              color: sActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.backgroundColor = 'transparent')
+                            }
+                          >
+                            <span
+                              className="h-1.5 w-1.5 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: p.color, opacity: 0.6 }}
+                            />
+                            <span className="flex-1 text-left truncate">{s.name}</span>
+                            {sActive && (
+                              <Check size={11} style={{ color: 'var(--text-primary)' }} />
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )
+                })}
+
+                {/* Create project option */}
+                {projectSearch.trim() &&
+                  !projects.some(
+                    (p) => p.name.toLowerCase() === projectSearch.trim().toLowerCase(),
+                  ) && (
+                    <div className="border-t" style={{ borderColor: 'var(--border-primary)' }}>
+                      <button
+                        onClick={() => {
+                          if (!user) return
+                          const trimmed = projectSearch.trim()
+                          const color =
+                            PROJECT_COLORS[Math.floor(Math.random() * PROJECT_COLORS.length)]
+                          createProject
+                            .mutateAsync({ user_id: user.id, name: trimmed, color })
+                            .then((p) => {
                               setProjectId(p.id)
                               setProjectSearch('')
-                              setShowProjectMenu(false)
                             })
-                          }
+                        }}
+                        disabled={createProject.isPending}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium transition-colors"
+                        style={{
+                          backgroundColor: 'var(--bg-secondary)',
+                          color: 'var(--text-primary)',
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
                         }
-                        if (e.key === 'Escape') setShowProjectMenu(false)
-                      }}
-                      placeholder="Buscar o crear proyecto..."
-                      className="w-full rounded-lg border px-2 py-1.5 text-xs outline-none"
-                      style={{
-                        backgroundColor: 'var(--bg-secondary)',
-                        borderColor: 'var(--border-primary)',
-                        color: 'var(--text-primary)',
-                      }}
-                    />
-                  </div>
-                  <div className="max-h-44 overflow-y-auto py-1">
-                    {filteredProjects.map((p) => {
-                      const active = projectId === p.id
-                      const hovered = hoveredProjectId === p.id
-                      const editing = editingProjectId === p.id
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')
+                        }
+                      >
+                        <Plus size={14} strokeWidth={2.5} />
+                        <span>
+                          Crear «<span className="font-semibold">{projectSearch.trim()}</span>»
+                        </span>
+                      </button>
+                    </div>
+                  )}
 
-                      if (editing) {
-                        return (
-                          <div key={p.id} className="flex items-center gap-1.5 px-2 py-1.5">
-                            <ColorPicker
-                              size="sm"
-                              value={editingProjectColor}
-                              onChange={setEditingProjectColor}
-                            />
-                            <input
-                              autoFocus
-                              value={editingProjectName}
-                              onChange={(e) => setEditingProjectName(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault()
-                                  const name = editingProjectName.trim()
-                                  if (name) updateProject.mutate({ id: p.id, updates: { name, color: editingProjectColor } })
-                                  setEditingProjectId(null)
-                                }
-                                if (e.key === 'Escape') setEditingProjectId(null)
-                              }}
-                              onBlur={(e) => {
-                                if (e.relatedTarget) return
-                                const name = editingProjectName.trim()
-                                if (name) updateProject.mutate({ id: p.id, updates: { name, color: editingProjectColor } })
-                                setEditingProjectId(null)
-                              }}
-                              className="flex-1 rounded border px-2 py-0.5 text-xs outline-none"
-                              style={{
-                                backgroundColor: 'var(--bg-secondary)',
-                                borderColor: 'var(--border-primary)',
-                                color: 'var(--text-primary)',
-                              }}
-                            />
-                          </div>
-                        )
-                      }
-
-                      const pSections = sectionsMap?.get(p.id) ?? []
-                      const activeRoot = active && !sectionId
-
-                      return (
-                        <div key={p.id}>
-                          <div
-                            className="flex items-center"
-                            onMouseEnter={() => setHoveredProjectId(p.id)}
-                            onMouseLeave={() => setHoveredProjectId(null)}
-                            style={{
-                              paddingLeft: 8 + p.depth * 12,
-                              paddingRight: 8,
-                              backgroundColor: hovered ? 'var(--bg-hover)' : 'transparent',
-                            }}
-                          >
-                          <button
-                            onClick={() => { setProjectId(p.id); setSectionId(null); setShowProjectMenu(false) }}
-                            className="flex flex-1 items-center gap-2 py-1.5 text-sm"
-                            style={{ color: 'var(--text-primary)' }}
-                          >
-                            <span className="h-2.5 w-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: p.color }} />
-                            <span className="flex-1 text-left truncate">{p.name}</span>
-                            {activeRoot && !hovered && <Check size={12} style={{ color: 'var(--text-primary)' }} />}
-                          </button>
-                          {hovered && !p.is_inbox && (
-                            <>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setEditingProjectId(p.id)
-                                  setEditingProjectName(p.name)
-                                  setEditingProjectColor(p.color)
-                                }}
-                                className="rounded p-1 transition-all"
-                                style={{ color: 'var(--text-muted)', backgroundColor: 'transparent' }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'var(--bg-active)'
-                                  e.currentTarget.style.color = 'var(--text-primary)'
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'transparent'
-                                  e.currentTarget.style.color = 'var(--text-muted)'
-                                }}
-                                title="Editar proyecto"
-                              >
-                                <Pencil size={12} />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  showConfirmDialog({
-                                    title: 'Eliminar proyecto',
-                                    message: `¿Eliminar el proyecto «${p.name}»? Las tareas dentro serán movidas a Entrada.`,
-                                    confirmLabel: 'Eliminar',
-                                    onConfirm: () => {
-                                      deleteProject.mutate(p.id)
-                                      if (projectId === p.id) setProjectId(inboxProject?.id ?? '')
-                                      setHoveredProjectId(null)
-                                    },
-                                  })
-                                }}
-                                className="rounded p-1 transition-all"
-                                style={{ color: '#EC1E2A', backgroundColor: 'transparent' }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'rgba(236,30,42,0.1)'
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'transparent'
-                                }}
-                                title="Eliminar proyecto"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </>
-                          )}
-                          </div>
-
-                          {/* Secciones del proyecto */}
-                          {pSections.map((s) => {
-                            const sActive = active && sectionId === s.id
-                            return (
-                              <button
-                                key={s.id}
-                                onClick={() => { setProjectId(p.id); setSectionId(s.id); setShowProjectMenu(false) }}
-                                className="flex w-full items-center gap-2 py-1 pr-3 text-xs transition-colors"
-                                style={{
-                                  paddingLeft: 28 + p.depth * 12,
-                                  color: sActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                                }}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                              >
-                                <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color, opacity: 0.6 }} />
-                                <span className="flex-1 text-left truncate">{s.name}</span>
-                                {sActive && <Check size={11} style={{ color: 'var(--text-primary)' }} />}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      )
-                    })}
-
-                    {/* Create project option */}
-                    {projectSearch.trim() &&
-                      !projects.some(
-                        (p) => p.name.toLowerCase() === projectSearch.trim().toLowerCase(),
-                      ) && (
-                        <div className="border-t" style={{ borderColor: 'var(--border-primary)' }}>
-                          <button
-                            onClick={() => {
-                              if (!user) return
-                              const trimmed = projectSearch.trim()
-                              const color = PROJECT_COLORS[Math.floor(Math.random() * PROJECT_COLORS.length)]
-                              createProject.mutateAsync({ user_id: user.id, name: trimmed, color }).then((p) => {
-                                setProjectId(p.id)
-                                setProjectSearch('')
-                              })
-                            }}
-                            disabled={createProject.isPending}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium transition-colors"
-                            style={{
-                              backgroundColor: 'var(--bg-secondary)',
-                              color: 'var(--text-primary)',
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
-                          >
-                            <Plus size={14} strokeWidth={2.5} />
-                            <span>Crear «<span className="font-semibold">{projectSearch.trim()}</span>»</span>
-                          </button>
-                        </div>
-                      )}
-
-                    {filteredProjects.length === 0 && !projectSearch.trim() && (
-                      <p className="px-3 py-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                        Sin proyectos aún
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Reminders */}
-            <ReminderPicker
-              reminders={pendingReminders}
-              onAdd={(r) => setPendingReminders((prev) => [...prev, r])}
-              onRemove={(i) => setPendingReminders((prev) => prev.filter((_, idx) => idx !== i))}
-              hasDateTime={hasTime && !!dueDate && !!dueTime}
-              dueDate={dueDate}
-              dueTime={dueTime}
-            />
-
-            {/* Labels */}
-            <div className="relative">
-              <button
-                onClick={() => setShowLabelMenu(!showLabelMenu)}
-                className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
-                style={{
-                  backgroundColor: selectedLabelIds.length > 0 ? 'rgba(107,114,128,0.1)' : 'var(--bg-secondary)',
-                  borderColor: selectedLabelIds.length > 0 ? 'rgba(107,114,128,0.3)' : 'var(--border-primary)',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                <Tag size={14} />
-                Etiquetas
-                {selectedLabelIds.length > 0 && (
-                  <span
-                    className="rounded-full px-1.5 py-0.5 text-xs font-bold text-white"
-                    style={{ backgroundColor: '#283B56' }}
-                  >
-                    {selectedLabelIds.length}
-                  </span>
+                {filteredProjects.length === 0 && !projectSearch.trim() && (
+                  <p className="px-3 py-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                    Sin proyectos aún
+                  </p>
                 )}
-              </button>
-              {showLabelMenu && (
-                <div
-                  className="absolute left-0 top-full z-20 mt-1 w-56 rounded-lg border shadow-lg"
-                  style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}
-                >
-                  <div className="p-2">
-                    <input
-                      autoFocus
-                      value={labelSearch}
-                      onChange={(e) => setLabelSearch(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          const trimmed = labelSearch.trim()
-                          if (!trimmed) return
-                          const exact = labels.find(
-                            (l) => l.name.toLowerCase() === trimmed.toLowerCase(),
-                          )
-                          if (exact) {
-                            toggleLabel(exact.id)
-                            setLabelSearch('')
-                          } else {
-                            const color = LABEL_COLORS[Math.floor(Math.random() * LABEL_COLORS.length)]
-                            createLabel.mutateAsync({ name: trimmed, color }).then((newLabel) => {
-                              setSelectedLabelIds((prev) => [...prev, newLabel.id])
-                              setLabelSearch('')
-                            })
-                          }
-                        }
-                        if (e.key === 'Escape') setShowLabelMenu(false)
-                      }}
-                      placeholder="Buscar o crear etiqueta..."
-                      className="w-full rounded-lg border px-2 py-1.5 text-xs outline-none"
-                      style={{
-                        backgroundColor: 'var(--bg-secondary)',
-                        borderColor: 'var(--border-primary)',
-                        color: 'var(--text-primary)',
-                      }}
-                    />
-                  </div>
-                  <div className="max-h-44 overflow-y-auto py-1">
-                    {filteredLabels.map((label) => {
-                      const active = selectedLabelIds.includes(label.id)
-                      const hovered = hoveredLabelId === label.id
-                      const editing = editingLabelId === label.id
+              </div>
+            </div>
+          )}
+        </div>
 
-                      if (editing) {
-                        return (
-                          <div key={label.id} className="flex items-center gap-1.5 px-2 py-1.5">
-                            <ColorPicker
-                              size="sm"
-                              value={editingLabelColor}
-                              onChange={setEditingLabelColor}
-                            />
-                            <input
-                              autoFocus
-                              value={editingLabelName}
-                              onChange={(e) => setEditingLabelName(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault()
-                                  const name = editingLabelName.trim()
-                                  if (name) updateLabel.mutate({ id: label.id, updates: { name, color: editingLabelColor } })
-                                  setEditingLabelId(null)
-                                }
-                                if (e.key === 'Escape') setEditingLabelId(null)
-                              }}
-                              onBlur={(e) => {
-                                if (e.relatedTarget) return
-                                const name = editingLabelName.trim()
-                                if (name) updateLabel.mutate({ id: label.id, updates: { name, color: editingLabelColor } })
-                                setEditingLabelId(null)
-                              }}
-                              className="flex-1 rounded border px-2 py-0.5 text-xs outline-none"
-                              style={{
-                                backgroundColor: 'var(--bg-secondary)',
-                                borderColor: 'var(--border-primary)',
-                                color: 'var(--text-primary)',
-                              }}
-                            />
-                          </div>
-                        )
-                      }
+        {/* Reminders */}
+        <ReminderPicker
+          reminders={pendingReminders}
+          onAdd={(r) => setPendingReminders((prev) => [...prev, r])}
+          onRemove={(i) => setPendingReminders((prev) => prev.filter((_, idx) => idx !== i))}
+          hasDateTime={hasTime && !!dueDate && !!dueTime}
+          dueDate={dueDate}
+          dueTime={dueTime}
+        />
 
-                      return (
-                        <div
-                          key={label.id}
-                          className="flex items-center px-2"
-                          onMouseEnter={() => setHoveredLabelId(label.id)}
-                          onMouseLeave={() => setHoveredLabelId(null)}
-                          style={{ backgroundColor: hovered ? 'var(--bg-hover)' : 'transparent' }}
-                        >
-                          <button
-                            onClick={() => toggleLabel(label.id)}
-                            className="flex flex-1 items-center gap-2 py-1.5 text-sm"
-                            style={{ color: 'var(--text-primary)' }}
-                          >
-                            <span className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: label.color }} />
-                            <span className="flex-1 text-left">{label.name}</span>
-                            {active && !hovered && <Check size={12} style={{ color: '#283B56' }} />}
-                          </button>
-                          {hovered && (
-                            <>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setEditingLabelId(label.id)
-                                  setEditingLabelName(label.name)
-                                  setEditingLabelColor(label.color)
-                                }}
-                                className="rounded p-1 transition-all"
-                                style={{ color: 'var(--text-muted)', backgroundColor: 'transparent' }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'rgba(40,59,86,0.12)'
-                                  e.currentTarget.style.color = '#283B56'
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'transparent'
-                                  e.currentTarget.style.color = 'var(--text-muted)'
-                                }}
-                                title="Editar etiqueta"
-                              >
-                                <Pencil size={12} />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  showConfirmDialog({
-                                    title: 'Eliminar etiqueta',
-                                    message: `¿Eliminar la etiqueta «${label.name}»? Se quitará de todas las tareas que la usen.`,
-                                    confirmLabel: 'Eliminar',
-                                    onConfirm: () => {
-                                      deleteLabel.mutate(label.id)
-                                      setSelectedLabelIds((prev) => prev.filter((id) => id !== label.id))
-                                      setHoveredLabelId(null)
-                                    },
-                                  })
-                                }}
-                                className="rounded p-1 transition-all"
-                                style={{ color: '#EC1E2A', backgroundColor: 'transparent' }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'rgba(236,30,42,0.1)'
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'transparent'
-                                }}
-                                title="Eliminar etiqueta"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </>
-                          )}
-                        </div>
+        {/* Labels */}
+        <div className="relative">
+          <button
+            onClick={() => setShowLabelMenu(!showLabelMenu)}
+            className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
+            style={{
+              backgroundColor:
+                selectedLabelIds.length > 0 ? 'rgba(107,114,128,0.1)' : 'var(--bg-secondary)',
+              borderColor:
+                selectedLabelIds.length > 0 ? 'rgba(107,114,128,0.3)' : 'var(--border-primary)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            <Tag size={14} />
+            Etiquetas
+            {selectedLabelIds.length > 0 && (
+              <span
+                className="rounded-full px-1.5 py-0.5 text-xs font-bold text-white"
+                style={{ backgroundColor: '#283B56' }}
+              >
+                {selectedLabelIds.length}
+              </span>
+            )}
+          </button>
+          {showLabelMenu && (
+            <div
+              className="absolute left-0 top-full z-20 mt-1 w-56 rounded-lg border shadow-lg"
+              style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}
+            >
+              <div className="p-2">
+                <input
+                  autoFocus
+                  value={labelSearch}
+                  onChange={(e) => setLabelSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      const trimmed = labelSearch.trim()
+                      if (!trimmed) return
+                      const exact = labels.find(
+                        (l) => l.name.toLowerCase() === trimmed.toLowerCase(),
                       )
-                    })}
+                      if (exact) {
+                        toggleLabel(exact.id)
+                        setLabelSearch('')
+                      } else {
+                        const color = LABEL_COLORS[Math.floor(Math.random() * LABEL_COLORS.length)]
+                        createLabel.mutateAsync({ name: trimmed, color }).then((newLabel) => {
+                          setSelectedLabelIds((prev) => [...prev, newLabel.id])
+                          setLabelSearch('')
+                        })
+                      }
+                    }
+                    if (e.key === 'Escape') setShowLabelMenu(false)
+                  }}
+                  placeholder="Buscar o crear etiqueta..."
+                  className="w-full rounded-lg border px-2 py-1.5 text-xs outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-secondary)',
+                    borderColor: 'var(--border-primary)',
+                    color: 'var(--text-primary)',
+                  }}
+                />
+              </div>
+              <div className="max-h-44 overflow-y-auto py-1">
+                {filteredLabels.map((label) => {
+                  const active = selectedLabelIds.includes(label.id)
+                  const hovered = hoveredLabelId === label.id
+                  const editing = editingLabelId === label.id
 
-                    {/* Opción crear si no hay coincidencia exacta */}
-                    {labelSearch.trim() &&
-                      !labels.some(
-                        (l) => l.name.toLowerCase() === labelSearch.trim().toLowerCase(),
-                      ) && (
-                        <div className="border-t" style={{ borderColor: 'var(--border-primary)' }}>
+                  if (editing) {
+                    return (
+                      <div key={label.id} className="flex items-center gap-1.5 px-2 py-1.5">
+                        <ColorPicker
+                          size="sm"
+                          value={editingLabelColor}
+                          onChange={setEditingLabelColor}
+                        />
+                        <input
+                          autoFocus
+                          value={editingLabelName}
+                          onChange={(e) => setEditingLabelName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              const name = editingLabelName.trim()
+                              if (name)
+                                updateLabel.mutate({
+                                  id: label.id,
+                                  updates: { name, color: editingLabelColor },
+                                })
+                              setEditingLabelId(null)
+                            }
+                            if (e.key === 'Escape') setEditingLabelId(null)
+                          }}
+                          onBlur={(e) => {
+                            if (e.relatedTarget) return
+                            const name = editingLabelName.trim()
+                            if (name)
+                              updateLabel.mutate({
+                                id: label.id,
+                                updates: { name, color: editingLabelColor },
+                              })
+                            setEditingLabelId(null)
+                          }}
+                          className="flex-1 rounded border px-2 py-0.5 text-xs outline-none"
+                          style={{
+                            backgroundColor: 'var(--bg-secondary)',
+                            borderColor: 'var(--border-primary)',
+                            color: 'var(--text-primary)',
+                          }}
+                        />
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div
+                      key={label.id}
+                      className="flex items-center px-2"
+                      onMouseEnter={() => setHoveredLabelId(label.id)}
+                      onMouseLeave={() => setHoveredLabelId(null)}
+                      style={{ backgroundColor: hovered ? 'var(--bg-hover)' : 'transparent' }}
+                    >
+                      <button
+                        onClick={() => toggleLabel(label.id)}
+                        className="flex flex-1 items-center gap-2 py-1.5 text-sm"
+                        style={{ color: 'var(--text-primary)' }}
+                      >
+                        <span
+                          className="h-3 w-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: label.color }}
+                        />
+                        <span className="flex-1 text-left">{label.name}</span>
+                        {active && !hovered && <Check size={12} style={{ color: '#283B56' }} />}
+                      </button>
+                      {hovered && (
+                        <>
                           <button
-                            onClick={() => {
-                              const trimmed = labelSearch.trim()
-                              const color = LABEL_COLORS[Math.floor(Math.random() * LABEL_COLORS.length)]
-                              createLabel.mutateAsync({ name: trimmed, color }).then((newLabel) => {
-                                setSelectedLabelIds((prev) => [...prev, newLabel.id])
-                                setLabelSearch('')
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setEditingLabelId(label.id)
+                              setEditingLabelName(label.name)
+                              setEditingLabelColor(label.color)
+                            }}
+                            className="rounded p-1 transition-all"
+                            style={{ color: 'var(--text-muted)', backgroundColor: 'transparent' }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'rgba(40,59,86,0.12)'
+                              e.currentTarget.style.color = '#283B56'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent'
+                              e.currentTarget.style.color = 'var(--text-muted)'
+                            }}
+                            title="Editar etiqueta"
+                          >
+                            <Pencil size={12} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              showConfirmDialog({
+                                title: 'Eliminar etiqueta',
+                                message: `¿Eliminar la etiqueta «${label.name}»? Se quitará de todas las tareas que la usen.`,
+                                confirmLabel: 'Eliminar',
+                                onConfirm: () => {
+                                  deleteLabel.mutate(label.id)
+                                  setSelectedLabelIds((prev) =>
+                                    prev.filter((id) => id !== label.id),
+                                  )
+                                  setHoveredLabelId(null)
+                                },
                               })
                             }}
-                            disabled={createLabel.isPending}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium transition-colors"
-                            style={{
-                              backgroundColor: 'var(--bg-secondary)',
-                              color: 'var(--text-primary)',
+                            className="rounded p-1 transition-all"
+                            style={{ color: '#EC1E2A', backgroundColor: 'transparent' }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'rgba(236,30,42,0.1)'
                             }}
-                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent'
+                            }}
+                            title="Eliminar etiqueta"
                           >
-                            <Plus size={14} strokeWidth={2.5} />
-                            <span>Crear «<span className="font-semibold">{labelSearch.trim()}</span>»</span>
+                            <Trash2 size={12} />
                           </button>
-                        </div>
+                        </>
                       )}
+                    </div>
+                  )
+                })}
 
-                    {filteredLabels.length === 0 && !labelSearch.trim() && (
-                      <p className="px-3 py-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                        Sin etiquetas aún
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
+                {/* Opción crear si no hay coincidencia exacta */}
+                {labelSearch.trim() &&
+                  !labels.some(
+                    (l) => l.name.toLowerCase() === labelSearch.trim().toLowerCase(),
+                  ) && (
+                    <div className="border-t" style={{ borderColor: 'var(--border-primary)' }}>
+                      <button
+                        onClick={() => {
+                          const trimmed = labelSearch.trim()
+                          const color =
+                            LABEL_COLORS[Math.floor(Math.random() * LABEL_COLORS.length)]
+                          createLabel.mutateAsync({ name: trimmed, color }).then((newLabel) => {
+                            setSelectedLabelIds((prev) => [...prev, newLabel.id])
+                            setLabelSearch('')
+                          })
+                        }}
+                        disabled={createLabel.isPending}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium transition-colors"
+                        style={{
+                          backgroundColor: 'var(--bg-secondary)',
+                          color: 'var(--text-primary)',
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')
+                        }
+                      >
+                        <Plus size={14} strokeWidth={2.5} />
+                        <span>
+                          Crear «<span className="font-semibold">{labelSearch.trim()}</span>»
+                        </span>
+                      </button>
+                    </div>
+                  )}
+
+                {filteredLabels.length === 0 && !labelSearch.trim() && (
+                  <p className="px-3 py-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                    Sin etiquetas aún
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-
-        {/* Footer */}
-        <div
-          className="flex items-center gap-2 border-t px-4 py-3"
-          style={{ borderColor: 'var(--border-primary)' }}
-        >
-          {!inline && (
-            <button
-              type="button"
-              onClick={() => setFullscreen((f) => !f)}
-              className="rounded-lg p-1.5 transition-colors"
-              style={{ color: 'var(--text-muted)' }}
-              title={fullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-            >
-              {fullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-            </button>
           )}
-          <div className="flex-1" />
-          <button
-            onClick={onClose}
-            className="rounded-lg px-4 py-1.5 text-sm font-medium transition-colors"
-            style={{ color: 'var(--text-secondary)' }}
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={!stripHtmlTags(title) || createTask.isPending || updateTask.isPending}
-            className="flex items-center gap-2 rounded-lg px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
-            style={{ backgroundColor: '#283B56' }}
-          >
-            <span>{task ? 'Guardar' : 'Añadir tarea'}</span>
-            {!task && !inline && <span className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-[10px]">Q</span>}
-          </button>
         </div>
+      </div>
+
+      {/* Footer */}
+      <div
+        className="flex items-center gap-2 border-t px-4 py-3"
+        style={{ borderColor: 'var(--border-primary)' }}
+      >
+        {!inline && (
+          <button
+            type="button"
+            onClick={() => setFullscreen((f) => !f)}
+            className="rounded-lg p-1.5 transition-colors"
+            style={{ color: 'var(--text-muted)' }}
+            title={fullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            {fullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+          </button>
+        )}
+        <div className="flex-1" />
+        <button
+          onClick={onClose}
+          className="rounded-lg px-4 py-1.5 text-sm font-medium transition-colors"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={!stripHtmlTags(title) || createTask.isPending || updateTask.isPending}
+          className="flex items-center gap-2 rounded-lg px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
+          style={{ backgroundColor: '#283B56' }}
+        >
+          <span>{task ? 'Guardar' : 'Añadir tarea'}</span>
+          {!task && !inline && (
+            <span className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-[10px]">Q</span>
+          )}
+        </button>
+      </div>
     </>
   )
 
@@ -1632,9 +1820,7 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
         className="mt-2 w-full rounded-xl border"
         style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}
       >
-        <div className="p-4">
-          {editorCard}
-        </div>
+        <div className="p-4">{editorCard}</div>
       </div>
     )
   }
@@ -1648,9 +1834,7 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
         )}
         style={{ backgroundColor: 'var(--bg-primary)' }}
       >
-        <div className="mx-auto w-full max-w-3xl px-4 py-4 md:px-6 md:py-6">
-          {editorCard}
-        </div>
+        <div className="mx-auto w-full max-w-3xl px-4 py-4 md:px-6 md:py-6">{editorCard}</div>
       </div>
     )
   }
@@ -1662,9 +1846,7 @@ export function TaskEditor({ open, onClose, task, defaultProjectId, defaultDate,
         className="relative z-10 w-full max-w-3xl mx-4 rounded-xl border shadow-2xl"
         style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}
       >
-        <div className="p-4">
-          {editorCard}
-        </div>
+        <div className="p-4">{editorCard}</div>
       </div>
     </div>
   )

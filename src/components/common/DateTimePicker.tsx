@@ -36,10 +36,18 @@ import {
 } from 'lucide-react'
 
 // ── Mini calendar para selección de fecha de fin ──────────────────────────────
-function MiniCalendar({ selected, onSelect }: { selected: string | null; onSelect: (d: string) => void }) {
+function MiniCalendar({
+  selected,
+  onSelect,
+}: {
+  selected: string | null
+  onSelect: (d: string) => void
+}) {
   const today = new Date()
   const selectedDate = selected ? parseLocalDate(selected) : null
-  const [viewMonth, setViewMonth] = useState(() => (selected ? parseLocalDate(selected) : new Date()))
+  const [viewMonth, setViewMonth] = useState(() =>
+    selected ? parseLocalDate(selected) : new Date(),
+  )
 
   const calendarDays = useMemo(() => {
     return eachDayOfInterval({
@@ -49,7 +57,10 @@ function MiniCalendar({ selected, onSelect }: { selected: string | null; onSelec
   }, [viewMonth])
 
   return (
-    <div className="mt-2 rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-primary)', backgroundColor: 'var(--bg-primary)' }}>
+    <div
+      className="mt-2 rounded-xl overflow-hidden"
+      style={{ border: '1px solid var(--border-primary)', backgroundColor: 'var(--bg-primary)' }}
+    >
       {/* Navegación de mes */}
       <div className="flex items-center justify-between px-2 pt-2 pb-1">
         <button
@@ -77,7 +88,13 @@ function MiniCalendar({ selected, onSelect }: { selected: string | null; onSelec
       {/* Cabecera de días */}
       <div className="grid grid-cols-7 text-center px-1 mb-0.5">
         {DAY_HEADERS.map((d) => (
-          <span key={d} className="py-0.5 text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>{d}</span>
+          <span
+            key={d}
+            className="py-0.5 text-[10px] font-medium"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            {d}
+          </span>
         ))}
       </div>
       {/* Grilla */}
@@ -94,11 +111,19 @@ function MiniCalendar({ selected, onSelect }: { selected: string | null; onSelec
               className="relative flex flex-col items-center justify-center rounded-md py-0.5 text-[11px] transition-colors"
               style={{
                 backgroundColor: isSelected ? '#283B56' : undefined,
-                color: isSelected ? '#fff' : isCurrentMonth ? 'var(--text-primary)' : 'var(--text-muted)',
+                color: isSelected
+                  ? '#fff'
+                  : isCurrentMonth
+                    ? 'var(--text-primary)'
+                    : 'var(--text-muted)',
                 fontWeight: isSelected ? 700 : undefined,
               }}
-              onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--bg-hover)' }}
-              onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = '' }}
+              onMouseEnter={(e) => {
+                if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--bg-hover)'
+              }}
+              onMouseLeave={(e) => {
+                if (!isSelected) e.currentTarget.style.backgroundColor = ''
+              }}
             >
               {format(day, 'd')}
               {isTodayDay && (
@@ -136,8 +161,18 @@ const BYDAY = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const
 const DAY_NAMES_ES = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
 const DAY_NAMES_SHORT_ES = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
 const MONTH_NAMES_ES = [
-  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
 ]
 
 function formatDuration(v: number): string {
@@ -168,7 +203,11 @@ interface DateTimePickerProps {
   onTimeChange: (time: string | null) => void
   onHasTimeChange: (hasTime: boolean) => void
   onDurationChange: (minutes: number | null) => void
-  onRecurrenceChange: (isRecurring: boolean, rule: string | null, from: 'due_date' | 'completion_date') => void
+  onRecurrenceChange: (
+    isRecurring: boolean,
+    rule: string | null,
+    from: 'due_date' | 'completion_date',
+  ) => void
   shortcutKey?: string
   inline?: boolean
 }
@@ -192,7 +231,10 @@ function generateRecurrencePresets(date: Date) {
     presets.push({ label: 'Último día de cada mes', rule: 'RRULE:FREQ=MONTHLY;BYMONTHDAY=-1' })
   }
 
-  presets.push({ label: `Cada año el ${dayOfMonth} de ${month}`, rule: `RRULE:FREQ=YEARLY;BYMONTH=${date.getMonth() + 1};BYMONTHDAY=${dayOfMonth}` })
+  presets.push({
+    label: `Cada año el ${dayOfMonth} de ${month}`,
+    rule: `RRULE:FREQ=YEARLY;BYMONTH=${date.getMonth() + 1};BYMONTHDAY=${dayOfMonth}`,
+  })
 
   return presets
 }
@@ -347,7 +389,7 @@ export function DateTimePicker({
       {
         icon: ArrowRight,
         label: 'Próxima semana',
-        hint: format(mon, "EEE d MMM", { locale: es }),
+        hint: format(mon, 'EEE d MMM', { locale: es }),
         color: '#8B5CF6',
         action: handleNextWeek,
       },
@@ -425,7 +467,9 @@ export function DateTimePicker({
         setCustomEndDate(null)
         setCustomHasEnd(false)
       }
-      setCustomDays(bydayMatch && freqMatch?.[1] === 'WEEKLY' ? bydayMatch[1]!.split(',').filter(Boolean) : [])
+      setCustomDays(
+        bydayMatch && freqMatch?.[1] === 'WEEKLY' ? bydayMatch[1]!.split(',').filter(Boolean) : [],
+      )
       setCustomUseLastDay(bymonthDayMatch?.[1] === '-1')
     } else {
       setCustomFreq('WEEKLY')
@@ -455,7 +499,16 @@ export function DateTimePicker({
     }
     onRecurrenceChange(true, rule, customFrom)
     setShowCustomRecurrence(false)
-  }, [customFreq, customInterval, customDays, customUseLastDay, customHasEnd, customEndDate, customFrom, onRecurrenceChange])
+  }, [
+    customFreq,
+    customInterval,
+    customDays,
+    customUseLastDay,
+    customHasEnd,
+    customEndDate,
+    customFrom,
+    onRecurrenceChange,
+  ])
 
   // Trigger label — includes time + duration when set
   const triggerLabel = useMemo(() => {
@@ -524,7 +577,15 @@ export function DateTimePicker({
         return interval > 1 ? `Último día cada ${interval} meses` : 'Último día del mes'
       }
       if (freq === 'WEEKLY' && bydayMatch) {
-        const dayMap: Record<string, string> = { MO: 'lun', TU: 'mar', WE: 'mié', TH: 'jue', FR: 'vie', SA: 'sáb', SU: 'dom' }
+        const dayMap: Record<string, string> = {
+          MO: 'lun',
+          TU: 'mar',
+          WE: 'mié',
+          TH: 'jue',
+          FR: 'vie',
+          SA: 'sáb',
+          SU: 'dom',
+        }
         const days = bydayMatch[1]!.split(',').map((x) => dayMap[x] ?? x)
         const prefix = interval > 1 ? `Cada ${interval} sem: ` : ''
         return `${prefix}${days.join(', ')}`
@@ -554,9 +615,7 @@ export function DateTimePicker({
         >
           <Calendar size={14} />
           <span>{triggerLabel ?? 'Fecha'}</span>
-          {isRecurring && (
-            <Repeat size={12} style={{ color: 'var(--text-muted)' }} />
-          )}
+          {isRecurring && <Repeat size={12} style={{ color: 'var(--text-muted)' }} />}
           {selectedDate && (
             <span
               className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-black/10"
@@ -581,7 +640,11 @@ export function DateTimePicker({
 
       {(inline || open) && !showCustomRecurrence && (
         <div
-          className={inline ? 'w-[min(288px,100vw-32px)] overflow-hidden' : 'w-[min(288px,100vw-32px)] rounded-xl shadow-xl overflow-y-auto'}
+          className={
+            inline
+              ? 'w-[min(288px,100vw-32px)] overflow-hidden'
+              : 'w-[min(288px,100vw-32px)] rounded-xl shadow-xl overflow-y-auto'
+          }
           style={{
             ...(inline ? {} : floatingStyle),
             backgroundColor: 'var(--bg-primary)',
@@ -634,7 +697,10 @@ export function DateTimePicker({
               >
                 <ChevronLeft size={16} style={{ color: 'var(--text-primary)' }} />
               </button>
-              <span className="text-sm font-semibold capitalize" style={{ color: 'var(--text-primary)' }}>
+              <span
+                className="text-sm font-semibold capitalize"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 {format(viewMonth, 'MMMM yyyy', { locale: es })}
               </span>
               <button
@@ -651,7 +717,11 @@ export function DateTimePicker({
             {/* Day headers */}
             <div className="mb-1 grid grid-cols-7 text-center">
               {DAY_HEADERS.map((d) => (
-                <span key={d} className="py-0.5 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                <span
+                  key={d}
+                  className="py-0.5 text-xs font-medium"
+                  style={{ color: 'var(--text-muted)' }}
+                >
                   {d}
                 </span>
               ))}
@@ -672,7 +742,11 @@ export function DateTimePicker({
                     className="relative flex flex-col items-center justify-center rounded-md py-1 text-xs transition-colors"
                     style={{
                       backgroundColor: isSelected ? '#283B56' : undefined,
-                      color: isSelected ? '#fff' : isCurrentMonth ? 'var(--text-primary)' : 'var(--text-muted)',
+                      color: isSelected
+                        ? '#fff'
+                        : isCurrentMonth
+                          ? 'var(--text-primary)'
+                          : 'var(--text-muted)',
                       fontWeight: isSelected ? 700 : undefined,
                     }}
                     onMouseEnter={(e) => {
@@ -754,12 +828,21 @@ export function DateTimePicker({
                     style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
                   >
                     {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map((h) => (
-                      <option key={h} value={h}>{h}</option>
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
                     ))}
                   </select>
-                  <span className="text-sm font-medium select-none px-0.5" style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)' }}>:</span>
+                  <span
+                    className="text-sm font-medium select-none px-0.5"
+                    style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)' }}
+                  >
+                    :
+                  </span>
                   <select
-                    value={String(Math.round(parseInt((time ?? '09:00').split(':')[1] ?? '0') / 5) * 5 % 60).padStart(2, '0')}
+                    value={String(
+                      (Math.round(parseInt((time ?? '09:00').split(':')[1] ?? '0') / 5) * 5) % 60,
+                    ).padStart(2, '0')}
                     onChange={(e) => {
                       const h = (time ?? '09:00').split(':')[0] ?? '09'
                       onTimeChange(`${h}:${e.target.value}`)
@@ -768,9 +851,13 @@ export function DateTimePicker({
                     className="outline-none text-sm font-medium px-2 py-1.5 cursor-pointer appearance-none"
                     style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
                   >
-                    {Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0')).map((m) => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
+                    {Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0')).map(
+                      (m) => (
+                        <option key={m} value={m}>
+                          {m}
+                        </option>
+                      ),
+                    )}
                   </select>
                 </div>
 
@@ -791,7 +878,10 @@ export function DateTimePicker({
                       }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
-                        if (e.key === 'Escape') { onDurationChange(null); setShowCustomDuration(false) }
+                        if (e.key === 'Escape') {
+                          onDurationChange(null)
+                          setShowCustomDuration(false)
+                        }
                       }}
                       className="flex-1 rounded-lg border px-2 py-1.5 text-xs outline-none"
                       style={{
@@ -800,7 +890,9 @@ export function DateTimePicker({
                         color: 'var(--text-primary)',
                       }}
                     />
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>min</span>
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      min
+                    </span>
                   </div>
                 ) : (
                   <select
@@ -829,9 +921,10 @@ export function DateTimePicker({
                         {opt.label}
                       </option>
                     ))}
-                    {durationMinutes !== null && !DURATION_PRESETS.some((p) => p.value === durationMinutes) && (
-                      <option value="custom">{formatDuration(durationMinutes)}</option>
-                    )}
+                    {durationMinutes !== null &&
+                      !DURATION_PRESETS.some((p) => p.value === durationMinutes) && (
+                        <option value="custom">{formatDuration(durationMinutes)}</option>
+                      )}
                     <option value="custom">Personalizado...</option>
                   </select>
                 )}
@@ -890,13 +983,13 @@ export function DateTimePicker({
                       onClick={() => handleRecurrencePreset(preset.rule)}
                       className="flex w-full items-center gap-3 rounded-lg px-6 py-1.5 text-xs transition-colors"
                       style={{ color: isActive ? '#283B56' : 'var(--text-secondary)' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                      }
                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
                       <span className="flex-1 text-left">{preset.label}</span>
-                      {isActive && (
-                        <Check size={14} style={{ color: '#283B56' }} />
-                      )}
+                      {isActive && <Check size={14} style={{ color: '#283B56' }} />}
                     </button>
                   )
                 })}
@@ -919,7 +1012,11 @@ export function DateTimePicker({
       {/* Custom recurrence dialog */}
       {(inline || open) && showCustomRecurrence && (
         <div
-          className={inline ? 'w-[min(288px,100vw-32px)] p-4' : 'w-[min(288px,100vw-32px)] rounded-xl p-4 shadow-xl'}
+          className={
+            inline
+              ? 'w-[min(288px,100vw-32px)] p-4'
+              : 'w-[min(288px,100vw-32px)] rounded-xl p-4 shadow-xl'
+          }
           style={{
             ...(inline ? {} : floatingStyle),
             backgroundColor: 'var(--bg-primary)',
@@ -943,11 +1040,17 @@ export function DateTimePicker({
 
           {/* Según la */}
           <div className="mb-3">
-            <span className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+            <span
+              className="mb-1.5 block text-xs font-medium"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               Según la
             </span>
             <div className="flex flex-col gap-1.5">
-              <label className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'var(--text-primary)' }}>
+              <label
+                className="flex items-center gap-2 text-xs cursor-pointer"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 <input
                   type="radio"
                   name="recurrence-from"
@@ -957,7 +1060,10 @@ export function DateTimePicker({
                 />
                 Fecha en la que se programe
               </label>
-              <label className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'var(--text-primary)' }}>
+              <label
+                className="flex items-center gap-2 text-xs cursor-pointer"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 <input
                   type="radio"
                   name="recurrence-from"
@@ -972,7 +1078,10 @@ export function DateTimePicker({
 
           {/* Cada */}
           <div className="mb-3">
-            <span className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+            <span
+              className="mb-1.5 block text-xs font-medium"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               Cada
             </span>
             <div className="flex gap-2">
@@ -1034,7 +1143,10 @@ export function DateTimePicker({
           {/* Días (solo cuando es semanal) */}
           {customFreq === 'WEEKLY' && (
             <div className="mb-3">
-              <span className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+              <span
+                className="mb-1.5 block text-xs font-medium"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 Días
               </span>
               <div className="flex gap-1">
@@ -1066,11 +1178,17 @@ export function DateTimePicker({
 
           {/* Finaliza */}
           <div className="mb-4">
-            <span className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+            <span
+              className="mb-1.5 block text-xs font-medium"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               Finaliza
             </span>
             <div className="flex flex-col gap-1.5">
-              <label className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'var(--text-primary)' }}>
+              <label
+                className="flex items-center gap-2 text-xs cursor-pointer"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 <input
                   type="radio"
                   name="recurrence-end"
@@ -1083,7 +1201,10 @@ export function DateTimePicker({
                 />
                 Nunca
               </label>
-              <label className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'var(--text-primary)' }}>
+              <label
+                className="flex items-center gap-2 text-xs cursor-pointer"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 <input
                   type="radio"
                   name="recurrence-end"

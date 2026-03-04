@@ -53,15 +53,21 @@ export function TaskTooltip({ task, children, disabled }: TaskTooltipProps) {
   // Hide when disabled changes (e.g., drag starts)
   useEffect(() => {
     if (disabled) {
-      if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null }
+      if (timerRef.current) {
+        clearTimeout(timerRef.current)
+        timerRef.current = null
+      }
       setShow(false)
     }
   }, [disabled])
 
   // Clean up timer on unmount
-  useEffect(() => () => {
-    if (timerRef.current) clearTimeout(timerRef.current)
-  }, [])
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    },
+    [],
+  )
 
   // Position tooltip
   useEffect(() => {
@@ -87,7 +93,7 @@ export function TaskTooltip({ task, children, disabled }: TaskTooltipProps) {
   let dateLabel = ''
   if (task.due_date) {
     const d = new Date(task.due_date + 'T00:00:00')
-    dateLabel = format(d, "EEEE d/MM", { locale: es })
+    dateLabel = format(d, 'EEEE d/MM', { locale: es })
   }
   let timeLabel = ''
   if (task.has_time && task.due_datetime) {
@@ -157,7 +163,11 @@ export function TaskTooltip({ task, children, disabled }: TaskTooltipProps) {
             {/* Description */}
             {description && (
               <div className="mt-2 flex items-start gap-2">
-                <AlignLeft size={14} className="mt-0.5 shrink-0" style={{ color: 'var(--text-muted)' }} />
+                <AlignLeft
+                  size={14}
+                  className="mt-0.5 shrink-0"
+                  style={{ color: 'var(--text-muted)' }}
+                />
                 <p
                   className="text-xs leading-relaxed line-clamp-2"
                   style={{ color: 'var(--text-secondary)' }}
@@ -171,7 +181,10 @@ export function TaskTooltip({ task, children, disabled }: TaskTooltipProps) {
             {project && (
               <div className="mt-2 flex items-center gap-2">
                 <Hash size={14} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
-                <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                <div
+                  className="flex items-center gap-1 text-xs"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
                   {parentProject && (
                     <>
                       <span
@@ -199,9 +212,7 @@ export function TaskTooltip({ task, children, disabled }: TaskTooltipProps) {
                   {dateLabel}
                   {timeLabel && ` ${timeLabel}`}
                 </span>
-                {task.is_recurring && (
-                  <Repeat size={12} style={{ color: 'var(--text-muted)' }} />
-                )}
+                {task.is_recurring && <Repeat size={12} style={{ color: 'var(--text-muted)' }} />}
               </div>
             )}
 

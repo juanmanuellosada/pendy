@@ -30,7 +30,8 @@ export function buildGoogleOAuthUrl(codeChallenge: string, redirectUri: string):
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: 'code',
-    scope: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email',
+    scope:
+      'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email',
     access_type: 'offline',
     prompt: 'consent',
     code_challenge: codeChallenge,
@@ -53,8 +54,18 @@ const BYDAY_ES: Record<string, string> = {
 }
 
 const MONTH_NAMES_ES = [
-  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
 ]
 
 function formatUntilDate(until: string): string {
@@ -106,8 +117,17 @@ export function parseRRule(rruleLine: string): string {
       if (bysetpos && byday) {
         const pos = parseInt(bysetpos, 10)
         const posLabel =
-          pos === 1 ? 'primer' : pos === 2 ? 'segundo' : pos === 3 ? 'tercer' :
-          pos === 4 ? 'cuarto' : pos === -1 ? 'último' : `${pos}º`
+          pos === 1
+            ? 'primer'
+            : pos === 2
+              ? 'segundo'
+              : pos === 3
+                ? 'tercer'
+                : pos === 4
+                  ? 'cuarto'
+                  : pos === -1
+                    ? 'último'
+                    : `${pos}º`
         text += `, el ${posLabel} ${listDays(byday)}`
       } else if (bymonthday) {
         text += `, el día ${bymonthday}`
@@ -136,19 +156,19 @@ export function parseRRule(rruleLine: string): string {
 // ─── Normalize raw API response to CalendarEvent ─────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function normalizeGoogleEvent(raw: any, meta?: { calendarId?: string; calendarName?: string; calendarColor?: string }): CalendarEvent {
+function normalizeGoogleEvent(
+  raw: any,
+  meta?: { calendarId?: string; calendarName?: string; calendarColor?: string },
+): CalendarEvent {
   const isAllDay = !!raw.start?.date
-  const start = isAllDay
-    ? new Date(`${raw.start.date}T00:00:00`)
-    : new Date(raw.start.dateTime)
-  const end = isAllDay
-    ? new Date(`${raw.end.date}T00:00:00`)
-    : new Date(raw.end.dateTime)
+  const start = isAllDay ? new Date(`${raw.start.date}T00:00:00`) : new Date(raw.start.dateTime)
+  const end = isAllDay ? new Date(`${raw.end.date}T00:00:00`) : new Date(raw.end.dateTime)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const reminders: CalendarEventReminder[] | undefined = raw.reminders?.useDefault === false
-    ? ((raw.reminders?.overrides ?? []) as CalendarEventReminder[])
-    : undefined
+  const reminders: CalendarEventReminder[] | undefined =
+    raw.reminders?.useDefault === false
+      ? ((raw.reminders?.overrides ?? []) as CalendarEventReminder[])
+      : undefined
 
   return {
     id: `google:${raw.id}`,
@@ -171,7 +191,9 @@ function normalizeGoogleEvent(raw: any, meta?: { calendarId?: string; calendarNa
 
 // ─── Fetch calendar list ──────────────────────────────────────────────────────
 
-export async function fetchGoogleCalendarList(accessToken: string): Promise<GoogleCalendarListEntry[]> {
+export async function fetchGoogleCalendarList(
+  accessToken: string,
+): Promise<GoogleCalendarListEntry[]> {
   const response = await fetch(
     'https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=50',
     { headers: { Authorization: `Bearer ${accessToken}` } },
@@ -184,13 +206,15 @@ export async function fetchGoogleCalendarList(accessToken: string): Promise<Goog
 
   const data = await response.json()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data.items ?? []).map((item: any): GoogleCalendarListEntry => ({
-    id: item.id,
-    summary: item.summary ?? item.id,
-    backgroundColor: item.backgroundColor,
-    primary: item.primary ?? false,
-    accessRole: item.accessRole,
-  }))
+  return (data.items ?? []).map(
+    (item: any): GoogleCalendarListEntry => ({
+      id: item.id,
+      summary: item.summary ?? item.id,
+      backgroundColor: item.backgroundColor,
+      primary: item.primary ?? false,
+      accessRole: item.accessRole,
+    }),
+  )
 }
 
 // ─── Create calendar ──────────────────────────────────────────────────────────
@@ -261,10 +285,7 @@ export async function setGoogleCalendarColor(
 
 // ─── Delete calendar ─────────────────────────────────────────────────────────
 
-export async function deleteGoogleCalendar(
-  accessToken: string,
-  calendarId: string,
-): Promise<void> {
+export async function deleteGoogleCalendar(accessToken: string, calendarId: string): Promise<void> {
   const res = await fetch(
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}`,
     { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } },
@@ -342,11 +363,7 @@ export async function fetchGoogleEvents(
 
   // Enriquecer instancias recurrentes con texto de recurrencia del evento master
   const uniqueMasterIds: string[] = [
-    ...new Set(
-      events
-        .filter((e) => e.recurringEventId)
-        .map((e) => e.recurringEventId as string),
-    ),
+    ...new Set(events.filter((e) => e.recurringEventId).map((e) => e.recurringEventId as string)),
   ]
 
   if (uniqueMasterIds.length > 0) {
@@ -406,9 +423,10 @@ export async function createGoogleEvent(
   }
   if (data.recurrence !== undefined) body.recurrence = data.recurrence
   if (data.reminders !== undefined) {
-    body.reminders = data.reminders.length > 0
-      ? { useDefault: false, overrides: data.reminders }
-      : { useDefault: true }
+    body.reminders =
+      data.reminders.length > 0
+        ? { useDefault: false, overrides: data.reminders }
+        : { useDefault: true }
   }
 
   const response = await fetch(
@@ -457,9 +475,10 @@ export async function updateGoogleEvent(
   if (data.end !== undefined) body.end = toGoogleDateTime(data.end, isAllDay)
   if (data.recurrence !== undefined) body.recurrence = data.recurrence
   if (data.reminders !== undefined) {
-    body.reminders = data.reminders.length > 0
-      ? { useDefault: false, overrides: data.reminders }
-      : { useDefault: true }
+    body.reminders =
+      data.reminders.length > 0
+        ? { useDefault: false, overrides: data.reminders }
+        : { useDefault: true }
   }
 
   const response = await fetch(

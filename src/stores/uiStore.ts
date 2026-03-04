@@ -53,10 +53,19 @@ interface UIState {
   setEditingProjectId: (id: string | null) => void
   setProjectEditorOpen: (open: boolean) => void
   setNewProjectParentId: (id: string | null) => void
-  showConfirmDialog: (config: { title: string; message: string; confirmLabel?: string; onConfirm: () => void }) => void
+  showConfirmDialog: (config: {
+    title: string
+    message: string
+    confirmLabel?: string
+    onConfirm: () => void
+  }) => void
   hideConfirmDialog: () => void
   getViewOptions: (viewId: string) => ViewOptions
-  setViewOption: <K extends keyof ViewOptions>(viewId: string, key: K, value: ViewOptions[K]) => void
+  setViewOption: <K extends keyof ViewOptions>(
+    viewId: string,
+    key: K,
+    value: ViewOptions[K],
+  ) => void
 }
 
 export const useUIStore = create<UIState>()(
@@ -74,10 +83,8 @@ export const useUIStore = create<UIState>()(
       setEditingProjectId: (id) => set({ editingProjectId: id }),
       setProjectEditorOpen: (open) => set({ projectEditorOpen: open }),
       setNewProjectParentId: (id) => set({ newProjectParentId: id }),
-      showConfirmDialog: (config) =>
-        set({ confirmDialogOpen: true, confirmDialogConfig: config }),
-      hideConfirmDialog: () =>
-        set({ confirmDialogOpen: false, confirmDialogConfig: null }),
+      showConfirmDialog: (config) => set({ confirmDialogOpen: true, confirmDialogConfig: config }),
+      hideConfirmDialog: () => set({ confirmDialogOpen: false, confirmDialogConfig: null }),
 
       getViewOptions: (viewId) => ({
         ...defaultViewOptions,

@@ -111,7 +111,12 @@ function ProjectTreeItem({
   onAddSubproject,
   currentPath,
 }: ProjectTreeItemProps) {
-  const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDragRef,
+    isDragging,
+  } = useDraggable({
     id: project.id,
   })
   const { setNodeRef: setDropRef } = useDroppable({ id: project.id })
@@ -254,7 +259,10 @@ export function Sidebar() {
   const todayViewOpts = getViewOptions('today')
   const showHabitsInToday = todayViewOpts.showHabits ?? true
   const pendingHabitsCount = showHabitsInToday
-    ? todayHabits.filter((h) => !habitCompletions.some((c) => c.habit_id === h.id && c.completed_date === todayDateKey)).length
+    ? todayHabits.filter(
+        (h) =>
+          !habitCompletions.some((c) => c.habit_id === h.id && c.completed_date === todayDateKey),
+      ).length
     : 0
   const todayCount = todayTasks.filter((t) => !t.is_completed).length + pendingHabitsCount
 
@@ -275,9 +283,7 @@ export function Sidebar() {
   const updateProject = useUpdateProject()
   const reorderProjects = useReorderProjects()
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-  )
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
   const tree = buildTree(regularProjects)
 
@@ -380,8 +386,15 @@ export function Sidebar() {
 
   if (sidebarCollapsed) {
     return (
-      <div className="flex h-full flex-col items-center py-4" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
-        <img src={`${import.meta.env.BASE_URL}pendy-logo.png`} alt="Pendy" className="h-8 w-8 rounded-lg" />
+      <div
+        className="flex h-full flex-col items-center py-4"
+        style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}
+      >
+        <img
+          src={`${import.meta.env.BASE_URL}pendy-logo.png`}
+          alt="Pendy"
+          className="h-8 w-8 rounded-lg"
+        />
         <div className="mt-4 flex flex-col gap-1">
           <button
             onClick={() => setQuickAddOpen(true)}
@@ -401,7 +414,11 @@ export function Sidebar() {
               opacity: isCalendarConnected ? 1 : 0.4,
               cursor: isCalendarConnected ? 'pointer' : 'not-allowed',
             }}
-            title={isCalendarConnected ? 'Añadir evento (E)' : 'Conecta un calendario para añadir eventos'}
+            title={
+              isCalendarConnected
+                ? 'Añadir evento (E)'
+                : 'Conecta un calendario para añadir eventos'
+            }
           >
             <CalendarPlus size={20} />
           </button>
@@ -438,8 +455,15 @@ export function Sidebar() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-4" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
-        <img src={`${import.meta.env.BASE_URL}pendy-logo.png`} alt="Pendy" className="h-8 w-8 rounded-lg" />
+      <div
+        className="flex items-center gap-3 px-4 py-4"
+        style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}
+      >
+        <img
+          src={`${import.meta.env.BASE_URL}pendy-logo.png`}
+          alt="Pendy"
+          className="h-8 w-8 rounded-lg"
+        />
         <div className="flex-1 min-w-0">
           <p className="truncate text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
             {profile?.full_name || 'Usuario'}
@@ -478,7 +502,11 @@ export function Sidebar() {
             opacity: isCalendarConnected ? 1 : 0.4,
             cursor: isCalendarConnected ? 'pointer' : 'not-allowed',
           }}
-          title={isCalendarConnected ? undefined : 'Conecta un calendario en Configuración para añadir eventos'}
+          title={
+            isCalendarConnected
+              ? undefined
+              : 'Conecta un calendario en Configuración para añadir eventos'
+          }
         >
           <CalendarPlus size={18} />
           <span className="flex-1 text-left">Añadir evento</span>
@@ -542,7 +570,8 @@ export function Sidebar() {
                 <span
                   className="min-w-[18px] rounded-full px-1.5 py-0.5 text-center text-[11px] font-semibold"
                   style={{
-                    backgroundColor: location.pathname === path ? 'rgba(255,255,255,0.2)' : 'var(--bg-secondary)',
+                    backgroundColor:
+                      location.pathname === path ? 'rgba(255,255,255,0.2)' : 'var(--bg-secondary)',
                     color: location.pathname === path ? '#FFFFFF' : 'var(--text-secondary)',
                   }}
                 >
@@ -566,12 +595,14 @@ export function Sidebar() {
 
       {/* Scrollable: Favoritos + Proyectos */}
       <div className="mt-2 flex-1 overflow-y-auto px-2 pb-2">
-
         {/* Favoritos: proyectos + etiquetas */}
         {(favoriteProjects.length > 0 || favoriteLabels.length > 0) && (
           <div className="mt-4">
             <div className="flex items-center px-3 py-1">
-              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+              <span
+                className="text-xs font-semibold uppercase tracking-wider"
+                style={{ color: 'var(--text-muted)' }}
+              >
                 Favoritos
               </span>
             </div>
@@ -587,7 +618,9 @@ export function Sidebar() {
                 )}
                 style={{
                   backgroundColor:
-                    location.pathname === `/app/project/${project.id}` ? 'var(--bg-active)' : 'transparent',
+                    location.pathname === `/app/project/${project.id}`
+                      ? 'var(--bg-active)'
+                      : 'transparent',
                   color: 'var(--text-primary)',
                 }}
               >
@@ -607,7 +640,9 @@ export function Sidebar() {
                 )}
                 style={{
                   backgroundColor:
-                    location.pathname === `/app/label/${label.id}` ? 'var(--bg-active)' : 'transparent',
+                    location.pathname === `/app/label/${label.id}`
+                      ? 'var(--bg-active)'
+                      : 'transparent',
                   color: 'var(--text-primary)',
                 }}
               >
@@ -633,7 +668,10 @@ export function Sidebar() {
               ) : (
                 <ChevronRight size={14} style={{ color: 'var(--text-muted)' }} />
               )}
-              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+              <span
+                className="text-xs font-semibold uppercase tracking-wider"
+                style={{ color: 'var(--text-muted)' }}
+              >
                 Mis proyectos
               </span>
             </button>
@@ -690,7 +728,9 @@ export function Sidebar() {
                         <Hash
                           size={14}
                           style={{
-                            color: regularProjects.find((p) => p.id === dragActiveId)?.color ?? '#283B56',
+                            color:
+                              regularProjects.find((p) => p.id === dragActiveId)?.color ??
+                              '#283B56',
                           }}
                         />
                         <span className="truncate">
@@ -717,7 +757,10 @@ export function Sidebar() {
               ) : (
                 <ChevronRight size={14} style={{ color: 'var(--text-muted)' }} />
               )}
-              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+              <span
+                className="text-xs font-semibold uppercase tracking-wider"
+                style={{ color: 'var(--text-muted)' }}
+              >
                 Etiquetas
               </span>
             </button>
@@ -744,11 +787,15 @@ export function Sidebar() {
                     onClick={() => handleNav(`/app/label/${label.id}`)}
                     className={cn(
                       'flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition-colors',
-                      location.pathname === `/app/label/${label.id}` ? 'font-medium' : 'hover:opacity-80',
+                      location.pathname === `/app/label/${label.id}`
+                        ? 'font-medium'
+                        : 'hover:opacity-80',
                     )}
                     style={{
                       backgroundColor:
-                        location.pathname === `/app/label/${label.id}` ? 'var(--bg-active)' : 'transparent',
+                        location.pathname === `/app/label/${label.id}`
+                          ? 'var(--bg-active)'
+                          : 'transparent',
                       color: 'var(--text-primary)',
                     }}
                   >

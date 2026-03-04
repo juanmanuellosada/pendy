@@ -80,7 +80,8 @@ export function LinkBubble({ editor, onEdit }: LinkBubbleProps) {
       // Find the link DOM node at cursor
       const { from } = editor.state.selection
       const domAtPos = editor.view.domAtPos(from)
-      const node = domAtPos.node instanceof HTMLElement ? domAtPos.node : domAtPos.node.parentElement
+      const node =
+        domAtPos.node instanceof HTMLElement ? domAtPos.node : domAtPos.node.parentElement
       const linkEl = node?.closest('a')
       if (linkEl) show(linkEl as HTMLElement)
     }

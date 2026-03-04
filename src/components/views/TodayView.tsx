@@ -2,7 +2,12 @@ import { PartyPopper, CalendarDays, ListChecks, Repeat } from 'lucide-react'
 import { useTodayTasks, useDeleteTask, useUpdateTask } from '@/hooks/useTasks'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { useTodayCalendarEvents } from '@/hooks/useCalendarEvents'
-import { useTodayHabits, useHabitCompletions, useHabitSchedules, useToggleHabitCompletion } from '@/hooks/useHabits'
+import {
+  useTodayHabits,
+  useHabitCompletions,
+  useHabitSchedules,
+  useToggleHabitCompletion,
+} from '@/hooks/useHabits'
 import { TaskEditor } from '@/components/tasks/TaskEditor'
 import { TaskItem } from '@/components/tasks/TaskItem'
 import { TaskGroup } from '@/components/tasks/TaskGroup'
@@ -115,7 +120,11 @@ export function TodayView() {
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-14 animate-pulse rounded-lg" style={{ backgroundColor: 'var(--bg-secondary)' }} />
+          <div
+            key={i}
+            className="h-14 animate-pulse rounded-lg"
+            style={{ backgroundColor: 'var(--bg-secondary)' }}
+          />
         ))}
       </div>
     )
@@ -147,12 +156,24 @@ export function TodayView() {
               Seleccionar
             </button>
           )}
-          <ViewOptionsBar viewId={VIEW_ID} availableStyles={['list', 'calendar']} hideDateFilter hideCalendarMode showHabitsToggle />
+          <ViewOptionsBar
+            viewId={VIEW_ID}
+            availableStyles={['list', 'calendar']}
+            hideDateFilter
+            hideCalendarMode
+            showHabitsToggle
+          />
         </div>
       </div>
 
       {opts.viewStyle === 'calendar' ? (
-        <TodayCalendarView tasks={visibleTasks} labelsMap={labelsMap} calendarEvents={calendarEvents} showCompleted={opts.showCompleted} showHabits={opts.showHabits ?? true} />
+        <TodayCalendarView
+          tasks={visibleTasks}
+          labelsMap={labelsMap}
+          calendarEvents={calendarEvents}
+          showCompleted={opts.showCompleted}
+          showHabits={opts.showHabits ?? true}
+        />
       ) : opts.groupBy !== 'none' ? (
         <div>
           {visibleTasks.length === 0 ? (
@@ -227,13 +248,21 @@ export function TodayView() {
                 <h2 className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
                   Hábitos
                   <span className="ml-2 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>
-                    {todayHabits.filter((h) =>
-                      habitCompletions.some((c) => c.habit_id === h.id && c.completed_date === todayDate)
-                    ).length}/{todayHabits.length}
+                    {
+                      todayHabits.filter((h) =>
+                        habitCompletions.some(
+                          (c) => c.habit_id === h.id && c.completed_date === todayDate,
+                        ),
+                      ).length
+                    }
+                    /{todayHabits.length}
                   </span>
                 </h2>
               </div>
-              <div className="overflow-hidden rounded-lg border" style={{ borderColor: 'var(--border-secondary)' }}>
+              <div
+                className="overflow-hidden rounded-lg border"
+                style={{ borderColor: 'var(--border-secondary)' }}
+              >
                 {todayHabits.map((habit) => (
                   <HabitItem
                     key={habit.id}
@@ -262,7 +291,10 @@ export function TodayView() {
                   </span>
                 </h2>
               </div>
-              <div className="divide-y rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border-secondary)' }}>
+              <div
+                className="divide-y rounded-lg border overflow-hidden"
+                style={{ borderColor: 'var(--border-secondary)' }}
+              >
                 {calendarEvents.map((event) => (
                   <CalendarEventItem key={event.id} event={event} />
                 ))}
@@ -272,7 +304,10 @@ export function TodayView() {
 
           {opts.showCompleted && completedTasks.length > 0 && (
             <div className="mt-6">
-              <p className="px-3 pb-2 text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+              <p
+                className="px-3 pb-2 text-xs font-medium uppercase tracking-wider"
+                style={{ color: 'var(--text-muted)' }}
+              >
                 Completadas ({completedTasks.length})
               </p>
               <div className="divide-y" style={{ borderColor: 'var(--border-secondary)' }}>

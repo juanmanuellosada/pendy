@@ -48,7 +48,7 @@ export const pushService = {
         p256dh: json.keys.p256dh,
         auth: json.keys.auth,
       },
-      { onConflict: 'user_id,endpoint' }
+      { onConflict: 'user_id,endpoint' },
     )
   },
 

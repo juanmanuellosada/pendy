@@ -12,7 +12,9 @@ function loadDetailWidth(): number {
       const n = parseInt(v, 10)
       if (n >= MIN_DETAIL_WIDTH && n <= MAX_DETAIL_WIDTH) return n
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return DEFAULT_DETAIL_WIDTH
 }
 
@@ -27,7 +29,7 @@ interface AppState {
   detailPanelWidth: number
   // Habit detail panel
   selectedHabitId: string | null
-  selectedHabitDate: string | null  // 'yyyy-MM-dd'
+  selectedHabitDate: string | null // 'yyyy-MM-dd'
   habitDetailOpen: boolean
 
   toggleSidebar: () => void
@@ -59,8 +61,10 @@ export const useAppStore = create<AppState>((set) => ({
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
-  setSelectedTaskId: (id) => set({ selectedTaskId: id, taskDetailOpen: id !== null, habitDetailOpen: false }),
-  setTaskDetailOpen: (open) => set({ taskDetailOpen: open, selectedTaskId: open ? undefined : null, habitDetailOpen: false }),
+  setSelectedTaskId: (id) =>
+    set({ selectedTaskId: id, taskDetailOpen: id !== null, habitDetailOpen: false }),
+  setTaskDetailOpen: (open) =>
+    set({ taskDetailOpen: open, selectedTaskId: open ? undefined : null, habitDetailOpen: false }),
   setQuickAddOpen: (open) => set({ quickAddOpen: open }),
   setEventEditorOpen: (open) => set({ eventEditorOpen: open }),
   setSearchOpen: (open) => set({ searchOpen: open }),
@@ -69,12 +73,14 @@ export const useAppStore = create<AppState>((set) => ({
     localStorage.setItem(DETAIL_WIDTH_KEY, String(clamped))
     set({ detailPanelWidth: clamped })
   },
-  setSelectedHabit: (id, date) => set({
-    selectedHabitId: id,
-    selectedHabitDate: date ?? null,
-    habitDetailOpen: id !== null,
-    taskDetailOpen: false,
-    selectedTaskId: null,
-  }),
-  setHabitDetailOpen: (open) => set({ habitDetailOpen: open, selectedHabitId: open ? undefined : null }),
+  setSelectedHabit: (id, date) =>
+    set({
+      selectedHabitId: id,
+      selectedHabitDate: date ?? null,
+      habitDetailOpen: id !== null,
+      taskDetailOpen: false,
+      selectedTaskId: null,
+    }),
+  setHabitDetailOpen: (open) =>
+    set({ habitDetailOpen: open, selectedHabitId: open ? undefined : null }),
 }))

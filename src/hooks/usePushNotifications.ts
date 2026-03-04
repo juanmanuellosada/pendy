@@ -6,7 +6,7 @@ export function usePushNotifications() {
   const { user } = useAuth()
   const supported = pushService.isSupported()
   const [permission, setPermission] = useState<NotificationPermission>(
-    supported ? Notification.permission : 'denied'
+    supported ? Notification.permission : 'denied',
   )
 
   // Sync subscription to DB every time the user logs in
@@ -28,7 +28,9 @@ export function usePushNotifications() {
         status.addEventListener('change', handler)
         return () => status.removeEventListener('change', handler)
       })
-      .catch(() => {/* Permissions API not supported, ignore */})
+      .catch(() => {
+        /* Permissions API not supported, ignore */
+      })
   }, [supported])
 
   const enable = async (): Promise<boolean> => {

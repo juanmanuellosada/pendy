@@ -85,16 +85,26 @@ export function groupTasks(
   }
 
   if (groupBy === 'priority') {
-    const priorityLabels: Record<number, string> = { 1: 'Urgente', 2: 'Alta', 3: 'Media', 4: 'Baja' }
-    const priorityColors: Record<number, string> = {
-      1: '#EC1E2A', 2: '#F59E0B', 3: '#3B82F6', 4: '#6B7280',
+    const priorityLabels: Record<number, string> = {
+      1: 'Urgente',
+      2: 'Alta',
+      3: 'Media',
+      4: 'Baja',
     }
-    return [1, 2, 3, 4].map((p) => ({
-      key: String(p),
-      label: `P${p} — ${priorityLabels[p]}`,
-      color: priorityColors[p],
-      tasks: tasks.filter((t) => t.priority === p),
-    })).filter((g) => g.tasks.length > 0)
+    const priorityColors: Record<number, string> = {
+      1: '#EC1E2A',
+      2: '#F59E0B',
+      3: '#3B82F6',
+      4: '#6B7280',
+    }
+    return [1, 2, 3, 4]
+      .map((p) => ({
+        key: String(p),
+        label: `P${p} — ${priorityLabels[p]}`,
+        color: priorityColors[p],
+        tasks: tasks.filter((t) => t.priority === p),
+      }))
+      .filter((g) => g.tasks.length > 0)
   }
 
   if (groupBy === 'label') {
@@ -115,13 +125,14 @@ export function groupTasks(
       }
     })
 
-    const result: { key: string; label: string; color?: string; tasks: Task[] }[] =
-      Object.entries(grouped).map(([key, { label, color, tasks: t }]) => ({
-        key,
-        label,
-        color,
-        tasks: t,
-      }))
+    const result: { key: string; label: string; color?: string; tasks: Task[] }[] = Object.entries(
+      grouped,
+    ).map(([key, { label, color, tasks: t }]) => ({
+      key,
+      label,
+      color,
+      tasks: t,
+    }))
 
     if (unlabeled.length > 0) {
       result.push({ key: 'none', label: 'Sin etiqueta', tasks: unlabeled })
