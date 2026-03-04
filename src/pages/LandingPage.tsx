@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   CheckCircle2,
@@ -10,6 +10,7 @@ import {
   Bell,
   Heart,
   Flame,
+  MessageSquare,
 } from 'lucide-react'
 
 const features = [
@@ -55,6 +56,12 @@ const features = [
     title: 'Recordatorios',
     description: 'Notificaciones push y por email. Elige exactamente cuándo quieres que te avisen.',
   },
+  {
+    icon: MessageSquare,
+    title: 'Comentarios y adjuntos',
+    description:
+      'Añade notas con texto enriquecido y archivos a cada tarea. Todo el contexto donde lo necesitas.',
+  },
 ]
 
 const mockTasks = [
@@ -84,14 +91,38 @@ const mockTasks = [
 ]
 
 export default function LandingPage() {
-  const [scrollY, setScrollY] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
+  const [featuresInView, setFeaturesInView] = useState(false)
+  const featuresRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY)
-    window.addEventListener('scroll', handleScroll)
     setTimeout(() => setIsVisible(true), 120)
-    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // IntersectionObserver for features section (Step 3)
+  useEffect(() => {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReduced) {
+      setFeaturesInView(true)
+      return
+    }
+
+    const el = featuresRef.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        if (entry?.isIntersecting) {
+          setFeaturesInView(true)
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.1 },
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
   }, [])
 
   return (
@@ -127,36 +158,29 @@ export default function LandingPage() {
           }}
         />
 
-        {/* Nav */}
-        <nav className="relative z-10 flex items-center justify-between px-8 py-6">
+        {/* Nav — Step 2: responsive padding + CTA sizing */}
+        <nav className="relative z-10 flex items-center justify-between px-4 md:px-8 py-6">
           <div className="flex items-center gap-3">
             <img
               src={`${import.meta.env.BASE_URL}pendy-logo.png`}
               alt="Pendy"
               className="w-8 h-8 rounded-lg"
             />
-            <span
-              className="text-white font-bold text-xl tracking-tight"
-              style={{ fontFamily: '"Bricolage Grotesque", system-ui, sans-serif' }}
-            >
-              Pendy
-            </span>
+            <span className="font-heading text-white font-bold text-xl tracking-tight">Pendy</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <Link
               to="/auth/login"
-              className="px-5 py-2.5 text-sm font-medium text-white/60 hover:text-white transition-colors"
-              style={{ fontFamily: '"DM Sans", system-ui, sans-serif' }}
+              className="font-body px-3 md:px-5 py-2.5 text-sm font-medium text-white/60 hover:text-white transition-colors"
             >
               Iniciar sesión
             </Link>
             <Link
               to="/auth/register"
-              className="px-5 py-2.5 text-sm font-bold text-white transition-all hover:opacity-90 hover:scale-[1.02]"
+              className="font-body px-4 md:px-5 py-2 md:py-2.5 text-sm font-bold text-white transition-all hover:opacity-90 hover:scale-[1.02]"
               style={{
                 backgroundColor: '#EC1E2A',
                 borderRadius: '8px',
-                fontFamily: '"DM Sans", system-ui, sans-serif',
               }}
             >
               Crear cuenta
@@ -179,21 +203,15 @@ export default function LandingPage() {
               }}
             >
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span
-                className="text-white/50 text-sm"
-                style={{ fontFamily: '"DM Sans", system-ui, sans-serif' }}
-              >
-                En desarrollo activo
-              </span>
+              <span className="font-body text-white/50 text-sm">En desarrollo activo</span>
             </div>
 
             {/* Headline */}
             <h1
-              className={`font-black text-white leading-[0.95] mb-8 transition-all duration-700 delay-100 ${
+              className={`font-display font-black text-white leading-[0.95] mb-8 transition-all duration-700 delay-100 ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`}
               style={{
-                fontFamily: '"Fraunces", Georgia, serif',
                 fontSize: 'clamp(56px, 10vw, 96px)',
                 letterSpacing: '-0.03em',
               }}
@@ -204,16 +222,15 @@ export default function LandingPage() {
             </h1>
 
             <p
-              className={`text-lg md:text-xl text-white/55 max-w-lg mx-auto leading-relaxed mb-12 transition-all duration-700 delay-200 ${
+              className={`font-body text-lg md:text-xl text-white/55 max-w-lg mx-auto leading-relaxed mb-12 transition-all duration-700 delay-200 ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`}
-              style={{ fontFamily: '"DM Sans", system-ui, sans-serif' }}
             >
               Gestión de tareas y hábitos pensada para la claridad. Proyectos, calendario, rutinas y
               recordatorios — todo integrado.
             </p>
 
-            {/* CTAs */}
+            {/* CTAs — Step 2: responsive padding */}
             <div
               className={`flex flex-col sm:flex-row gap-4 items-center justify-center transition-all duration-700 delay-300 ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
@@ -221,11 +238,10 @@ export default function LandingPage() {
             >
               <Link
                 to="/auth/register"
-                className="group flex items-center gap-2 px-9 py-4 text-base font-bold text-white transition-all hover:scale-[1.03]"
+                className="font-body group flex items-center gap-2 px-7 py-3.5 md:px-9 md:py-4 text-base font-bold text-white transition-all hover:scale-[1.03]"
                 style={{
                   backgroundColor: '#EC1E2A',
                   borderRadius: '10px',
-                  fontFamily: '"DM Sans", system-ui, sans-serif',
                   boxShadow: '0 0 48px rgba(236,30,42,0.28)',
                 }}
               >
@@ -234,8 +250,7 @@ export default function LandingPage() {
               </Link>
               <Link
                 to="/auth/login"
-                className="flex items-center gap-2 px-9 py-4 text-base font-medium text-white/55 hover:text-white/80 transition-colors"
-                style={{ fontFamily: '"DM Sans", system-ui, sans-serif' }}
+                className="font-body flex items-center gap-2 px-7 py-3.5 md:px-9 md:py-4 text-base font-medium text-white/55 hover:text-white/80 transition-colors"
               >
                 Ya tengo cuenta
               </Link>
@@ -243,13 +258,10 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Scroll hint */}
-        <div className="relative z-10 flex justify-center pb-10 opacity-30">
+        {/* Scroll hint — Step 2: hidden on mobile */}
+        <div className="relative z-10 hidden md:flex justify-center pb-10 opacity-30">
           <div className="flex flex-col items-center gap-2 animate-bounce">
-            <span
-              className="text-white text-[10px] uppercase tracking-[0.2em]"
-              style={{ fontFamily: '"DM Sans", system-ui' }}
-            >
+            <span className="font-body text-white text-[10px] uppercase tracking-[0.2em]">
               ver más
             </span>
             <div className="w-px h-10 bg-gradient-to-b from-white to-transparent" />
@@ -262,57 +274,40 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2
-              className="text-3xl md:text-[42px] font-black text-gray-900 dark:text-white mb-4"
-              style={{
-                fontFamily: '"Fraunces", Georgia, serif',
-                letterSpacing: '-0.025em',
-              }}
+              className="font-display text-3xl md:text-[42px] font-black text-gray-900 dark:text-white mb-4"
+              style={{ letterSpacing: '-0.025em' }}
             >
               Todo en un solo lugar
             </h2>
-            <p
-              className="text-base text-gray-500 dark:text-gray-400"
-              style={{ fontFamily: '"DM Sans", system-ui' }}
-            >
+            <p className="font-body text-base text-gray-500 dark:text-gray-400">
               Proyectos, tareas, hábitos, calendario y recordatorios — integrados y siempre al día.
             </p>
           </div>
 
-          {/* Browser mockup */}
+          {/* Browser mockup — Step 4: aria-hidden, responsive */}
           <div
             className="shadow-2xl overflow-hidden"
             style={{
               borderRadius: '18px',
               border: '1px solid rgba(0,0,0,0.07)',
             }}
+            aria-hidden="true"
           >
-            {/* Window chrome */}
-            <div
-              className="flex items-center gap-2 px-4 py-3"
-              style={{ backgroundColor: '#f0f1f3', borderBottom: '1px solid #e2e4e8' }}
-            >
+            {/* Window chrome — Step 6: dark mode */}
+            <div className="flex items-center gap-2 px-4 py-3 bg-[#f0f1f3] dark:bg-[#2a2a2a] border-b border-[#e2e4e8] dark:border-[#3a3a3a]">
               <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
               <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
               <div className="w-3 h-3 rounded-full bg-[#28C840]" />
-              <div
-                className="ml-3 flex-1 max-w-xs mx-auto h-5 rounded-md"
-                style={{ background: '#e2e4e8' }}
-              />
+              <div className="ml-3 flex-1 max-w-xs mx-auto h-5 rounded-md bg-[#e2e4e8] dark:bg-[#3a3a3a]" />
             </div>
 
-            {/* App layout */}
-            <div className="flex" style={{ height: '380px', backgroundColor: '#fff' }}>
-              {/* Sidebar */}
-              <div
-                className="w-52 flex-shrink-0 p-3 space-y-0.5"
-                style={{ backgroundColor: '#f8f9fb', borderRight: '1px solid #eaecf0' }}
-              >
+            {/* App layout — Step 4: responsive height, Step 6: dark mode */}
+            <div className="flex h-auto min-h-[280px] md:h-[380px] bg-white dark:bg-[#1a1f2b]">
+              {/* Sidebar — Step 4: hidden on mobile */}
+              <div className="hidden md:block w-52 flex-shrink-0 p-3 space-y-0.5 bg-[#f8f9fb] dark:bg-[#161b26] border-r border-[#eaecf0] dark:border-[#2a3244]">
                 <div className="flex items-center gap-2 px-3 py-2 mb-4">
                   <div className="w-5 h-5 rounded" style={{ backgroundColor: '#283B56' }} />
-                  <span
-                    className="text-sm font-bold"
-                    style={{ color: '#283B56', fontFamily: '"Bricolage Grotesque", system-ui' }}
-                  >
+                  <span className="font-heading text-sm font-bold text-[#283B56] dark:text-white">
                     Pendy
                   </span>
                 </div>
@@ -324,12 +319,11 @@ export default function LandingPage() {
                 ].map((item) => (
                   <div
                     key={item.label}
-                    className="flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium"
-                    style={{
-                      backgroundColor: item.active ? 'rgba(40,59,86,0.07)' : 'transparent',
-                      color: item.active ? '#283B56' : '#6B7280',
-                      fontFamily: '"DM Sans", system-ui',
-                    }}
+                    className={`font-body flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium ${
+                      item.active
+                        ? 'bg-[rgba(40,59,86,0.07)] dark:bg-[rgba(255,255,255,0.08)] text-[#283B56] dark:text-white'
+                        : 'text-[#6B7280] dark:text-[#9CA3AF]'
+                    }`}
                   >
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.dot }} />
                     {item.label}
@@ -337,10 +331,7 @@ export default function LandingPage() {
                 ))}
 
                 <div className="pt-5 pb-1.5 px-3">
-                  <span
-                    className="text-[10px] uppercase tracking-widest font-semibold text-gray-400"
-                    style={{ fontFamily: '"DM Sans", system-ui' }}
-                  >
+                  <span className="font-body text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500">
                     Proyectos
                   </span>
                 </div>
@@ -351,8 +342,7 @@ export default function LandingPage() {
                 ].map((item) => (
                   <div
                     key={item.label}
-                    className="flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs text-gray-500"
-                    style={{ fontFamily: '"DM Sans", system-ui' }}
+                    className="font-body flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs text-gray-500 dark:text-gray-400"
                   >
                     <div
                       className="w-2.5 h-2.5 rounded-sm"
@@ -364,21 +354,17 @@ export default function LandingPage() {
               </div>
 
               {/* Main content */}
-              <div className="flex-1 p-6 overflow-hidden">
+              <div className="flex-1 p-4 md:p-6 overflow-hidden">
                 <div className="flex items-baseline justify-between mb-5">
                   <div>
-                    <div
-                      className="text-lg font-bold text-gray-900"
-                      style={{ fontFamily: '"Bricolage Grotesque", system-ui' }}
-                    >
+                    <div className="font-heading text-lg font-bold text-gray-900 dark:text-white">
                       Hoy
                     </div>
-                    <div className="text-xs text-gray-400 mt-0.5">4 tareas pendientes</div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                      4 tareas pendientes
+                    </div>
                   </div>
-                  <div
-                    className="text-xs text-gray-400"
-                    style={{ fontFamily: '"DM Sans", system-ui' }}
-                  >
+                  <div className="font-body text-xs text-gray-400 dark:text-gray-500">
                     Viernes, 28 feb
                   </div>
                 </div>
@@ -387,12 +373,11 @@ export default function LandingPage() {
                   {mockTasks.map((task, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg border"
-                      style={{
-                        borderColor: task.done ? 'transparent' : '#eaecf0',
-                        backgroundColor: task.done ? '#fafafa' : '#fff',
-                        opacity: task.done ? 0.45 : 1,
-                      }}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border ${
+                        task.done
+                          ? 'border-transparent bg-[#fafafa] dark:bg-[#1e2433] opacity-45'
+                          : 'border-[#eaecf0] dark:border-[#2a3244] bg-white dark:bg-[#1a1f2b]'
+                      }`}
                     >
                       <div
                         className="w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center"
@@ -414,12 +399,11 @@ export default function LandingPage() {
                         )}
                       </div>
                       <span
-                        className="text-sm flex-1 truncate"
-                        style={{
-                          fontFamily: '"DM Sans", system-ui',
-                          color: task.done ? '#9CA3AF' : '#374151',
-                          textDecoration: task.done ? 'line-through' : 'none',
-                        }}
+                        className={`font-body text-sm flex-1 truncate ${
+                          task.done
+                            ? 'text-[#9CA3AF] line-through'
+                            : 'text-[#374151] dark:text-[#d1d5db]'
+                        }`}
                       >
                         {task.title}
                       </span>
@@ -427,11 +411,10 @@ export default function LandingPage() {
                         <span className="text-[11px] text-gray-400 tabular-nums">{task.time}</span>
                       )}
                       <span
-                        className="text-[10px] px-2 py-0.5 rounded-full font-medium flex-shrink-0"
+                        className="font-body text-[10px] px-2 py-0.5 rounded-full font-medium flex-shrink-0"
                         style={{
                           backgroundColor: `${task.priority}14`,
                           color: task.priority,
-                          fontFamily: '"DM Sans", system-ui',
                         }}
                       >
                         {task.label}
@@ -446,44 +429,39 @@ export default function LandingPage() {
       </section>
 
       {/* ── FEATURES ────────────────────────────────────────────── */}
-      <section className="py-28 px-6 bg-white dark:bg-[#0f1117]">
+      <section className="py-28 px-6 bg-white dark:bg-[#0f1117]" ref={featuresRef}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-20">
             <h2
-              className="text-4xl md:text-[50px] font-black text-gray-900 dark:text-white mb-5"
-              style={{
-                fontFamily: '"Fraunces", Georgia, serif',
-                letterSpacing: '-0.025em',
-              }}
+              className="font-display text-4xl md:text-[50px] font-black text-gray-900 dark:text-white mb-5"
+              style={{ letterSpacing: '-0.025em' }}
             >
               Lo que necesitas.
               <br />
               <span className="text-gray-400 dark:text-gray-600">Nada que no uses.</span>
             </h2>
-            <p
-              className="text-base text-gray-500 dark:text-gray-400 max-w-md mx-auto"
-              style={{ fontFamily: '"DM Sans", system-ui' }}
-            >
+            <p className="font-body text-base text-gray-500 dark:text-gray-400 max-w-md mx-auto">
               Funcionalidades que realmente importan para gestionar tu tiempo y tu energía.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-5">
+          {/* Step 8: grid 4 cols on lg, 8 features */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
             {features.map((feature, index) => {
               const Icon = feature.icon
-              const isInView = scrollY > 400
               const isHighlight = (feature as { highlight?: boolean }).highlight
               return (
                 <div
                   key={index}
-                  className={`group p-8 border transition-all duration-500 hover:shadow-lg hover:-translate-y-1 ${
+                  role="article"
+                  tabIndex={0}
+                  className={`group p-8 border transition-all duration-500 hover:shadow-lg hover:-translate-y-1 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#283B56] ${
                     isHighlight
                       ? 'dark:border-orange-900/40 border-orange-100 hover:border-orange-200 dark:hover:border-orange-800/50'
                       : 'dark:border-gray-800 border-gray-100 hover:border-gray-200 dark:hover:border-gray-700'
-                  } ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                  } ${featuresInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                   style={{
-                    borderRadius: '16px',
-                    transitionDelay: isInView ? `${index * 60}ms` : '0ms',
+                    transitionDelay: featuresInView ? `${index * 60}ms` : '0ms',
                     backgroundColor: isHighlight ? 'rgba(249,115,22,0.03)' : undefined,
                   }}
                 >
@@ -498,16 +476,10 @@ export default function LandingPage() {
                       style={{ color: isHighlight ? '#F59E0B' : '#283B56' }}
                     />
                   </div>
-                  <h3
-                    className="text-base font-bold text-gray-900 dark:text-white mb-2"
-                    style={{ fontFamily: '"Bricolage Grotesque", system-ui' }}
-                  >
+                  <h3 className="font-heading text-base font-bold text-gray-900 dark:text-white mb-2">
                     {feature.title}
                   </h3>
-                  <p
-                    className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed"
-                    style={{ fontFamily: '"DM Sans", system-ui' }}
-                  >
+                  <p className="font-body text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
                     {feature.description}
                   </p>
                 </div>
@@ -517,11 +489,28 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── SOCIAL PROOF / STATS — Step 10 ─────────────────────── */}
+      <section className="py-10 px-6 bg-white dark:bg-[#0f1117] border-t border-gray-100 dark:border-gray-800/50">
+        <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+          {[
+            { icon: Calendar, text: 'Calendario integrado' },
+            { icon: Flame, text: 'Hábitos con rachas' },
+            { icon: Zap, text: 'Captura con lenguaje natural' },
+            { icon: Bell, text: 'Modo offline' },
+          ].map((item, i) => (
+            <div key={i} className="flex items-center gap-2 text-gray-400 dark:text-gray-500">
+              <item.icon className="w-3.5 h-3.5" />
+              <span className="font-body text-sm">{item.text}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ── CTA ─────────────────────────────────────────────────── */}
       <section className="py-28 px-6 bg-[#F5F7FA] dark:bg-[#131720]">
         <div className="max-w-3xl mx-auto">
           <div
-            className="relative overflow-hidden p-14 text-center"
+            className="relative overflow-hidden p-10 md:p-14 text-center"
             style={{
               background: 'linear-gradient(135deg, #141e2d 0%, #1f2f45 100%)',
               borderRadius: '28px',
@@ -546,24 +535,20 @@ export default function LandingPage() {
 
             <div className="relative">
               <h2
-                className="text-4xl md:text-5xl font-black text-white mb-4"
-                style={{ fontFamily: '"Fraunces", Georgia, serif', letterSpacing: '-0.025em' }}
+                className="font-display text-4xl md:text-5xl font-black text-white mb-4"
+                style={{ letterSpacing: '-0.025em' }}
               >
                 Empieza hoy.
               </h2>
-              <p
-                className="text-white/55 text-base mb-10 max-w-sm mx-auto leading-relaxed"
-                style={{ fontFamily: '"DM Sans", system-ui' }}
-              >
+              <p className="font-body text-white/55 text-base mb-10 max-w-sm mx-auto leading-relaxed">
                 Crea tu cuenta y construye el sistema que funciona para ti.
               </p>
               <Link
                 to="/auth/register"
-                className="inline-flex items-center gap-2 px-10 py-4 text-base font-bold text-white transition-all hover:scale-[1.03]"
+                className="font-body inline-flex items-center gap-2 px-10 py-4 text-base font-bold text-white transition-all hover:scale-[1.03]"
                 style={{
                   backgroundColor: '#EC1E2A',
                   borderRadius: '10px',
-                  fontFamily: '"DM Sans", system-ui',
                   boxShadow: '0 0 48px rgba(236,30,42,0.35)',
                 }}
               >
@@ -575,7 +560,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── FOOTER ──────────────────────────────────────────────── */}
+      {/* ── FOOTER — Step 9: links ─────────────────────────────── */}
       <footer className="py-10 px-6 border-t border-gray-100 dark:border-gray-800/60 bg-white dark:bg-[#0f1117]">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-center gap-3">
           <div className="flex items-center gap-2">
@@ -584,29 +569,27 @@ export default function LandingPage() {
               alt="Pendy"
               className="w-6 h-6 rounded-md"
             />
-            <span
-              className="text-sm font-bold text-gray-700 dark:text-gray-300"
-              style={{ fontFamily: '"Bricolage Grotesque", system-ui' }}
-            >
+            <span className="font-heading text-sm font-bold text-gray-700 dark:text-gray-300">
               Pendy
             </span>
           </div>
           <span className="text-gray-300 dark:text-gray-700 hidden md:inline">·</span>
-          <p className="text-sm text-gray-400" style={{ fontFamily: '"DM Sans", system-ui' }}>
+          <p className="font-body text-sm text-gray-400">
             © 2026. Hecho con{' '}
             <Heart size={11} className="inline text-red-500 fill-red-500 mx-0.5 -mt-0.5" /> para la
             productividad personal.
           </p>
+          <span className="text-gray-300 dark:text-gray-700 hidden md:inline">·</span>
+          <div className="flex items-center gap-4">
+            <span className="font-body text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer transition-colors">
+              Privacidad
+            </span>
+            <span className="font-body text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer transition-colors">
+              Términos
+            </span>
+          </div>
         </div>
       </footer>
-
-      {/* Google Fonts */}
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      <link
-        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:wght@400;500;600&display=swap"
-        rel="stylesheet"
-      />
     </div>
   )
 }
