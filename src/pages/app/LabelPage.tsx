@@ -136,7 +136,7 @@ export default function LabelPage() {
               showProject
               isSelectMode={isSelectMode}
               isSelected={selectedIds.has(task.id)}
-              onToggleSelect={() => toggle(task.id)}
+              onToggleSelect={toggle}
             />
           ))}
         </div>

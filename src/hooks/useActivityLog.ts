@@ -1,0 +1,39 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { activityService } from '@/services/activityService'
+import { useAuth } from './useAuth'
+import { taskKeys } from './useTasks'
+import type { ActivityLog } from '@/lib/types'
+
+export function useLogActivity() {
+  const { user } = useAuth()
+  return useMutation({
+    mutationFn: (entry: Omit<ActivityLog, 'id' | 'created_at' | 'user_id'>) =>
+      activityService.log({ ...entry, user_id: user!.id }),
+  })
+}
+
+export function useUndo() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!user) return
+      const [latest] = await activityService.getLatest(user.id, 1)
+      if (!latest) {
+        toast.info('Nada que deshacer')
+        return
+      }
+      await activityService.undo(latest)
+      await activityService.deleteEntry(latest.id)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      toast.success('Acción deshecha')
+    },
+    onError: () => {
+      toast.error('No se pudo deshacer la acción')
+    },
+  })
+}

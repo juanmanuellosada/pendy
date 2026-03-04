@@ -406,7 +406,7 @@ export function ProjectView({ project }: ProjectViewProps) {
                       labels={labelsMap?.get(task.id)}
                       isSelectMode={isSelectMode}
                       isSelected={selectedIds.has(task.id)}
-                      onToggleSelect={() => toggle(task.id)}
+                      onToggleSelect={toggle}
                     />
                   ))}
                 </div>
@@ -423,7 +423,7 @@ export function ProjectView({ project }: ProjectViewProps) {
                     labels={labelsMap?.get(task.id)}
                     isSelectMode={isSelectMode}
                     isSelected={selectedIds.has(task.id)}
-                    onToggleSelect={() => toggle(task.id)}
+                    onToggleSelect={toggle}
                   />
                 ))}
               </div>
@@ -866,7 +866,7 @@ function SortableTaskItem({
   labels?: Label[]
   isSelectMode?: boolean
   isSelected?: boolean
-  onToggleSelect?: () => void
+  onToggleSelect?: (id: string) => void
 }) {
   const {
     attributes,
@@ -898,6 +898,7 @@ function SortableTaskItem({
           {...listeners}
           className="absolute left-0 top-0 bottom-0 z-10 flex w-6 cursor-grab items-center justify-center opacity-0 transition-opacity group-hover/sortable:opacity-100 active:cursor-grabbing"
           style={{ color: 'var(--text-muted)' }}
+          aria-label="Arrastrar para reordenar"
         >
           <GripVertical size={14} />
         </div>
@@ -1084,7 +1085,7 @@ function SortableSectionBlock({
                       labels={labelsMap?.get(task.id)}
                       isSelectMode={isSelectMode}
                       isSelected={selectedIds?.has(task.id)}
-                      onToggleSelect={onToggleSelect ? () => onToggleSelect(task.id) : undefined}
+                      onToggleSelect={onToggleSelect}
                     />
                   ))}
                 </div>
@@ -1101,7 +1102,7 @@ function SortableSectionBlock({
                     labels={labelsMap?.get(task.id)}
                     isSelectMode={isSelectMode}
                     isSelected={selectedIds?.has(task.id)}
-                    onToggleSelect={onToggleSelect ? () => onToggleSelect(task.id) : undefined}
+                    onToggleSelect={onToggleSelect}
                   />
                 ))}
               </div>
@@ -1269,7 +1270,7 @@ function StaticSectionBlock({
                   labels={labelsMap?.get(task.id)}
                   isSelectMode={isSelectMode}
                   isSelected={selectedIds?.has(task.id)}
-                  onToggleSelect={onToggleSelect ? () => onToggleSelect(task.id) : undefined}
+                  onToggleSelect={onToggleSelect}
                 />
               ))}
             </div>

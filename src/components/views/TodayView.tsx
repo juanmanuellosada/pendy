@@ -233,7 +233,7 @@ export function TodayView() {
                     labels={labelsMap?.get(task.id)}
                     isSelectMode={isSelectMode}
                     isSelected={selectedIds.has(task.id)}
-                    onToggleSelect={() => toggle(task.id)}
+                    onToggleSelect={toggle}
                   />
                 ))}
               </div>
@@ -250,7 +250,7 @@ export function TodayView() {
                     labels={labelsMap?.get(task.id)}
                     isSelectMode={isSelectMode}
                     isSelected={selectedIds.has(task.id)}
-                    onToggleSelect={() => toggle(task.id)}
+                    onToggleSelect={toggle}
                   />
                 ))}
               </div>
@@ -335,7 +335,7 @@ export function TodayView() {
                     labels={labelsMap?.get(task.id)}
                     isSelectMode={isSelectMode}
                     isSelected={selectedIds.has(task.id)}
-                    onToggleSelect={() => toggle(task.id)}
+                    onToggleSelect={toggle}
                   />
                 ))}
               </div>

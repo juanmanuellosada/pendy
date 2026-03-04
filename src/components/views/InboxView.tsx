@@ -3,8 +3,8 @@ import { useInboxTasks, useDeleteTask, useUpdateTask } from '@/hooks/useTasks'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { useCreateSection } from '@/hooks/useSections'
 import { TaskEditor } from '@/components/tasks/TaskEditor'
-import { TaskItem } from '@/components/tasks/TaskItem'
 import { TaskGroup } from '@/components/tasks/TaskGroup'
+import { VirtualTaskList } from '@/components/tasks/VirtualTaskList'
 import { BulkActionBar } from '@/components/common/BulkActionBar'
 import { ViewOptionsBar } from './ViewOptionsBar'
 import { BoardView } from './BoardView'
@@ -208,18 +208,13 @@ export function InboxView() {
     }
 
     return (
-      <div className="divide-y" style={{ borderColor: 'var(--border-secondary)' }}>
-        {visibleTasks.map((task) => (
-          <TaskItem
-            key={task.id}
-            task={task}
-            labels={labelsMap?.get(task.id)}
-            isSelectMode={isSelectMode}
-            isSelected={selectedIds.has(task.id)}
-            onToggleSelect={() => toggle(task.id)}
-          />
-        ))}
-      </div>
+      <VirtualTaskList
+        tasks={visibleTasks}
+        labelsMap={labelsMap}
+        isSelectMode={isSelectMode}
+        selectedIds={selectedIds}
+        onToggleSelect={toggle}
+      />
     )
   }
 

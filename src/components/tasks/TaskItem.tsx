@@ -1,15 +1,14 @@
-import { memo, useState } from 'react'
+import { memo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, Flag, MoreHorizontal, Trash2, Clock, Check, Repeat } from 'lucide-react'
+import { Calendar, Flag, MoreHorizontal, Clock, Check, Repeat } from 'lucide-react'
 import { TaskCheckbox } from './TaskCheckbox'
 import { TaskContextMenu } from './TaskContextMenu'
 import { TaskTooltip } from '@/components/common/TaskTooltip'
 import { cn, stripHtmlTags, stripLabelTokensFromHtml } from '@/lib/utils'
 import { formatRelativeDate, isOverdue } from '@/lib/utils'
 import { PRIORITY_COLORS } from '@/lib/constants'
-import { useCompleteTask, useDeleteTask } from '@/hooks/useTasks'
+import { useCompleteTask } from '@/hooks/useTasks'
 import { useAppStore } from '@/stores/appStore'
-import { useUIStore } from '@/stores/uiStore'
 import type { Task, Label } from '@/lib/types'
 
 interface TaskItemProps {
@@ -21,7 +20,7 @@ interface TaskItemProps {
   // Bulk selection
   isSelectMode?: boolean
   isSelected?: boolean
-  onToggleSelect?: () => void
+  onToggleSelect?: (id: string) => void
 }
 
 export const TaskItem = memo(function TaskItem({
@@ -34,10 +33,8 @@ export const TaskItem = memo(function TaskItem({
 }: TaskItemProps) {
   const navigate = useNavigate()
   const completeTask = useCompleteTask()
-  const deleteTask = useDeleteTask()
   const { setSelectedTaskId } = useAppStore()
-  const { showConfirmDialog } = useUIStore()
-  const [showMenu, setShowMenu] = useState(false)
+  const moreButtonRef = useRef<HTMLButtonElement>(null)
   const [completing, setCompleting] = useState(false)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
 
@@ -55,19 +52,17 @@ export const TaskItem = memo(function TaskItem({
     }, 300)
   }
 
-  const handleDelete = (e: React.MouseEvent) => {
+  const handleMoreClick = (e: React.MouseEvent) => {
     e.stopPropagation()
-    setShowMenu(false)
-    showConfirmDialog({
-      title: '¿Eliminar tarea?',
-      message: 'Esta acción no se puede deshacer. La tarea será eliminada permanentemente.',
-      onConfirm: () => deleteTask.mutate(task.id),
-    })
+    const rect = moreButtonRef.current?.getBoundingClientRect()
+    if (rect) {
+      setContextMenu({ x: rect.left, y: rect.bottom + 4 })
+    }
   }
 
   const handleClick = () => {
     if (isSelectMode) {
-      onToggleSelect?.()
+      onToggleSelect?.(task.id)
       return
     }
     setSelectedTaskId(task.id)
@@ -89,7 +84,6 @@ export const TaskItem = memo(function TaskItem({
       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = rowBgHover)}
       onMouseLeave={(e) => {
         e.currentTarget.style.backgroundColor = rowBg
-        if (!isSelectMode) setShowMenu(false)
       }}
       onClick={handleClick}
       onContextMenu={handleContextMenu}
@@ -182,35 +176,15 @@ export const TaskItem = memo(function TaskItem({
       {/* More options — hidden in select mode */}
       {!isSelectMode && (
         <div className="flex shrink-0 items-center gap-1 opacity-100 md:opacity-0 transition-opacity md:group-hover:opacity-100">
-          <div className="relative">
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowMenu(!showMenu)
-              }}
-              className="rounded p-2 md:p-1 transition-colors hover:opacity-70"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              <MoreHorizontal size={14} />
-            </button>
-            {showMenu && (
-              <div
-                className="absolute right-0 top-full z-10 mt-1 w-36 rounded-lg border py-1 shadow-lg"
-                style={{
-                  backgroundColor: 'var(--bg-primary)',
-                  borderColor: 'var(--border-primary)',
-                }}
-              >
-                <button
-                  onClick={handleDelete}
-                  className="flex w-full items-center gap-2 px-3 py-1.5 text-sm text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
-                >
-                  <Trash2 size={14} />
-                  Eliminar
-                </button>
-              </div>
-            )}
-          </div>
+          <button
+            ref={moreButtonRef}
+            onClick={handleMoreClick}
+            className="rounded p-2 md:p-1 transition-colors hover:opacity-70"
+            style={{ color: 'var(--text-muted)' }}
+            aria-label="Más opciones"
+          >
+            <MoreHorizontal size={14} />
+          </button>
         </div>
       )}
     </div>
@@ -234,7 +208,7 @@ export const TaskItem = memo(function TaskItem({
 
   return (
     <>
-      <TaskTooltip task={task} disabled={showMenu || !!contextMenu}>
+      <TaskTooltip task={task} disabled={!!contextMenu}>
         {inner}
       </TaskTooltip>
 

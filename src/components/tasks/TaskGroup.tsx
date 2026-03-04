@@ -66,7 +66,7 @@ export function TaskGroup({
               labels={labelsMap?.get(task.id)}
               isSelectMode={isSelectMode}
               isSelected={selectedIds?.has(task.id)}
-              onToggleSelect={onToggleSelect ? () => onToggleSelect(task.id) : undefined}
+              onToggleSelect={onToggleSelect}
             />
           ))}
         </div>

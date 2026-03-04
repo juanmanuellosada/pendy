@@ -22,6 +22,8 @@ export function MobileNav() {
         borderColor: 'var(--border-primary)',
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
+      aria-label="Navegación principal"
+      role="navigation"
     >
       <div className="flex items-center justify-around py-2">
         {items.map(({ icon: Icon, label, path }) => (
@@ -32,6 +34,8 @@ export function MobileNav() {
             style={{
               color: location.pathname === path ? '#283B56' : 'var(--text-muted)',
             }}
+            aria-label={label}
+            aria-current={location.pathname === path ? 'page' : undefined}
           >
             <Icon size={20} />
             <span>{label}</span>
@@ -41,6 +45,7 @@ export function MobileNav() {
           onClick={() => setQuickAddOpen(true)}
           className="flex flex-col items-center gap-0.5 px-3 py-1 text-xs"
           style={{ color: '#EC1E2A' }}
+          aria-label="Agregar tarea"
         >
           <Plus size={20} />
           <span>Agregar</span>

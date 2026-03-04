@@ -80,7 +80,11 @@ export function useRealtimeSync() {
           queryClient.invalidateQueries({ queryKey: filterKeys.all })
         },
       )
-      .subscribe()
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          queryClient.invalidateQueries()
+        }
+      })
 
     channelRef.current = channel
 

@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { taskService } from '@/services/taskService'
+import { activityService } from '@/services/activityService'
 import { labelKeys } from './useLabels'
 import type { Task } from '@/lib/types'
 import { useAuth } from './useAuth'
@@ -35,6 +37,7 @@ export function useInboxTasks() {
     queryKey: taskKeys.inbox(user?.id ?? ''),
     queryFn: () => taskService.getInboxTasks(inboxProject!.id),
     enabled: !!user && !!inboxProject,
+    staleTime: 30_000,
   })
 }
 
@@ -44,6 +47,7 @@ export function useTodayTasks() {
     queryKey: taskKeys.today(user?.id ?? ''),
     queryFn: () => taskService.getTasksDueToday(user!.id),
     enabled: !!user,
+    staleTime: 30_000,
   })
 }
 
@@ -53,6 +57,7 @@ export function useUpcomingTasks(days = 30) {
     queryKey: taskKeys.upcoming(user?.id ?? '', days),
     queryFn: () => taskService.getTasksUpcoming(user!.id, days),
     enabled: !!user,
+    staleTime: 30_000,
   })
 }
 
@@ -80,6 +85,7 @@ export function useProjectTasks(projectId: string) {
     queryKey: taskKeys.project(projectId),
     queryFn: () => taskService.getTasksByProject(projectId),
     enabled: !!projectId,
+    staleTime: 30_000,
   })
 }
 
@@ -109,6 +115,9 @@ export function useCreateTask() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all })
       queryClient.invalidateQueries({ queryKey: labelKeys.allTaskLabels(user?.id ?? '') })
+    },
+    onError: () => {
+      toast.error('No se pudo crear la tarea')
     },
   })
 }
@@ -146,6 +155,7 @@ export function useUpdateTask() {
       context?.snapshots.forEach(([key, data]) => {
         queryClient.setQueryData(key, data)
       })
+      toast.error('No se pudo actualizar la tarea')
     },
     onSettled: (_data, _err, { id }, context) => {
       // Only invalidate queries that actually contained this task
@@ -161,6 +171,7 @@ export function useUpdateTask() {
 
 export function useCompleteTask() {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
 
   return useMutation({
     mutationFn: ({ id, completed, task }: { id: string; completed: boolean; task?: Task }) =>
@@ -194,6 +205,20 @@ export function useCompleteTask() {
       context?.snapshots.forEach(([key, data]) => {
         queryClient.setQueryData(key, data)
       })
+      toast.error('No se pudo completar la tarea')
+    },
+    onSuccess: (_data, { id, completed }) => {
+      if (user) {
+        activityService
+          .log({
+            user_id: user.id,
+            entity_type: 'task',
+            entity_id: id,
+            action: 'completed',
+            changes: { is_completed: { old: !completed, new: completed } },
+          })
+          .catch(() => {})
+      }
     },
     onSettled: (_data, _err, _vars, context) => {
       // Only invalidate queries that actually contained this task
@@ -268,6 +293,7 @@ export function useReorderTasks() {
     },
     onError: (_err, { projectId }, context) => {
       if (context?.prev) queryClient.setQueryData(taskKeys.project(projectId), context.prev)
+      toast.error('No se pudo reordenar las tareas')
     },
     onSettled: (_d, _e, { projectId }) => {
       queryClient.invalidateQueries({ queryKey: taskKeys.project(projectId) })
@@ -282,6 +308,9 @@ export function useDeleteTask() {
     mutationFn: (id: string) => taskService.deleteTask(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all })
+    },
+    onError: () => {
+      toast.error('No se pudo eliminar la tarea')
     },
   })
 }

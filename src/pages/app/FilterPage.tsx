@@ -189,7 +189,7 @@ export default function FilterPage() {
               showProject
               isSelectMode={isSelectMode}
               isSelected={selectedIds.has(task.id)}
-              onToggleSelect={() => toggle(task.id)}
+              onToggleSelect={toggle}
             />
           ))}
         </div>

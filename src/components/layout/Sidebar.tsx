@@ -161,6 +161,7 @@ function ProjectTreeItem({
           className="flex-shrink-0 cursor-grab opacity-0 group-hover:opacity-50 active:cursor-grabbing"
           onClick={(e) => e.stopPropagation()}
           title="Arrastrar para reordenar"
+          aria-label="Arrastrar para reordenar"
         >
           <GripVertical size={12} style={{ color: 'var(--text-muted)' }} />
         </span>
@@ -174,6 +175,7 @@ function ProjectTreeItem({
               e.stopPropagation()
               toggleCollapsed(project.id)
             }}
+            aria-label={isCollapsed ? 'Expandir proyecto' : 'Contraer proyecto'}
           >
             {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
           </button>
@@ -212,6 +214,7 @@ function ProjectTreeItem({
               onAddSubproject(project.id)
             }}
             title="Añadir subproyecto"
+            aria-label="Añadir subproyecto"
           >
             <Plus size={13} strokeWidth={2.5} />
           </button>
@@ -691,6 +694,7 @@ export function Sidebar() {
             <button
               onClick={() => setProjectsExpanded(!projectsExpanded)}
               className="flex items-center gap-1"
+              aria-label={projectsExpanded ? 'Contraer proyectos' : 'Expandir proyectos'}
             >
               {projectsExpanded ? (
                 <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />
@@ -709,6 +713,7 @@ export function Sidebar() {
               className="rounded p-1 transition-colors hover:opacity-70"
               style={{ color: 'var(--text-muted)' }}
               title="Nuevo proyecto"
+              aria-label="Nuevo proyecto"
             >
               <Plus size={16} />
             </button>
@@ -798,6 +803,7 @@ export function Sidebar() {
               className="rounded p-1 transition-colors hover:opacity-70"
               style={{ color: 'var(--text-muted)' }}
               title="Gestionar etiquetas"
+              aria-label="Gestionar etiquetas"
             >
               <Settings size={14} />
             </button>
@@ -864,6 +870,7 @@ export function Sidebar() {
               className="rounded p-1 transition-colors hover:opacity-70"
               style={{ color: 'var(--text-muted)' }}
               title="Gestionar filtros"
+              aria-label="Gestionar filtros"
             >
               <Settings size={14} />
             </button>

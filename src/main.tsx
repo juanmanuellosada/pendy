@@ -1,10 +1,12 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { Toaster } from 'sonner'
 import App from './App'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import { queryPersister } from '@/lib/queryPersister'
 import './index.css'
 
 // Cuando Vite no puede cargar un chunk (404 tras nuevo deploy con hash distinto),
@@ -13,12 +15,19 @@ window.addEventListener('vite:preloadError', () => {
   window.location.reload()
 })
 
+const MS_24H = 1000 * 60 * 60 * 24
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60,
+      gcTime: MS_24H,
       retry: 1,
       refetchOnWindowFocus: false,
+      networkMode: 'offlineFirst',
+    },
+    mutations: {
+      networkMode: 'offlineFirst',
     },
   },
 })
@@ -26,7 +35,10 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || '/'}>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{ persister: queryPersister, maxAge: MS_24H }}
+      >
         <ErrorBoundary>
           <App />
         </ErrorBoundary>
@@ -40,7 +52,7 @@ createRoot(document.getElementById('root')!).render(
             },
           }}
         />
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </BrowserRouter>
   </StrictMode>,
 )

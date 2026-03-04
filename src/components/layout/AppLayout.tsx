@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { MobileNav } from './MobileNav'
 import { TaskDetail } from '@/components/tasks/TaskDetail'
+import { useUndo } from '@/hooks/useActivityLog'
 import { HabitDetail } from '@/components/habits/HabitDetail'
 import { CalendarEventEditor } from '@/components/common/CalendarEventEditor'
 import { useAppStore } from '@/stores/appStore'
@@ -12,6 +13,7 @@ import { usePushNotifications } from '@/hooks/usePushNotifications'
 import { useRealtimeSync } from '@/hooks/useRealtimeSync'
 import { useAppBadge } from '@/hooks/useAppBadge'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { OfflineBanner } from '@/components/common/OfflineBanner'
 import { cn } from '@/lib/utils'
 import { useEffect } from 'react'
 
@@ -31,14 +33,25 @@ export function AppLayout() {
   usePushNotifications() // registers SW and syncs subscription on login
   useAppBadge() // syncs PWA badge with today's pending count
   useRealtimeSync() // live sync across tabs/devices via Supabase Realtime
+  const undo = useUndo()
   const isCalendarConnected = integrations.length > 0
   const location = useLocation()
   const navigate = useNavigate()
   const isMobile = useIsMobile()
 
-  // Atajos de teclado globales
+  // Atajos de teclado globales (G+key chords per spec)
   useEffect(() => {
+    let gPressed = false
+    let gTimer: ReturnType<typeof setTimeout> | null = null
+
     const handler = (e: KeyboardEvent) => {
+      // Ctrl+Z → Undo (works from anywhere)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        undo.mutate()
+        return
+      }
+
       const tag = (e.target as HTMLElement).tagName
       const isInput =
         tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable
@@ -46,6 +59,49 @@ export function AppLayout() {
       if (isInput) return
 
       const key = e.key.toLowerCase()
+
+      // G chord: G then I/T/U/C/A
+      if (!e.ctrlKey && !e.metaKey && key === 'g' && !gPressed) {
+        gPressed = true
+        if (gTimer) clearTimeout(gTimer)
+        gTimer = setTimeout(() => {
+          gPressed = false
+        }, 500)
+        return
+      }
+
+      if (gPressed && !e.ctrlKey && !e.metaKey) {
+        gPressed = false
+        if (gTimer) clearTimeout(gTimer)
+
+        if (key === 'i') {
+          e.preventDefault()
+          navigate('/app/inbox')
+          return
+        }
+        if (key === 't') {
+          e.preventDefault()
+          navigate('/app/today')
+          return
+        }
+        if (key === 'u') {
+          e.preventDefault()
+          navigate('/app/upcoming')
+          return
+        }
+        if (key === 'c') {
+          e.preventDefault()
+          navigate('/app/completed')
+          return
+        }
+        if (key === 'a') {
+          e.preventDefault()
+          navigate('/app/habits')
+          return
+        }
+      }
+
+      gPressed = false
 
       // S → Buscador
       if (!e.ctrlKey && !e.metaKey && key === 's') {
@@ -69,36 +125,13 @@ export function AppLayout() {
         }
         return
       }
-
-      // Navegación rápida
-      if (!e.ctrlKey && !e.metaKey && key === 'i') {
-        e.preventDefault()
-        navigate('/app/inbox')
-        return
-      }
-      if (!e.ctrlKey && !e.metaKey && key === 'h') {
-        e.preventDefault()
-        navigate('/app/today')
-        return
-      }
-      if (!e.ctrlKey && !e.metaKey && key === 'p') {
-        e.preventDefault()
-        navigate('/app/upcoming')
-        return
-      }
-      if (!e.ctrlKey && !e.metaKey && key === 'c') {
-        e.preventDefault()
-        navigate('/app/completed')
-        return
-      }
-      if (!e.ctrlKey && !e.metaKey && key === 'a') {
-        e.preventDefault()
-        navigate('/app/habits')
-      }
     }
 
     window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
+    return () => {
+      window.removeEventListener('keydown', handler)
+      if (gTimer) clearTimeout(gTimer)
+    }
   }, [navigate, setQuickAddOpen, setEventEditorOpen, isCalendarConnected])
 
   // En mobile, redirigir el panel de TaskDetail a la vista fullscreen
@@ -154,6 +187,7 @@ export function AppLayout() {
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
+        <OfflineBanner />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-6">
           <div
             className={cn(
