@@ -93,13 +93,34 @@ const mockTasks = [
 export default function LandingPage() {
   const [isVisible, setIsVisible] = useState(false)
   const [featuresInView, setFeaturesInView] = useState(false)
+  const [navScrolled, setNavScrolled] = useState(false)
   const featuresRef = useRef<HTMLDivElement>(null)
+  const heroRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     setTimeout(() => setIsVisible(true), 120)
   }, [])
 
-  // IntersectionObserver for features section (Step 3)
+  // Sticky nav: detect when hero is no longer fully visible
+  useEffect(() => {
+    const el = heroRef.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        if (entry) {
+          setNavScrolled(!entry.isIntersecting)
+        }
+      },
+      { threshold: 0, rootMargin: '-80px 0px 0px 0px' },
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  // IntersectionObserver for features section
   useEffect(() => {
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (prefersReduced) {
@@ -127,8 +148,47 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0f1117] overflow-hidden">
+      {/* ── STICKY NAV ─────────────────────────────────────────── */}
+      <nav
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          navScrolled
+            ? 'bg-[#16202f]/90 backdrop-blur-xl shadow-lg border-b border-white/5'
+            : 'bg-transparent'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 md:px-8 py-4 md:py-6">
+          <div className="flex items-center gap-3">
+            <img
+              src={`${import.meta.env.BASE_URL}pendy-logo.png`}
+              alt="Pendy"
+              className="w-8 h-8 rounded-lg"
+            />
+            <span className="font-heading text-white font-bold text-xl tracking-tight">Pendy</span>
+          </div>
+          <div className="flex items-center gap-2 md:gap-3">
+            <Link
+              to="/auth/login"
+              className="font-body px-3 md:px-5 py-2.5 text-sm font-medium text-white/60 hover:text-white transition-colors"
+            >
+              Iniciar sesión
+            </Link>
+            <Link
+              to="/auth/register"
+              className="font-body px-4 md:px-5 py-2 md:py-2.5 text-sm font-bold text-white transition-all hover:opacity-90 hover:scale-[1.02]"
+              style={{
+                backgroundColor: '#EC1E2A',
+                borderRadius: '8px',
+              }}
+            >
+              Crear cuenta
+            </Link>
+          </div>
+        </div>
+      </nav>
+
       {/* ── HERO ──────────────────────────────────────────────── */}
       <section
+        ref={heroRef}
         className="relative min-h-screen flex flex-col"
         style={{ backgroundColor: '#16202f' }}
       >
@@ -158,35 +218,8 @@ export default function LandingPage() {
           }}
         />
 
-        {/* Nav — Step 2: responsive padding + CTA sizing */}
-        <nav className="relative z-10 flex items-center justify-between px-4 md:px-8 py-6">
-          <div className="flex items-center gap-3">
-            <img
-              src={`${import.meta.env.BASE_URL}pendy-logo.png`}
-              alt="Pendy"
-              className="w-8 h-8 rounded-lg"
-            />
-            <span className="font-heading text-white font-bold text-xl tracking-tight">Pendy</span>
-          </div>
-          <div className="flex items-center gap-2 md:gap-3">
-            <Link
-              to="/auth/login"
-              className="font-body px-3 md:px-5 py-2.5 text-sm font-medium text-white/60 hover:text-white transition-colors"
-            >
-              Iniciar sesión
-            </Link>
-            <Link
-              to="/auth/register"
-              className="font-body px-4 md:px-5 py-2 md:py-2.5 text-sm font-bold text-white transition-all hover:opacity-90 hover:scale-[1.02]"
-              style={{
-                backgroundColor: '#EC1E2A',
-                borderRadius: '8px',
-              }}
-            >
-              Crear cuenta
-            </Link>
-          </div>
-        </nav>
+        {/* Spacer for fixed nav */}
+        <div className="h-16 md:h-20" />
 
         {/* Hero content */}
         <div className="relative z-10 flex-1 flex items-center justify-center px-6 pb-20">
@@ -230,7 +263,7 @@ export default function LandingPage() {
               recordatorios — todo integrado.
             </p>
 
-            {/* CTAs — Step 2: responsive padding */}
+            {/* CTAs */}
             <div
               className={`flex flex-col sm:flex-row gap-4 items-center justify-center transition-all duration-700 delay-300 ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
@@ -258,7 +291,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Scroll hint — Step 2: hidden on mobile */}
+        {/* Scroll hint — hidden on mobile */}
         <div className="relative z-10 hidden md:flex justify-center pb-10 opacity-30">
           <div className="flex flex-col items-center gap-2 animate-bounce">
             <span className="font-body text-white text-[10px] uppercase tracking-[0.2em]">
@@ -271,7 +304,7 @@ export default function LandingPage() {
 
       {/* ── APP PREVIEW ─────────────────────────────────────────── */}
       <section className="bg-[#F5F7FA] dark:bg-[#131720] py-24 px-6">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2
               className="font-display text-3xl md:text-[42px] font-black text-gray-900 dark:text-white mb-4"
@@ -284,16 +317,16 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Browser mockup — Step 4: aria-hidden, responsive */}
+          {/* Browser mockup — hover perspective on desktop */}
           <div
-            className="shadow-2xl overflow-hidden"
+            className="shadow-2xl overflow-hidden transition-transform duration-500 lg:hover:scale-[1.01] lg:hover:-translate-y-1 lg:hover:shadow-[0_25px_60px_-12px_rgba(0,0,0,0.25)]"
             style={{
               borderRadius: '18px',
               border: '1px solid rgba(0,0,0,0.07)',
             }}
             aria-hidden="true"
           >
-            {/* Window chrome — Step 6: dark mode */}
+            {/* Window chrome */}
             <div className="flex items-center gap-2 px-4 py-3 bg-[#f0f1f3] dark:bg-[#2a2a2a] border-b border-[#e2e4e8] dark:border-[#3a3a3a]">
               <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
               <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
@@ -301,9 +334,9 @@ export default function LandingPage() {
               <div className="ml-3 flex-1 max-w-xs mx-auto h-5 rounded-md bg-[#e2e4e8] dark:bg-[#3a3a3a]" />
             </div>
 
-            {/* App layout — Step 4: responsive height, Step 6: dark mode */}
-            <div className="flex h-auto min-h-[280px] md:h-[380px] bg-white dark:bg-[#1a1f2b]">
-              {/* Sidebar — Step 4: hidden on mobile */}
+            {/* App layout — taller on lg+ */}
+            <div className="flex h-auto min-h-[280px] md:h-[380px] lg:h-[440px] bg-white dark:bg-[#1a1f2b]">
+              {/* Sidebar — hidden on mobile */}
               <div className="hidden md:block w-52 flex-shrink-0 p-3 space-y-0.5 bg-[#f8f9fb] dark:bg-[#161b26] border-r border-[#eaecf0] dark:border-[#2a3244]">
                 <div className="flex items-center gap-2 px-3 py-2 mb-4">
                   <div className="w-5 h-5 rounded" style={{ backgroundColor: '#283B56' }} />
@@ -423,6 +456,78 @@ export default function LandingPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Detail panel — visible on lg+ */}
+              <div className="hidden lg:flex w-64 flex-shrink-0 flex-col p-5 bg-[#fcfcfd] dark:bg-[#1e2433] border-l border-[#eaecf0] dark:border-[#2a3244]">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="font-heading text-sm font-bold text-gray-900 dark:text-white">
+                    Detalle
+                  </span>
+                  <div className="w-5 h-5 rounded bg-gray-100 dark:bg-[#2a3244]" />
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <div className="font-body text-xs text-gray-400 dark:text-gray-500 mb-1">
+                      Tarea
+                    </div>
+                    <div className="font-body text-sm font-medium text-gray-800 dark:text-gray-200">
+                      Llamar al proveedor
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-body text-xs text-gray-400 dark:text-gray-500 mb-1">
+                      Prioridad
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]" />
+                      <span className="font-body text-sm text-gray-700 dark:text-gray-300">
+                        Alta
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-body text-xs text-gray-400 dark:text-gray-500 mb-1">
+                      Fecha
+                    </div>
+                    <div className="font-body text-sm text-gray-700 dark:text-gray-300">
+                      Hoy, 11:30
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-body text-xs text-gray-400 dark:text-gray-500 mb-1">
+                      Proyecto
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-sm bg-[#3B82F6]" />
+                      <span className="font-body text-sm text-gray-700 dark:text-gray-300">
+                        Trabajo
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-body text-xs text-gray-400 dark:text-gray-500 mb-1">
+                      Etiquetas
+                    </div>
+                    <div className="flex gap-1.5">
+                      <span className="font-body text-[10px] px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium">
+                        Urgente
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-auto pt-4 border-t border-[#eaecf0] dark:border-[#2a3244]">
+                  <div className="font-body text-xs text-gray-400 dark:text-gray-500 mb-2">
+                    Comentarios
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white dark:bg-[#1a1f2b] border border-[#eaecf0] dark:border-[#2a3244]">
+                    <span className="font-body text-xs text-gray-500 dark:text-gray-400">
+                      Confirmar presupuesto antes de llamar
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -445,8 +550,8 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Step 8: grid 4 cols on lg, 8 features */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+          {/* Grid: 1 col → 2 cols → 3 cols → 4 cols */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {features.map((feature, index) => {
               const Icon = feature.icon
               const isHighlight = (feature as { highlight?: boolean }).highlight
@@ -489,7 +594,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── SOCIAL PROOF / STATS — Step 10 ─────────────────────── */}
+      {/* ── SOCIAL PROOF / STATS ───────────────────────────────── */}
       <section className="py-10 px-6 bg-white dark:bg-[#0f1117] border-t border-gray-100 dark:border-gray-800/50">
         <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
           {[
@@ -506,9 +611,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── CTA ─────────────────────────────────────────────────── */}
+      {/* ── CTA — wider card ───────────────────────────────────── */}
       <section className="py-28 px-6 bg-[#F5F7FA] dark:bg-[#131720]">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div
             className="relative overflow-hidden p-10 md:p-14 text-center"
             style={{
@@ -560,7 +665,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── FOOTER — Step 9: links ─────────────────────────────── */}
+      {/* ── FOOTER ─────────────────────────────────────────────── */}
       <footer className="py-10 px-6 border-t border-gray-100 dark:border-gray-800/60 bg-white dark:bg-[#0f1117]">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-center gap-3">
           <div className="flex items-center gap-2">
