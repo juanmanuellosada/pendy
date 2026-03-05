@@ -986,11 +986,22 @@ function TimedTaskBlock({
       {isCompact ? (
         /* ── Compact mode: single row, no checkbox ── */
         <div className="flex items-center gap-1 h-full">
-          <span className="shrink-0 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
+          <button
+            className="shrink-0 w-3 h-3 rounded-full border-2 flex items-center justify-center transition-colors hover:opacity-80"
+            style={{
+              borderColor: color,
+              backgroundColor: task.is_completed ? color : 'transparent',
+            }}
+            onClick={(e) => {
+              e.stopPropagation()
+              completeTask.mutate({ id: task.id, completed: !task.is_completed })
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+          />
           <p
             className={cn(
               'truncate text-[10px] font-medium flex-1 min-w-0 leading-none',
-              task.is_completed && 'line-through',
+              task.is_completed && 'line-through opacity-50',
             )}
             style={{ color: 'var(--text-primary)' }}
           >
