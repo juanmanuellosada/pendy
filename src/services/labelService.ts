@@ -75,8 +75,8 @@ export const labelService = {
     }
   },
 
-  /** Devuelve un mapa taskId → Label[] para todos los tasks del usuario */
-  async getAllTaskLabelsMap(userId: string): Promise<Map<string, Label[]>> {
+  /** Devuelve un array serializable de { task_id, labels }[] para todos los tasks del usuario */
+  async getAllTaskLabelsRaw(userId: string): Promise<{ task_id: string; labels: Label[] }[]> {
     const { data, error } = await supabase
       .from('task_labels')
       .select(
@@ -86,11 +86,11 @@ export const labelService = {
 
     if (error) throw error
 
-    const map = new Map<string, Label[]>()
+    const acc = new Map<string, Label[]>()
     ;(data ?? []).forEach((row) => {
-      if (!map.has(row.task_id)) map.set(row.task_id, [])
-      map.get(row.task_id)!.push(row.labels as unknown as Label)
+      if (!acc.has(row.task_id)) acc.set(row.task_id, [])
+      acc.get(row.task_id)!.push(row.labels as unknown as Label)
     })
-    return map
+    return Array.from(acc.entries()).map(([task_id, labels]) => ({ task_id, labels }))
   },
 }

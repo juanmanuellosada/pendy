@@ -31,8 +31,11 @@ export function useAllTaskLabelsMap() {
   const { user } = useAuth()
   return useQuery({
     queryKey: labelKeys.allTaskLabels(user?.id ?? ''),
-    queryFn: () => labelService.getAllTaskLabelsMap(user!.id),
+    // queryFn returns a plain array (serializable by the IndexedDB persister)
+    queryFn: () => labelService.getAllTaskLabelsRaw(user!.id),
     enabled: !!user,
+    // select converts the array to a Map on every read — not stored in cache
+    select: (rows) => new Map(rows.map((r) => [r.task_id, r.labels])),
   })
 }
 

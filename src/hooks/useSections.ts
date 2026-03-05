@@ -22,8 +22,11 @@ export function useProjectSections(projectId: string | undefined) {
 export function useAllSections() {
   return useQuery({
     queryKey: sectionKeys.allSections,
-    queryFn: async () => {
-      const sections = await sectionService.getAllSections()
+    // queryFn returns a plain array (serializable by the IndexedDB persister)
+    queryFn: () => sectionService.getAllSections(),
+    staleTime: 1000 * 60,
+    // select converts the array to a Map on every read — not stored in cache
+    select: (sections) => {
       const map = new Map<string, Section[]>()
       for (const s of sections) {
         const arr = map.get(s.project_id) ?? []
@@ -32,7 +35,6 @@ export function useAllSections() {
       }
       return map
     },
-    staleTime: 1000 * 60,
   })
 }
 
