@@ -21,6 +21,16 @@ function isTokenExpired(integration: CalendarIntegration): boolean {
   return new Date(integration.token_expiry) <= new Date(Date.now() + 60_000)
 }
 
+// When events are restored from the persisted IndexedDB cache, Date objects come
+// back as strings. This function ensures start/end are always real Date instances.
+function rehydrateEvents(events: CalendarEvent[]): CalendarEvent[] {
+  return events.map((ev) => ({
+    ...ev,
+    start: ev.start instanceof Date ? ev.start : new Date(ev.start),
+    end: ev.end instanceof Date ? ev.end : new Date(ev.end),
+  }))
+}
+
 // ─── Google events with auto-refresh ─────────────────────────────────────────
 
 async function fetchGoogleEventsWithRefresh(
@@ -102,6 +112,7 @@ export function useTodayCalendarEvents() {
     enabled: !!user && !!googleIntegration,
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
+    select: rehydrateEvents,
     queryFn: async () => {
       const from = startOfDay(new Date())
       const to = endOfDay(new Date())
@@ -139,6 +150,7 @@ export function useUpcomingCalendarEvents(days: number) {
     enabled: !!user && !!googleIntegration,
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
+    select: rehydrateEvents,
     queryFn: async () => {
       const today = startOfDay(new Date())
       const from = today
@@ -174,6 +186,7 @@ export function useCalendarEventsByRange(from: Date | null, to: Date | null) {
     enabled: !!user && !!googleIntegration && !!from && !!to,
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
+    select: rehydrateEvents,
     queryFn: async () => {
       const makeRefreshFn = async () => {
         const result = await refreshMutation.mutateAsync()
