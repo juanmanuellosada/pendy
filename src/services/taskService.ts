@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import { labelService } from './labelService'
 import { rrulestr } from 'rrule'
+import { format } from 'date-fns'
 import type { Task } from '@/lib/types'
 
 export const taskService = {
@@ -17,7 +18,7 @@ export const taskService = {
   },
 
   async getTasksDueToday(userId: string): Promise<Task[]> {
-    const today = new Date().toISOString().split('T')[0]
+    const today = format(new Date(), 'yyyy-MM-dd')
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
@@ -31,10 +32,10 @@ export const taskService = {
   },
 
   async getTasksUpcoming(userId: string, days: number = 30): Promise<Task[]> {
-    const today = new Date().toISOString().split('T')[0]
+    const today = format(new Date(), 'yyyy-MM-dd')
     const futureDate = new Date()
     futureDate.setDate(futureDate.getDate() + days)
-    const future = futureDate.toISOString().split('T')[0]
+    const future = format(futureDate, 'yyyy-MM-dd')
 
     const { data, error } = await supabase
       .from('tasks')
