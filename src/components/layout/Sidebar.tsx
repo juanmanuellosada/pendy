@@ -42,6 +42,7 @@ import { useTodayHabits, useHabitCompletions } from '@/hooks/useHabits'
 import { useLabels } from '@/hooks/useLabels'
 import { useFilters } from '@/hooks/useFilters'
 import { cn } from '@/lib/utils'
+import { format } from 'date-fns'
 import { Filter as FilterIcon } from 'lucide-react'
 import type { Project } from '@/lib/types'
 
@@ -261,7 +262,7 @@ export function Sidebar() {
   const { data: todayTasks = [] } = useTodayTasks()
   const { data: projectCounts = {} } = useTaskCountsByProject()
   const { data: todayHabits = [] } = useTodayHabits()
-  const todayDateKey = new Date().toISOString().slice(0, 10)
+  const todayDateKey = format(new Date(), 'yyyy-MM-dd')
   const { data: habitCompletions = [] } = useHabitCompletions(todayDateKey, todayDateKey)
   const todayViewOpts = getViewOptions('today')
   const showHabitsInToday = todayViewOpts.showHabits ?? true

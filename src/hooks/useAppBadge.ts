@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { format } from 'date-fns'
 import { useTodayTasks } from '@/hooks/useTasks'
 import { useTodayHabits, useHabitCompletions } from '@/hooks/useHabits'
 import { useUIStore } from '@/stores/uiStore'
@@ -11,7 +12,7 @@ import { useUIStore } from '@/stores/uiStore'
 export function useAppBadge() {
   const { data: todayTasks = [] } = useTodayTasks()
   const { data: todayHabits = [] } = useTodayHabits()
-  const todayDateKey = new Date().toISOString().slice(0, 10)
+  const todayDateKey = format(new Date(), 'yyyy-MM-dd')
   const { data: habitCompletions = [] } = useHabitCompletions(todayDateKey, todayDateKey)
   const { getViewOptions } = useUIStore()
 
