@@ -1954,7 +1954,8 @@ function TimelineTaskBlock({
   const labels = labelsMap?.get(task.id) ?? []
   const description = task.description ? stripHtmlTags(task.description).trim() : ''
 
-  const showTimeSeparate = currentHeight >= 38
+  const isCompact = currentHeight < 30
+  const showTimeSeparate = !isCompact && currentHeight >= 38
   const showDescription = currentHeight >= 60 && description
   const showProject = currentHeight >= 78 && project
   const showLabels = currentHeight >= 96 && labels.length > 0
@@ -2001,7 +2002,8 @@ function TimelineTaskBlock({
   return (
     <div
       className={cn(
-        'group absolute left-0.5 right-0.5 z-10 select-none overflow-hidden rounded-md border-l-3 px-1.5 py-0.5',
+        'group absolute left-0.5 right-0.5 z-10 select-none overflow-hidden rounded-md border-l-3',
+        isCompact ? 'px-1.5 py-0' : 'px-1.5 py-0.5',
         task.is_completed && 'opacity-50',
         isDragging && 'opacity-30',
         isVirtual && 'opacity-60',
@@ -2021,74 +2023,100 @@ function TimelineTaskBlock({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <div className="flex items-start gap-1">
-        <div className="mt-0.5">
-          <TaskCheckbox
-            checked={task.is_completed}
-            priority={task.priority}
-            onChange={
-              isVirtual ? () => {} : (completed) => completeTask.mutate({ id: task.id, completed })
-            }
-          />
+      {isCompact ? (
+        /* ── Compact mode: single row, no checkbox ── */
+        <div className="flex items-center gap-1 h-full">
+          <span className="shrink-0 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
+          <p
+            className={cn(
+              'truncate text-[10px] font-medium flex-1 min-w-0 leading-none',
+              task.is_completed && 'line-through',
+            )}
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {stripLabelTokensFromText(stripHtmlTags(task.title))}
+          </p>
+          <span
+            className="shrink-0 text-[10px] whitespace-nowrap"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            {timeStart}
+            {task.is_recurring && <span className="ml-0.5">↻</span>}
+          </span>
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1">
-            <p
-              className={cn(
-                'truncate text-[11px] font-medium flex-1 min-w-0',
-                task.is_completed && 'line-through',
-              )}
-              style={{ color: 'var(--text-primary)' }}
-            >
-              {stripLabelTokensFromText(stripHtmlTags(task.title))}
-            </p>
-            {!showTimeSeparate && (
-              <span
-                className="shrink-0 text-[10px] whitespace-nowrap"
-                style={{ color: 'var(--text-muted)' }}
+      ) : (
+        /* ── Normal mode ── */
+        <div className="flex items-start gap-1">
+          <div className="mt-0.5">
+            <TaskCheckbox
+              checked={task.is_completed}
+              priority={task.priority}
+              onChange={
+                isVirtual
+                  ? () => {}
+                  : (completed) => completeTask.mutate({ id: task.id, completed })
+              }
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1">
+              <p
+                className={cn(
+                  'truncate text-[11px] font-medium flex-1 min-w-0',
+                  task.is_completed && 'line-through',
+                )}
+                style={{ color: 'var(--text-primary)' }}
               >
-                {timeStart}
-                {task.is_recurring && <span className="ml-0.5">↻</span>}
-              </span>
+                {stripLabelTokensFromText(stripHtmlTags(task.title))}
+              </p>
+              {!showTimeSeparate && (
+                <span
+                  className="shrink-0 text-[10px] whitespace-nowrap"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  {timeStart}
+                  {task.is_recurring && <span className="ml-0.5">↻</span>}
+                </span>
+              )}
+            </div>
+            {showTimeSeparate && (
+              <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                {timeStr}
+                {task.is_recurring && <span className="ml-1">↻</span>}
+              </p>
+            )}
+            {showDescription && (
+              <p className="truncate text-[10px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                {description}
+              </p>
+            )}
+            {showProject && (
+              <div className="flex items-center gap-1 mt-0.5">
+                <span
+                  className="inline-block h-2 w-2 rounded-sm shrink-0"
+                  style={{ backgroundColor: project.color }}
+                />
+                <span className="truncate text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                  {project.name}
+                </span>
+              </div>
+            )}
+            {showLabels && (
+              <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                {labels.slice(0, 2).map((label) => (
+                  <span
+                    key={label.id}
+                    className="rounded px-1 py-px text-[9px] font-medium"
+                    style={{ backgroundColor: label.color + '20', color: label.color }}
+                  >
+                    {label.name}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
-          {showTimeSeparate && (
-            <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-              {timeStr}
-              {task.is_recurring && <span className="ml-1">↻</span>}
-            </p>
-          )}
-          {showDescription && (
-            <p className="truncate text-[10px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-              {description}
-            </p>
-          )}
-          {showProject && (
-            <div className="flex items-center gap-1 mt-0.5">
-              <span
-                className="inline-block h-2 w-2 rounded-sm shrink-0"
-                style={{ backgroundColor: project.color }}
-              />
-              <span className="truncate text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                {project.name}
-              </span>
-            </div>
-          )}
-          {showLabels && (
-            <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-              {labels.slice(0, 2).map((label) => (
-                <span
-                  key={label.id}
-                  className="rounded px-1 py-px text-[9px] font-medium"
-                  style={{ backgroundColor: label.color + '20', color: label.color }}
-                >
-                  {label.name}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
-      </div>
+      )}
 
       <div
         data-resize-handle
