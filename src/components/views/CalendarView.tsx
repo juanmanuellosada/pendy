@@ -2096,7 +2096,7 @@ function TimelineTaskBlock({
                 const next = !task.is_completed
                 if (next) playCompletionSound()
                 else playUncompleteSound()
-                completeTask.mutate({ id: task.id, completed: next })
+                completeTask.mutate({ id: task.id, completed: next, task })
               }
             }}
             onMouseDown={(e) => e.stopPropagation()}
@@ -2128,7 +2128,7 @@ function TimelineTaskBlock({
               onChange={
                 isVirtual
                   ? () => {}
-                  : (completed) => completeTask.mutate({ id: task.id, completed })
+                  : (completed) => completeTask.mutate({ id: task.id, completed, task })
               }
             />
           </div>
@@ -2528,7 +2528,9 @@ function AllDayChip({
           checked={task.is_completed}
           priority={task.priority}
           onChange={
-            isVirtual ? () => {} : (completed) => completeTask.mutate({ id: task.id, completed })
+            isVirtual
+              ? () => {}
+              : (completed) => completeTask.mutate({ id: task.id, completed, task })
           }
         />
         <span

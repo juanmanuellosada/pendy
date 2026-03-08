@@ -1042,7 +1042,7 @@ function TimedTaskBlock({
               const next = !task.is_completed
               if (next) playCompletionSound()
               else playUncompleteSound()
-              completeTask.mutate({ id: task.id, completed: next })
+              completeTask.mutate({ id: task.id, completed: next, task })
             }}
             onMouseDown={(e) => e.stopPropagation()}
           />
@@ -1070,7 +1070,7 @@ function TimedTaskBlock({
             <TaskCheckbox
               checked={task.is_completed}
               priority={task.priority}
-              onChange={(completed) => completeTask.mutate({ id: task.id, completed })}
+              onChange={(completed) => completeTask.mutate({ id: task.id, completed, task })}
             />
           </div>
           <div className="min-w-0 flex-1">
@@ -1452,7 +1452,7 @@ function OverdueTaskCard({ task }: { task: Task }) {
       <TaskCheckbox
         checked={task.is_completed}
         priority={task.priority}
-        onChange={(completed) => completeTask.mutate({ id: task.id, completed })}
+        onChange={(completed) => completeTask.mutate({ id: task.id, completed, task })}
       />
       <span
         className={cn('flex-1 truncate text-xs font-medium', task.is_completed && 'line-through')}
@@ -1817,7 +1817,7 @@ function TimelineTaskCard({
         <TaskCheckbox
           checked={task.is_completed}
           priority={task.priority}
-          onChange={(completed) => completeTask.mutate({ id: task.id, completed })}
+          onChange={(completed) => completeTask.mutate({ id: task.id, completed, task })}
         />
         <span
           className={cn('truncate text-xs font-medium', task.is_completed && 'line-through')}
