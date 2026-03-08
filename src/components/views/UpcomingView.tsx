@@ -179,7 +179,6 @@ export function UpcomingView() {
       return (
         <CalendarView
           calendarMode={opts.calendarMode}
-          onAddTask={handleAddTask}
           showFutureRecurrences={opts.showFutureRecurrences}
           showCompleted={opts.showCompleted}
           showHabits={opts.showHabits ?? true}

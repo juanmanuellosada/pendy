@@ -172,7 +172,6 @@ function overlapPos(col: number, totalCols: number): React.CSSProperties {
 
 interface CalendarViewProps {
   calendarMode: CalendarMode
-  onAddTask: (dateStr: string) => void
   showFutureRecurrences?: boolean
   showCompleted?: boolean
   showHabits?: boolean
@@ -188,7 +187,6 @@ function snapMinutes(totalMinutes: number): number {
 
 export function CalendarView({
   calendarMode,
-  onAddTask,
   showFutureRecurrences = true,
   showCompleted = true,
   showHabits = true,
@@ -220,8 +218,8 @@ export function CalendarView({
   } | null>(null)
   const [creatingTaskInfo, setCreatingTaskInfo] = useState<{
     date: string
-    time: string
-    durationMinutes: number
+    time: string | null
+    durationMinutes: number | null
   } | null>(null)
 
   const days = useMemo((): Date[] => {
@@ -423,7 +421,6 @@ export function CalendarView({
               onEditEvent={setEditingEvent}
               onCreateEvent={setCreatingEventInfo}
               onCreateTask={setCreatingTaskInfo}
-              onAddTask={onAddTask}
               onSetHabitDefaultTime={(habitId, time) =>
                 setHabitDefaultTime.mutate({ habitId, time })
               }
@@ -499,7 +496,13 @@ export function CalendarView({
                           inCurrentMonth={isSameMonth(day, currentDate)}
                           isOver={dragOverDate === dateStr}
                           hasRightBorder={colIdx < 6}
-                          onAddTask={onAddTask}
+                          onAddTask={(dateStr) =>
+                            setCreatingTaskInfo({
+                              date: dateStr,
+                              time: null,
+                              durationMinutes: null,
+                            })
+                          }
                           onDragStart={handleDragStart}
                           onDragOver={handleDragOver}
                           onDragLeave={handleDragLeave}
@@ -590,7 +593,6 @@ function TimelineGrid({
   onEditEvent,
   onCreateEvent,
   onCreateTask,
-  onAddTask,
   onSetHabitDefaultTime,
   onUpsertHabitSchedule,
   onToggleHabitCompletion,
@@ -614,8 +616,11 @@ function TimelineGrid({
     durationMinutes?: number
     allDay?: boolean
   }) => void
-  onCreateTask: (info: { date: string; time: string; durationMinutes: number }) => void
-  onAddTask: (dateStr: string) => void
+  onCreateTask: (info: {
+    date: string
+    time: string | null
+    durationMinutes: number | null
+  }) => void
   onSetHabitDefaultTime?: (habitId: string, time: string) => void
   onUpsertHabitSchedule?: (habitId: string, date: string, time: string) => void
   onToggleHabitCompletion?: (habitId: string, date: Date) => void
@@ -1299,7 +1304,9 @@ function TimelineGrid({
                     <Plus size={10} />
                   </button>
                   <button
-                    onClick={() => onAddTask(dateStr)}
+                    onClick={() =>
+                      onCreateTask({ date: dateStr, time: null, durationMinutes: null })
+                    }
                     className="rounded p-0.5 transition-opacity hover:opacity-70"
                     style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-primary)' }}
                     title="Nueva tarea todo el día"

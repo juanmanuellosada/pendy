@@ -200,7 +200,6 @@ export function TodayView() {
           calendarEvents={calendarEvents}
           showCompleted={opts.showCompleted}
           showHabits={opts.showHabits ?? true}
-          onAddTask={() => setEditorOpen(true)}
         />
       ) : opts.groupBy !== 'none' ? (
         <div>
