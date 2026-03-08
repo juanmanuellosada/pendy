@@ -106,6 +106,7 @@ function computeNLPDecorations(state: EditorState, disabledPhrases: Set<string>)
     if (m && m.index !== undefined && m[0].length > 0) {
       const matchedText = m[0].trim().toLowerCase()
       const isDisabled = disabledPhrases.has(matchedText)
+      if (isDisabled) continue // disabled → plain text, no decoration
       const matchStart = m.index
       const matchEnd = matchStart + m[0].length
       if (matchStart < posMap.length && matchEnd - 1 < posMap.length) {
@@ -113,9 +114,7 @@ function computeNLPDecorations(state: EditorState, disabledPhrases: Set<string>)
         const to = posMap[matchEnd - 1]! + 1
         decorations.push(
           Decoration.inline(from, to, {
-            style: isDisabled
-              ? 'color: var(--text-muted); text-decoration: line-through; cursor: pointer'
-              : `color: ${NLP_HIGHLIGHT_COLOR}; cursor: pointer`,
+            style: `color: ${NLP_HIGHLIGHT_COLOR}; cursor: pointer`,
             class: 'nlp-date-token',
           }),
         )
