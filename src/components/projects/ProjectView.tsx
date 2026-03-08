@@ -133,10 +133,6 @@ export function ProjectView({ project }: ProjectViewProps) {
     setEditorOpen(true)
   }
 
-  const handleAddTask = (_dateStr?: string) => {
-    setEditorOpen(true)
-  }
-
   const handleSaveSection = (name: string) => {
     if (editingSection) {
       updateSection.mutate({
