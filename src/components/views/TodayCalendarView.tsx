@@ -93,6 +93,7 @@ interface TodayCalendarViewProps {
   calendarEvents?: CalendarEvent[]
   showCompleted?: boolean
   showHabits?: boolean
+  onAddTask?: () => void
 }
 
 /** Convert a pixel offset (relative to grid top) to fractional hours */
@@ -110,6 +111,7 @@ export function TodayCalendarView({
   calendarEvents = [],
   showCompleted = true,
   showHabits = true,
+  onAddTask,
 }: TodayCalendarViewProps) {
   const isMobile = useIsMobile()
   const hourHeight = isMobile ? 40 : HOUR_HEIGHT
@@ -424,13 +426,7 @@ export function TodayCalendarView({
                       <Plus size={10} />
                     </button>
                     <button
-                      onClick={() =>
-                        setCreatingTaskInfo({
-                          date: todayDateStr,
-                          time: null,
-                          durationMinutes: null,
-                        })
-                      }
+                      onClick={() => onAddTask?.()}
                       className="rounded p-0.5 transition-opacity hover:opacity-70"
                       style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-primary)' }}
                       title="Nueva tarea todo el día"
