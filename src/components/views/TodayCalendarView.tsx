@@ -24,6 +24,7 @@ import { useHabitTooltip } from '@/components/habits/HabitTooltip'
 import { TaskEditor } from '@/components/tasks/TaskEditor'
 import { PRIORITY_COLORS } from '@/lib/constants'
 import { cn, stripHtmlTags, stripLabelTokensFromText } from '@/lib/utils'
+import { playCompletionSound, playUncompleteSound } from '@/lib/sound'
 import { TaskTooltip } from '@/components/common/TaskTooltip'
 import { CalendarEventEditor } from '@/components/common/CalendarEventEditor'
 import type { Task, Label, CalendarEvent, Habit, HabitCompletion } from '@/lib/types'
@@ -1038,7 +1039,10 @@ function TimedTaskBlock({
             }}
             onClick={(e) => {
               e.stopPropagation()
-              completeTask.mutate({ id: task.id, completed: !task.is_completed })
+              const next = !task.is_completed
+              if (next) playCompletionSound()
+              else playUncompleteSound()
+              completeTask.mutate({ id: task.id, completed: next })
             }}
             onMouseDown={(e) => e.stopPropagation()}
           />

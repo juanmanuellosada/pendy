@@ -47,6 +47,7 @@ import { useHabitTooltip } from '@/components/habits/HabitTooltip'
 import { TaskEditor } from '@/components/tasks/TaskEditor'
 import { PRIORITY_COLORS } from '@/lib/constants'
 import { cn, stripHtmlTags, stripLabelTokensFromText } from '@/lib/utils'
+import { playCompletionSound, playUncompleteSound } from '@/lib/sound'
 import type { Task, CalendarEvent, Habit, HabitCompletion, HabitSchedule } from '@/lib/types'
 import { TaskTooltip } from '@/components/common/TaskTooltip'
 import {
@@ -2091,7 +2092,12 @@ function TimelineTaskBlock({
             }}
             onClick={(e) => {
               e.stopPropagation()
-              if (!isVirtual) completeTask.mutate({ id: task.id, completed: !task.is_completed })
+              if (!isVirtual) {
+                const next = !task.is_completed
+                if (next) playCompletionSound()
+                else playUncompleteSound()
+                completeTask.mutate({ id: task.id, completed: next })
+              }
             }}
             onMouseDown={(e) => e.stopPropagation()}
           />
