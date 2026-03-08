@@ -18,6 +18,7 @@ import {
   useUpsertHabitSchedule,
 } from '@/hooks/useHabits'
 import { TaskCheckbox } from '@/components/tasks/TaskCheckbox'
+import { TaskContextMenu } from '@/components/tasks/TaskContextMenu'
 import { HabitCheckbox } from '@/components/habits/HabitCheckbox'
 import { useHabitTooltip } from '@/components/habits/HabitTooltip'
 import { TaskEditor } from '@/components/tasks/TaskEditor'
@@ -836,6 +837,7 @@ function TimedTaskBlock({
   const [resizeDelta, setResizeDelta] = useState(0)
   const [interacting, setInteracting] = useState(false)
   const didMove = useRef(false)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
 
   // When server data catches up to local override, clear the override
   const baseHour = localHour ?? serverHour
@@ -1011,7 +1013,20 @@ function TimedTaskBlock({
       onClick={handleClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setContextMenu({ x: e.clientX, y: e.clientY })
+      }}
     >
+      {contextMenu && (
+        <TaskContextMenu
+          task={task}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
       {isCompact ? (
         /* ── Compact mode: single row, no checkbox ── */
         <div className="flex items-center gap-1 h-full">
@@ -1776,29 +1791,45 @@ function TimelineTaskCard({
   const completeTask = useCompleteTask()
   const { setSelectedTaskId } = useAppStore()
   const color = PRIORITY_COLORS[task.priority] ?? PRIORITY_COLORS[4]
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
 
   return (
-    <div
-      className={cn(
-        'mb-1 flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-colors',
-        task.is_completed && 'opacity-50',
-      )}
-      style={{ backgroundColor: `${color}18` }}
-      onClick={() => setSelectedTaskId(task.id)}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-    >
-      <TaskCheckbox
-        checked={task.is_completed}
-        priority={task.priority}
-        onChange={(completed) => completeTask.mutate({ id: task.id, completed })}
-      />
-      <span
-        className={cn('truncate text-xs font-medium', task.is_completed && 'line-through')}
-        style={{ color: 'var(--text-primary)' }}
+    <>
+      <div
+        className={cn(
+          'mb-1 flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-colors',
+          task.is_completed && 'opacity-50',
+        )}
+        style={{ backgroundColor: `${color}18` }}
+        onClick={() => setSelectedTaskId(task.id)}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        onContextMenu={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          setContextMenu({ x: e.clientX, y: e.clientY })
+        }}
       >
-        {stripLabelTokensFromText(stripHtmlTags(task.title))}
-      </span>
-    </div>
+        <TaskCheckbox
+          checked={task.is_completed}
+          priority={task.priority}
+          onChange={(completed) => completeTask.mutate({ id: task.id, completed })}
+        />
+        <span
+          className={cn('truncate text-xs font-medium', task.is_completed && 'line-through')}
+          style={{ color: 'var(--text-primary)' }}
+        >
+          {stripLabelTokensFromText(stripHtmlTags(task.title))}
+        </span>
+      </div>
+      {contextMenu && (
+        <TaskContextMenu
+          task={task}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+    </>
   )
 }

@@ -41,6 +41,7 @@ import {
   useUpdateHabit,
 } from '@/hooks/useHabits'
 import { TaskCheckbox } from '@/components/tasks/TaskCheckbox'
+import { TaskContextMenu } from '@/components/tasks/TaskContextMenu'
 import { HabitCheckbox } from '@/components/habits/HabitCheckbox'
 import { useHabitTooltip } from '@/components/habits/HabitTooltip'
 import { TaskEditor } from '@/components/tasks/TaskEditor'
@@ -1981,6 +1982,7 @@ function TimelineTaskBlock({
   const [resizeDelta, setResizeDelta] = useState(0)
   const [resizing, setResizing] = useState(false)
   const currentHeight = Math.max(baseHeight + resizeDelta, (MIN_DURATION / 60) * HOUR_HEIGHT)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
 
   const displayHours = pxToHours(Math.max(0, currentTop), HOUR_HEIGHT)
   const displayH = Math.floor(displayHours)
@@ -2063,7 +2065,21 @@ function TimelineTaskBlock({
       onMouseDown={handleMouseDown}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      onContextMenu={(e) => {
+        if (isVirtual) return
+        e.preventDefault()
+        e.stopPropagation()
+        setContextMenu({ x: e.clientX, y: e.clientY })
+      }}
     >
+      {contextMenu && !isVirtual && (
+        <TaskContextMenu
+          task={task}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
       {isCompact ? (
         /* ── Compact mode: single row, no checkbox ── */
         <div className="flex items-center gap-1 h-full">
@@ -2478,36 +2494,53 @@ function AllDayChip({
   const { setSelectedTaskId } = useAppStore()
   const color = PRIORITY_COLORS[task.priority] ?? PRIORITY_COLORS[4]
   const isVirtual = task.id.includes('::')
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
 
   return (
-    <div
-      className={cn(
-        'mb-0.5 flex cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-[11px] overflow-hidden min-w-0',
-        task.is_completed && 'opacity-50',
-        isVirtual && 'opacity-70',
-      )}
-      style={{
-        backgroundColor: `${color}20`,
-        ...(isVirtual ? { outline: `1px dashed ${color}60` } : {}),
-      }}
-      onClick={() => setSelectedTaskId(originalTaskId(task.id))}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-    >
-      <TaskCheckbox
-        checked={task.is_completed}
-        priority={task.priority}
-        onChange={
-          isVirtual ? () => {} : (completed) => completeTask.mutate({ id: task.id, completed })
-        }
-      />
-      <span
-        className={cn('truncate min-w-0 flex-1', task.is_completed && 'line-through')}
-        style={{ color: 'var(--text-primary)' }}
+    <>
+      <div
+        className={cn(
+          'mb-0.5 flex cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-[11px] overflow-hidden min-w-0',
+          task.is_completed && 'opacity-50',
+          isVirtual && 'opacity-70',
+        )}
+        style={{
+          backgroundColor: `${color}20`,
+          ...(isVirtual ? { outline: `1px dashed ${color}60` } : {}),
+        }}
+        onClick={() => setSelectedTaskId(originalTaskId(task.id))}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        onContextMenu={(e) => {
+          if (isVirtual) return
+          e.preventDefault()
+          e.stopPropagation()
+          setContextMenu({ x: e.clientX, y: e.clientY })
+        }}
       >
-        {stripLabelTokensFromText(stripHtmlTags(task.title))}
-      </span>
-    </div>
+        <TaskCheckbox
+          checked={task.is_completed}
+          priority={task.priority}
+          onChange={
+            isVirtual ? () => {} : (completed) => completeTask.mutate({ id: task.id, completed })
+          }
+        />
+        <span
+          className={cn('truncate min-w-0 flex-1', task.is_completed && 'line-through')}
+          style={{ color: 'var(--text-primary)' }}
+        >
+          {stripLabelTokensFromText(stripHtmlTags(task.title))}
+        </span>
+      </div>
+      {contextMenu && !isVirtual && (
+        <TaskContextMenu
+          task={task}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+    </>
   )
 }
 
