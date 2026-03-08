@@ -342,7 +342,7 @@ export function ProjectView({ project }: ProjectViewProps) {
 
     // Calendar view
     if (opts.viewStyle === 'calendar') {
-      return <CalendarView calendarMode={opts.calendarMode} onAddTask={handleAddTask} />
+      return <CalendarView calendarMode={opts.calendarMode} />
     }
 
     // List view with grouping (priority/label) — no DnD, no sections

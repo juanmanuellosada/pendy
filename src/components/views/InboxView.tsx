@@ -174,7 +174,7 @@ export function InboxView() {
 
     // Calendar view
     if (opts.viewStyle === 'calendar') {
-      return <CalendarView calendarMode={opts.calendarMode} onAddTask={() => setEditorOpen(true)} />
+      return <CalendarView calendarMode={opts.calendarMode} />
     }
 
     // List view (default)
