@@ -423,6 +423,7 @@ export function CalendarView({
               onEditEvent={setEditingEvent}
               onCreateEvent={setCreatingEventInfo}
               onCreateTask={setCreatingTaskInfo}
+              onAddTask={onAddTask}
               onSetHabitDefaultTime={(habitId, time) =>
                 setHabitDefaultTime.mutate({ habitId, time })
               }
@@ -589,6 +590,7 @@ function TimelineGrid({
   onEditEvent,
   onCreateEvent,
   onCreateTask,
+  onAddTask,
   onSetHabitDefaultTime,
   onUpsertHabitSchedule,
   onToggleHabitCompletion,
@@ -613,6 +615,7 @@ function TimelineGrid({
     allDay?: boolean
   }) => void
   onCreateTask: (info: { date: string; time: string; durationMinutes: number }) => void
+  onAddTask: (dateStr: string) => void
   onSetHabitDefaultTime?: (habitId: string, time: string) => void
   onUpsertHabitSchedule?: (habitId: string, date: string, time: string) => void
   onToggleHabitCompletion?: (habitId: string, date: Date) => void
@@ -1296,7 +1299,7 @@ function TimelineGrid({
                     <Plus size={10} />
                   </button>
                   <button
-                    onClick={() => onCreateTask({ date: dateStr, time: '', durationMinutes: 0 })}
+                    onClick={() => onAddTask(dateStr)}
                     className="rounded p-0.5 transition-opacity hover:opacity-70"
                     style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-primary)' }}
                     title="Nueva tarea todo el día"

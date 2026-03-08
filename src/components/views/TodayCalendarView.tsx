@@ -130,8 +130,8 @@ export function TodayCalendarView({
   } | null>(null)
   const [creatingTaskInfo, setCreatingTaskInfo] = useState<{
     date: string
-    time: string
-    durationMinutes: number
+    time: string | null
+    durationMinutes: number | null
   } | null>(null)
   const [hoveredAllDayRow, setHoveredAllDayRow] = useState(false)
 
@@ -425,7 +425,11 @@ export function TodayCalendarView({
                     </button>
                     <button
                       onClick={() =>
-                        setCreatingTaskInfo({ date: todayDateStr, time: '', durationMinutes: 0 })
+                        setCreatingTaskInfo({
+                          date: todayDateStr,
+                          time: null,
+                          durationMinutes: null,
+                        })
                       }
                       className="rounded p-0.5 transition-opacity hover:opacity-70"
                       style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-primary)' }}
