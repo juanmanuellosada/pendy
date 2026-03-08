@@ -99,6 +99,8 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
   const [saving, setSaving] = useState(false)
   // Track which fields were set by live NLP so we can revert them when the token is removed
   const nlpAppliedRef = useRef({ date: false, time: false, duration: false, recurrence: false })
+  // True when the user has manually changed the date via the picker — prevents NLP from overriding
+  const userSetDateRef = useRef(false)
 
   // NLP disabled phrases (double-click to toggle)
   const [disabledDatePhrases, setDisabledDatePhrases] = useState<Set<string>>(new Set())
@@ -186,6 +188,7 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
       setDueTime(null)
     }
     nlpAppliedRef.current = { date: false, time: false, duration: false, recurrence: false }
+    userSetDateRef.current = false
     setHashQuery(null)
     setAtQuery(null)
     setDisabledDatePhrases(new Set())
@@ -198,10 +201,10 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
     const nlp = parseNLPTokens(plainText, disabledDatePhrases)
     const applied = nlpAppliedRef.current
 
-    if (nlp.date !== null) {
+    if (nlp.date !== null && !userSetDateRef.current) {
       setDueDate(nlp.date)
       applied.date = true
-    } else if (applied.date) {
+    } else if (applied.date && !userSetDateRef.current) {
       setDueDate(task.due_date ?? null)
       applied.date = false
     }
@@ -474,6 +477,7 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
 
   /* ── Date/Time handlers (save immediately) ──── */
   const handleDateChange = (date: string | null) => {
+    userSetDateRef.current = date !== null
     setDueDate(date)
     save({ due_date: date })
   }

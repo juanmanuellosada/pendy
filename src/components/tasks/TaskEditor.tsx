@@ -153,6 +153,8 @@ export function TaskEditor({
     recurrence: false,
     priority: false,
   })
+  // True when the user has manually changed the date via the picker — prevents NLP from overriding
+  const userSetDateRef = useRef(false)
   // Priority value before any NLP override (used to restore when token is removed)
   const initialPriorityRef = useRef<1 | 2 | 3 | 4>(4)
   const [fullscreen, setFullscreen] = useState(false)
@@ -205,6 +207,7 @@ export function TaskEditor({
     setHashQuery(null)
     setAtQuery(null)
     setDisabledDatePhrases(new Set())
+    userSetDateRef.current = false
     initialPriorityRef.current = (task ? task.priority : 4) as 1 | 2 | 3 | 4
     nlpAppliedRef.current = {
       date: false,
@@ -465,10 +468,10 @@ export function TaskEditor({
     const nlp = parseNLPTokens(plainText, disabledDatePhrases)
     const applied = nlpAppliedRef.current
 
-    if (nlp.date !== null) {
+    if (nlp.date !== null && !userSetDateRef.current) {
       setDueDate(nlp.date)
       applied.date = true
-    } else if (applied.date) {
+    } else if (applied.date && !userSetDateRef.current) {
       setDueDate(null)
       applied.date = false
     }
@@ -1174,7 +1177,10 @@ export function TaskEditor({
           isRecurring={isRecurring}
           recurrenceRule={recurrenceRule}
           recurrenceFrom={recurrenceFrom}
-          onDateChange={setDueDate}
+          onDateChange={(date) => {
+            userSetDateRef.current = date !== null
+            setDueDate(date)
+          }}
           onTimeChange={setDueTime}
           onHasTimeChange={setHasTime}
           onDurationChange={setDurationMinutes}
