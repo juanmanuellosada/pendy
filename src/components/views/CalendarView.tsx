@@ -800,9 +800,7 @@ function TimelineGrid({
     showHabits,
   ])
 
-  const hasAnyAllDay = dayData.some(
-    (d) => d.allDay.length > 0 || d.allDayEvents.length > 0 || d.unscheduledHabits.length > 0,
-  )
+  // hasAnyAllDay removed — all-day row is always visible
 
   const getColFromX = useCallback(
     (clientX: number): number => {

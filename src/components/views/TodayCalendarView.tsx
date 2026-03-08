@@ -264,8 +264,7 @@ export function TodayCalendarView({
 
   const allDayEvents = calendarEvents.filter((e) => e.isAllDay)
   const timedEvents = calendarEvents.filter((e) => !e.isAllDay)
-  const hasAllDaySection =
-    allDayTasks.length > 0 || allDayEvents.length > 0 || unscheduledHabits.length > 0
+  // hasAllDaySection removed — all-day zone is always visible
 
   // Calcula columnas de overlap para todos los bloques con hora en el timeline
   const timedLayout = useMemo(() => {
