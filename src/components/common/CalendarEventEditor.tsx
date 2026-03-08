@@ -970,6 +970,7 @@ interface CalendarEventEditorProps {
   defaultDate?: Date
   defaultHour?: number
   defaultDurationMinutes?: number
+  defaultAllDay?: boolean
   variant?: 'panel'
   onClose: () => void
 }
@@ -979,6 +980,7 @@ export function CalendarEventEditor({
   defaultDate,
   defaultHour = 9,
   defaultDurationMinutes,
+  defaultAllDay,
   variant,
   onClose,
 }: CalendarEventEditorProps) {
@@ -1027,7 +1029,7 @@ export function CalendarEventEditor({
   const [dateValue, setDateValue] = useState(dateToInputValue(initStart))
   const [startTime, setStartTime] = useState(timeToInputValue(initStart))
   const [endTime, setEndTime] = useState(timeToInputValue(initEnd))
-  const [isAllDay, setIsAllDay] = useState(event?.isAllDay ?? false)
+  const [isAllDay, setIsAllDay] = useState(event?.isAllDay ?? defaultAllDay ?? false)
   const [calendarId, setCalendarId] = useState(
     event?.calendarId ?? calendarList.find((c) => c.primary)?.id ?? 'primary',
   )

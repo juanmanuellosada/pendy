@@ -125,6 +125,17 @@ export function TaskEditor({
   const newSubtaskRef = useRef<HTMLInputElement>(null)
   const justAddedSubtaskRef = useRef<string | null>(null)
 
+  // NLP disabled phrases (double-click to toggle)
+  const [disabledDatePhrases, setDisabledDatePhrases] = useState<Set<string>>(new Set())
+  const handleToggleDatePhrase = useCallback((phrase: string) => {
+    setDisabledDatePhrases((prev) => {
+      const next = new Set(prev)
+      if (next.has(phrase)) next.delete(phrase)
+      else next.add(phrase)
+      return next
+    })
+  }, [])
+
   // Hash autocomplete state (#labels)
   const [hashQuery, setHashQuery] = useState<string | null>(null)
   const [hashStart, setHashStart] = useState(0)
@@ -193,6 +204,7 @@ export function TaskEditor({
     setNewSubtaskText('')
     setHashQuery(null)
     setAtQuery(null)
+    setDisabledDatePhrases(new Set())
     initialPriorityRef.current = (task ? task.priority : 4) as 1 | 2 | 3 | 4
     nlpAppliedRef.current = {
       date: false,
@@ -446,11 +458,11 @@ export function TaskEditor({
     setAtQuery(null)
   }, [])
 
-  // â”€â”€ Live NLP: runs on every title change via React state (not Tiptap callback)
+  // ── Live NLP: runs on every title change via React state (not Tiptap callback)
   useEffect(() => {
     if (!open) return
     const plainText = stripHtmlTags(title)
-    const nlp = parseNLPTokens(plainText)
+    const nlp = parseNLPTokens(plainText, disabledDatePhrases)
     const applied = nlpAppliedRef.current
 
     if (nlp.date !== null) {
@@ -499,7 +511,7 @@ export function TaskEditor({
       setPriority(initialPriorityRef.current)
       applied.priority = false
     }
-  }, [title, open])
+  }, [title, open, disabledDatePhrases])
 
   // â”€â”€ Toggle label with bidirectional title sync â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const toggleLabel = (labelId: string) => {
@@ -587,8 +599,8 @@ export function TaskEditor({
     }
     cleanTitle = removePriorityTokens(cleanTitle)
 
-    // â”€â”€ NLP: detect date / time / duration / recurrence tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    const nlp = parseNLPTokens(stripHtmlTags(cleanTitle))
+    // ── NLP: detect date / time / duration / recurrence tokens ──────────
+    const nlp = parseNLPTokens(stripHtmlTags(cleanTitle), disabledDatePhrases)
     const resolvedDate = nlp.date ?? dueDate
     const resolvedTime = nlp.hasTime ? nlp.time : dueTime
     const resolvedHasTime = nlp.hasTime || hasTime
@@ -780,6 +792,8 @@ export function TaskEditor({
           autoFocus
           editorRef={titleEditorRef}
           onUpdate={handleTitleUpdate}
+          disabledDatePhrases={disabledDatePhrases}
+          onToggleDatePhrase={handleToggleDatePhrase}
           onKeyDown={(event) => {
             // Auto-confirm p1-p4 priority tokens on Space
             if (event.key === ' ') {

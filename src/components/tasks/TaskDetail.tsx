@@ -100,6 +100,17 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
   // Track which fields were set by live NLP so we can revert them when the token is removed
   const nlpAppliedRef = useRef({ date: false, time: false, duration: false, recurrence: false })
 
+  // NLP disabled phrases (double-click to toggle)
+  const [disabledDatePhrases, setDisabledDatePhrases] = useState<Set<string>>(new Set())
+  const handleToggleDatePhrase = useCallback((phrase: string) => {
+    setDisabledDatePhrases((prev) => {
+      const next = new Set(prev)
+      if (next.has(phrase)) next.delete(phrase)
+      else next.add(phrase)
+      return next
+    })
+  }, [])
+
   // Hash autocomplete state (#labels)
   const [hashQuery, setHashQuery] = useState<string | null>(null)
   const [hashStart, setHashStart] = useState(0)
@@ -177,13 +188,14 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
     nlpAppliedRef.current = { date: false, time: false, duration: false, recurrence: false }
     setHashQuery(null)
     setAtQuery(null)
+    setDisabledDatePhrases(new Set())
   }, [task?.id, task?.updated_at]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Live NLP: update pickers as user types date/time/duration/recurrence tokens in title
   useEffect(() => {
     if (!task) return
     const plainText = stripHtmlTags(title)
-    const nlp = parseNLPTokens(plainText)
+    const nlp = parseNLPTokens(plainText, disabledDatePhrases)
     const applied = nlpAppliedRef.current
 
     if (nlp.date !== null) {
@@ -221,7 +233,7 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
       setRecurrenceRule(task.recurrence_rule ?? null)
       applied.recurrence = false
     }
-  }, [title]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [title, disabledDatePhrases]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!effectiveTaskId) return null
 
@@ -354,7 +366,7 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
     const updates: Partial<Task> = {}
 
     // Parse NLP tokens (date, time, duration, recurrence)
-    const nlp = parseNLPTokens(plainText)
+    const nlp = parseNLPTokens(plainText, disabledDatePhrases)
     if (nlp.date !== null) {
       updates.due_date = nlp.date
       if (nlp.hasTime && nlp.time) {
@@ -715,6 +727,8 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
               textClassName={cn('font-medium leading-snug', fullScreen ? 'text-lg' : 'text-base')}
               editorRef={titleEditorRef}
               onUpdate={handleTitleUpdate}
+              disabledDatePhrases={disabledDatePhrases}
+              onToggleDatePhrase={handleToggleDatePhrase}
               onKeyDown={(event) => {
                 if (hashQuery !== null && hashTotalItems > 0) {
                   if (event.key === 'ArrowDown') {

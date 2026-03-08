@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef, useState } from 'react'
+import { useEffect, useCallback, useRef, useState, type MutableRefObject } from 'react'
 import { useEditor, EditorContent, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -28,6 +28,8 @@ interface TitleEditorProps {
   textClassName?: string
   /** Content rendered to the left of the editor text (below toolbar). */
   leftSlot?: React.ReactNode
+  disabledDatePhrases?: Set<string>
+  onToggleDatePhrase?: (phrase: string) => void
 }
 
 // Extension to block Enter/newlines and handle Escape
@@ -76,7 +78,7 @@ const SingleLine = Extension.create({
 const NLP_HIGHLIGHT_COLOR = '#8B5CF6'
 const nlpHighlightKey = new PluginKey('nlpHighlight')
 
-function computeNLPDecorations(state: EditorState): DecorationSet {
+function computeNLPDecorations(state: EditorState, disabledPhrases: Set<string>): DecorationSet {
   // Build plain text + position map from doc
   let text = ''
   const posMap: number[] = []
@@ -91,15 +93,19 @@ function computeNLPDecorations(state: EditorState): DecorationSet {
 
   if (!text.trim()) return DecorationSet.empty
 
+  // Parse without disabled to get ALL tokens for visualization
   const nlp = parseNLPTokens(text)
   if (nlp.patterns.length === 0) return DecorationSet.empty
 
   const decorations: Decoration[] = []
   const lower = text.toLowerCase()
 
+  // Date tokens (may be disabled → strikethrough)
   for (const pattern of nlp.patterns) {
     const m = lower.match(pattern)
     if (m && m.index !== undefined && m[0].length > 0) {
+      const matchedText = m[0].trim().toLowerCase()
+      const isDisabled = disabledPhrases.has(matchedText)
       const matchStart = m.index
       const matchEnd = matchStart + m[0].length
       if (matchStart < posMap.length && matchEnd - 1 < posMap.length) {
@@ -107,15 +113,17 @@ function computeNLPDecorations(state: EditorState): DecorationSet {
         const to = posMap[matchEnd - 1]! + 1
         decorations.push(
           Decoration.inline(from, to, {
-            style: `color: ${NLP_HIGHLIGHT_COLOR}`,
-            class: 'nlp-token',
+            style: isDisabled
+              ? 'color: var(--text-muted); text-decoration: line-through; cursor: pointer'
+              : `color: ${NLP_HIGHLIGHT_COLOR}; cursor: pointer`,
+            class: 'nlp-date-token',
           }),
         )
       }
     }
   }
 
-  // Tokens inline: p1-p4, #etiqueta, @proyecto
+  // Inline tokens: p1-p4, #etiqueta, @proyecto — NOT affected by disabled
   const INLINE_TOKEN_PATTERNS = [/\bp[1-4]\b/g, /#\S+/g, /@\S+/g]
   for (const re of INLINE_TOKEN_PATTERNS) {
     const g = new RegExp(re.source, re.flags)
@@ -140,31 +148,52 @@ function computeNLPDecorations(state: EditorState): DecorationSet {
   return DecorationSet.create(state.doc, decorations)
 }
 
-const NLPHighlight = Extension.create({
-  name: 'nlpHighlight',
+function makeNLPHighlight(
+  disabledRef: MutableRefObject<Set<string>>,
+  onToggleRef: MutableRefObject<((phrase: string) => void) | undefined>,
+) {
+  return Extension.create({
+    name: 'nlpHighlight',
 
-  addProseMirrorPlugins() {
-    return [
-      new Plugin({
-        key: nlpHighlightKey,
-        state: {
-          init(_, state) {
-            return computeNLPDecorations(state)
+    addProseMirrorPlugins() {
+      return [
+        new Plugin({
+          key: nlpHighlightKey,
+          state: {
+            init(_, state) {
+              return computeNLPDecorations(state, disabledRef.current)
+            },
+            apply(tr, oldDecorations, _, newState) {
+              if (!tr.docChanged && !tr.getMeta(nlpHighlightKey)) return oldDecorations
+              return computeNLPDecorations(newState, disabledRef.current)
+            },
           },
-          apply(tr, oldDecorations, _, newState) {
-            if (!tr.docChanged) return oldDecorations
-            return computeNLPDecorations(newState)
+          props: {
+            decorations(state) {
+              return nlpHighlightKey.getState(state)
+            },
+            handleDOMEvents: {
+              dblclick: (view, event) => {
+                const target = (event.target as HTMLElement).closest?.(
+                  '.nlp-date-token',
+                ) as HTMLElement | null
+                if (!target) return false
+                const phrase = target.textContent?.trim().toLowerCase() ?? ''
+                if (!phrase) return false
+                onToggleRef.current?.(phrase)
+                setTimeout(() => {
+                  view.dispatch(view.state.tr.setMeta(nlpHighlightKey, { refresh: true }))
+                }, 0)
+                event.preventDefault()
+                return true
+              },
+            },
           },
-        },
-        props: {
-          decorations(state) {
-            return nlpHighlightKey.getState(state)
-          },
-        },
-      }),
-    ]
-  },
-})
+        }),
+      ]
+    },
+  })
+}
 
 function ToolbarButton({
   onClick,
@@ -215,12 +244,26 @@ export function TitleEditor({
   className = '',
   textClassName = 'text-sm font-medium leading-normal',
   leftSlot,
+  disabledDatePhrases,
+  onToggleDatePhrase,
 }: TitleEditorProps) {
   const internalRef = useRef<Editor | null>(null)
   const [linkDialogOpen, setLinkDialogOpen] = useState(false)
   const [linkInitialUrl, setLinkInitialUrl] = useState('')
   const [linkInitialText, setLinkInitialText] = useState<string | undefined>(undefined)
   const [linkEditRange, setLinkEditRange] = useState<{ from: number; to: number } | null>(null)
+
+  const disabledPhrasesRef = useRef<Set<string>>(new Set())
+  const onToggleDatePhraseRef = useRef<((phrase: string) => void) | undefined>(onToggleDatePhrase)
+
+  // Keep refs in sync
+  useEffect(() => {
+    disabledPhrasesRef.current = disabledDatePhrases ?? new Set()
+    onToggleDatePhraseRef.current = onToggleDatePhrase
+  }, [disabledDatePhrases, onToggleDatePhrase])
+
+  // Memoize the extension so it's created once per component instance
+  const nlpHighlightExtension = useRef(makeNLPHighlight(disabledPhrasesRef, onToggleDatePhraseRef))
 
   const editor = useEditor({
     extensions: [
@@ -242,7 +285,7 @@ export function TitleEditor({
       TextStyle,
       Color,
       SingleLine,
-      NLPHighlight,
+      nlpHighlightExtension.current,
       BreakMarksOnSpace,
     ],
     content,
@@ -290,6 +333,13 @@ export function TitleEditor({
       editor.commands.setContent(content)
     }
   }, [content]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Force decoration refresh when disabledDatePhrases changes
+  useEffect(() => {
+    if (!editor) return
+    disabledPhrasesRef.current = disabledDatePhrases ?? new Set()
+    editor.view.dispatch(editor.view.state.tr.setMeta(nlpHighlightKey, { refresh: true }))
+  }, [disabledDatePhrases, editor])
 
   const cmd = useCallback(
     (fn: () => void) => () => {

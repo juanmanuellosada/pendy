@@ -216,6 +216,7 @@ export function CalendarView({
     date: Date
     hour: number
     durationMinutes?: number
+    allDay?: boolean
   } | null>(null)
   const [creatingTaskInfo, setCreatingTaskInfo] = useState<{
     date: string
@@ -530,6 +531,7 @@ export function CalendarView({
             defaultDate={creatingEventInfo.date}
             defaultHour={creatingEventInfo.hour}
             defaultDurationMinutes={creatingEventInfo.durationMinutes}
+            defaultAllDay={creatingEventInfo.allDay}
             onClose={() => setCreatingEventInfo(null)}
           />
         )}
@@ -604,7 +606,12 @@ function TimelineGrid({
   showHabits?: boolean
   onNavigate?: (dir: 1 | -1) => void
   onEditEvent: (event: CalendarEvent) => void
-  onCreateEvent: (info: { date: Date; hour: number; durationMinutes?: number }) => void
+  onCreateEvent: (info: {
+    date: Date
+    hour: number
+    durationMinutes?: number
+    allDay?: boolean
+  }) => void
   onCreateTask: (info: { date: string; time: string; durationMinutes: number }) => void
   onSetHabitDefaultTime?: (habitId: string, time: string) => void
   onUpsertHabitSchedule?: (habitId: string, date: string, time: string) => void
@@ -622,6 +629,7 @@ function TimelineGrid({
 
   const [now, setNow] = useState(new Date())
   const [highlightCol, setHighlightCol] = useState<number | null>(null)
+  const [hoveredAllDayCol, setHoveredAllDayCol] = useState<number | null>(null)
 
   // Task drag state
   const [drag, setDrag] = useState<DragState | null>(null)
@@ -1217,26 +1225,30 @@ function TimelineGrid({
         ))}
       </div>
 
-      {/* All-day row */}
-      {hasAnyAllDay && (
+      {/* All-day row — siempre visible para poder crear eventos/tareas todo el día */}
+      <div
+        className="grid border-b"
+        style={{
+          gridTemplateColumns: `56px repeat(${days.length}, 1fr)`,
+          borderColor: 'var(--border-secondary)',
+        }}
+      >
         <div
-          className="grid border-b"
-          style={{
-            gridTemplateColumns: `56px repeat(${days.length}, 1fr)`,
-            borderColor: 'var(--border-secondary)',
-          }}
+          className="flex items-start justify-end pr-2 pt-1 text-[10px]"
+          style={{ color: 'var(--text-muted)' }}
         >
-          <div
-            className="flex items-start justify-end pr-2 pt-1 text-[10px]"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Todo el día
-          </div>
-          {dayData.map((dd, i) => (
+          Todo el día
+        </div>
+        {dayData.map((dd, i) => {
+          const dateStr = format(dd.day, 'yyyy-MM-dd')
+          const isHovered = hoveredAllDayCol === i
+          return (
             <div
               key={i}
-              className="min-h-[32px] border-l p-1 flex flex-col gap-0.5 overflow-hidden min-w-0"
+              className="relative min-h-[28px] border-l p-1 flex flex-col gap-0.5 overflow-hidden min-w-0"
               style={{ borderColor: 'var(--border-secondary)' }}
+              onMouseEnter={() => setHoveredAllDayCol(i)}
+              onMouseLeave={() => setHoveredAllDayCol(null)}
             >
               {dd.allDay.map((t) => (
                 <TaskTooltip key={t.id} task={t}>
@@ -1274,10 +1286,31 @@ function TimelineGrid({
                   onEdit={() => onEditHabit?.(habit, dd.day)}
                 />
               ))}
+              {/* Hover buttons to create */}
+              {isHovered && (
+                <div className="absolute right-1 top-1 flex items-center gap-0.5 z-10">
+                  <button
+                    onClick={() => onCreateEvent({ date: dd.day, hour: 9, allDay: true })}
+                    className="rounded p-0.5 transition-opacity hover:opacity-70"
+                    style={{ color: '#4285F4', backgroundColor: 'var(--bg-primary)' }}
+                    title="Nuevo evento de calendario todo el día"
+                  >
+                    <Plus size={10} />
+                  </button>
+                  <button
+                    onClick={() => onCreateTask({ date: dateStr, time: '', durationMinutes: 0 })}
+                    className="rounded p-0.5 transition-opacity hover:opacity-70"
+                    style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-primary)' }}
+                    title="Nueva tarea todo el día"
+                  >
+                    <CheckSquare size={10} />
+                  </button>
+                </div>
+              )}
             </div>
-          ))}
-        </div>
-      )}
+          )
+        })}
+      </div>
 
       {/* Timeline body */}
       <div
@@ -2030,7 +2063,7 @@ function TimelineTaskBlock({
             className="shrink-0 w-3 h-3 rounded-full border-2 flex items-center justify-center transition-colors hover:opacity-80"
             style={{
               borderColor: color,
-              backgroundColor: task.is_completed ? color : 'transparent',
+              backgroundColor: task.is_completed ? color : color + '30',
             }}
             onClick={(e) => {
               e.stopPropagation()

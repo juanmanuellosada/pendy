@@ -57,7 +57,7 @@ export interface NLPResult {
   patterns: RegExp[]
 }
 
-export function parseNLPTokens(text: string): NLPResult {
+export function parseNLPTokens(text: string, disabledPhrases?: Set<string>): NLPResult {
   const result: NLPResult = {
     date: null,
     time: null,
@@ -73,29 +73,40 @@ export function parseNLPTokens(text: string): NLPResult {
   // so later patterns don't re-match parts already claimed.
   let working = text.toLowerCase()
 
+  // Helper: check if a matched phrase is disabled
+  const disabled = (matchedText: string): boolean =>
+    disabledPhrases?.has(matchedText.trim().toLowerCase()) ?? false
+
   // ── 1. Recurrence ──────────────────────────────────────────────────────────
 
   // "cada día laborable"
-  if (/\bcada d[ií]a laborable\b/.test(working)) {
-    result.isRecurring = true
-    result.recurrenceRule = 'RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR'
-    result.patterns.push(/\bcada d[ií]a laborable\b/i)
-    working = working.replace(/\bcada d[ií]a laborable\b/, ' ')
+  {
+    const m = working.match(/\bcada d[ií]a laborable\b/)
+    if (m) {
+      if (!disabled(m[0])) {
+        result.isRecurring = true
+        result.recurrenceRule = 'RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR'
+        result.patterns.push(/\bcada d[ií]a laborable\b/i)
+      }
+      working = working.replace(/\bcada d[ií]a laborable\b/, ' ')
+    }
   }
 
   // "cada N días/semanas/meses/años"
   if (!result.isRecurring) {
     const m = working.match(/\bcada (\d+)\s+(d[ií]as?|semanas?|mes(?:es)?|a[ñn]os?)\b/)
     if (m) {
-      const interval = parseInt(m[1]!)
-      const unit = m[2]!
-      let freq = 'DAILY'
-      if (/semana/.test(unit)) freq = 'WEEKLY'
-      else if (/mes/.test(unit)) freq = 'MONTHLY'
-      else if (/a[ñn]o/.test(unit)) freq = 'YEARLY'
-      result.isRecurring = true
-      result.recurrenceRule = `RRULE:FREQ=${freq};INTERVAL=${interval}`
-      result.patterns.push(/\bcada \d+\s+(?:d[ií]as?|semanas?|mes(?:es)?|a[ñn]os?)\b/i)
+      if (!disabled(m[0])) {
+        const interval = parseInt(m[1]!)
+        const unit = m[2]!
+        let freq = 'DAILY'
+        if (/semana/.test(unit)) freq = 'WEEKLY'
+        else if (/mes/.test(unit)) freq = 'MONTHLY'
+        else if (/a[ñn]o/.test(unit)) freq = 'YEARLY'
+        result.isRecurring = true
+        result.recurrenceRule = `RRULE:FREQ=${freq};INTERVAL=${interval}`
+        result.patterns.push(/\bcada \d+\s+(?:d[ií]as?|semanas?|mes(?:es)?|a[ñn]os?)\b/i)
+      }
       working = working.replace(/\bcada \d+\s+(?:d[ií]as?|semanas?|mes(?:es)?|a[ñn]os?)\b/, ' ')
     }
   }
@@ -105,14 +116,16 @@ export function parseNLPTokens(text: string): NLPResult {
     const re = new RegExp(`\\bcada (${DAY_NAMES_PATTERN})\\b`)
     const m = working.match(re)
     if (m) {
-      const normalized = m[1]!.replace('é', 'e').replace('á', 'a')
-      const dayNum = DAY_MAP[normalized] ?? DAY_MAP[m[1]!]
-      if (dayNum !== undefined) {
-        result.isRecurring = true
-        result.recurrenceRule = `RRULE:FREQ=WEEKLY;BYDAY=${BYDAY[dayNum]}`
-        result.patterns.push(new RegExp(`\\bcada (?:${DAY_NAMES_PATTERN})\\b`, 'i'))
-        working = working.replace(re, ' ')
+      if (!disabled(m[0])) {
+        const normalized = m[1]!.replace('é', 'e').replace('á', 'a')
+        const dayNum = DAY_MAP[normalized] ?? DAY_MAP[m[1]!]
+        if (dayNum !== undefined) {
+          result.isRecurring = true
+          result.recurrenceRule = `RRULE:FREQ=WEEKLY;BYDAY=${BYDAY[dayNum]}`
+          result.patterns.push(new RegExp(`\\bcada (?:${DAY_NAMES_PATTERN})\\b`, 'i'))
+        }
       }
+      working = working.replace(re, ' ')
     }
   }
 
@@ -120,14 +133,16 @@ export function parseNLPTokens(text: string): NLPResult {
   if (!result.isRecurring) {
     const m = working.match(/\bcada (d[ií]a|semana|mes|a[ñn]o)\b/)
     if (m) {
-      const unit = m[1]!
-      let freq = 'DAILY'
-      if (/semana/.test(unit)) freq = 'WEEKLY'
-      else if (/^mes$/.test(unit)) freq = 'MONTHLY'
-      else if (/a[ñn]o/.test(unit)) freq = 'YEARLY'
-      result.isRecurring = true
-      result.recurrenceRule = `RRULE:FREQ=${freq};INTERVAL=1`
-      result.patterns.push(/\bcada (?:d[ií]a|semana|mes|a[ñn]o)\b/i)
+      if (!disabled(m[0])) {
+        const unit = m[1]!
+        let freq = 'DAILY'
+        if (/semana/.test(unit)) freq = 'WEEKLY'
+        else if (/^mes$/.test(unit)) freq = 'MONTHLY'
+        else if (/a[ñn]o/.test(unit)) freq = 'YEARLY'
+        result.isRecurring = true
+        result.recurrenceRule = `RRULE:FREQ=${freq};INTERVAL=1`
+        result.patterns.push(/\bcada (?:d[ií]a|semana|mes|a[ñn]o)\b/i)
+      }
       working = working.replace(/\bcada (?:d[ií]a|semana|mes|a[ñn]o)\b/, ' ')
     }
   }
@@ -139,8 +154,10 @@ export function parseNLPTokens(text: string): NLPResult {
   {
     const m = working.match(/\b(?:por\s+)?(\d+)\s*h\s*(\d+)\s*m(?:in(?:utos?)?)?\b/)
     if (m) {
-      result.durationMinutes = parseInt(m[1]!) * 60 + parseInt(m[2]!)
-      result.patterns.push(/\b(?:por\s+)?\d+\s*h\s*\d+\s*m(?:in(?:utos?)?)?\b/i)
+      if (!disabled(m[0])) {
+        result.durationMinutes = parseInt(m[1]!) * 60 + parseInt(m[2]!)
+        result.patterns.push(/\b(?:por\s+)?\d+\s*h\s*\d+\s*m(?:in(?:utos?)?)?\b/i)
+      }
       working = working.replace(/\b(?:por\s+)?\d+\s*h\s*\d+\s*m(?:in(?:utos?)?)?\b/, ' ')
     }
   }
@@ -149,8 +166,10 @@ export function parseNLPTokens(text: string): NLPResult {
   if (result.durationMinutes === null) {
     const m = working.match(/\b(?:por\s+)?(\d+)\s*(?:hs?|horas?)\b/)
     if (m) {
-      result.durationMinutes = parseInt(m[1]!) * 60
-      result.patterns.push(/\b(?:por\s+)?\d+\s*(?:hs?|horas?)\b/i)
+      if (!disabled(m[0])) {
+        result.durationMinutes = parseInt(m[1]!) * 60
+        result.patterns.push(/\b(?:por\s+)?\d+\s*(?:hs?|horas?)\b/i)
+      }
       working = working.replace(/\b(?:por\s+)?\d+\s*(?:hs?|horas?)\b/, ' ')
     }
   }
@@ -159,8 +178,10 @@ export function parseNLPTokens(text: string): NLPResult {
   if (result.durationMinutes === null) {
     const m = working.match(/\b(?:por\s+)?(\d+)\s*(?:min(?:utos?)?|m)\b/)
     if (m) {
-      result.durationMinutes = parseInt(m[1]!)
-      result.patterns.push(/\b(?:por\s+)?\d+\s*(?:min(?:utos?)?|m)\b/i)
+      if (!disabled(m[0])) {
+        result.durationMinutes = parseInt(m[1]!)
+        result.patterns.push(/\b(?:por\s+)?\d+\s*(?:min(?:utos?)?|m)\b/i)
+      }
       working = working.replace(/\b(?:por\s+)?\d+\s*(?:min(?:utos?)?|m)\b/, ' ')
     }
   }
@@ -175,9 +196,11 @@ export function parseNLPTokens(text: string): NLPResult {
       const h = parseInt(m[1]!)
       const mn = parseInt(m[2]!)
       if (h >= 0 && h <= 23 && mn >= 0 && mn <= 59) {
-        result.time = `${String(h).padStart(2, '0')}:${String(mn).padStart(2, '0')}`
-        result.hasTime = true
-        result.patterns.push(/\b(?:a las\s+)?\d{1,2}:\d{2}\b/i)
+        if (!disabled(m[0])) {
+          result.time = `${String(h).padStart(2, '0')}:${String(mn).padStart(2, '0')}`
+          result.hasTime = true
+          result.patterns.push(/\b(?:a las\s+)?\d{1,2}:\d{2}\b/i)
+        }
         working = working.replace(/\b(?:a las\s+)?\d{1,2}:\d{2}\b/, ' ')
       }
     }
@@ -187,15 +210,17 @@ export function parseNLPTokens(text: string): NLPResult {
   if (!result.hasTime) {
     const m = working.match(/\b(?:a las\s+)?(\d{1,2})\s*(am|pm)\b/)
     if (m) {
-      let h = parseInt(m[1]!)
-      if (m[2] === 'pm' && h < 12) h += 12
-      if (m[2] === 'am' && h === 12) h = 0
-      if (h >= 0 && h <= 23) {
-        result.time = `${String(h).padStart(2, '0')}:00`
-        result.hasTime = true
-        result.patterns.push(/\b(?:a las\s+)?\d{1,2}\s*(?:am|pm)\b/i)
-        working = working.replace(/\b(?:a las\s+)?\d{1,2}\s*(?:am|pm)\b/, ' ')
+      if (!disabled(m[0])) {
+        let h = parseInt(m[1]!)
+        if (m[2] === 'pm' && h < 12) h += 12
+        if (m[2] === 'am' && h === 12) h = 0
+        if (h >= 0 && h <= 23) {
+          result.time = `${String(h).padStart(2, '0')}:00`
+          result.hasTime = true
+          result.patterns.push(/\b(?:a las\s+)?\d{1,2}\s*(?:am|pm)\b/i)
+        }
       }
+      working = working.replace(/\b(?:a las\s+)?\d{1,2}\s*(?:am|pm)\b/, ' ')
     }
   }
 
@@ -203,66 +228,95 @@ export function parseNLPTokens(text: string): NLPResult {
   if (!result.hasTime) {
     const m = working.match(/\ba las (\d{1,2})\b/)
     if (m) {
-      const h = parseInt(m[1]!)
-      if (h >= 0 && h <= 23) {
-        result.time = `${String(h).padStart(2, '0')}:00`
-        result.hasTime = true
-        result.patterns.push(/\ba las \d{1,2}\b/i)
-        working = working.replace(/\ba las \d{1,2}\b/, ' ')
+      if (!disabled(m[0])) {
+        const h = parseInt(m[1]!)
+        if (h >= 0 && h <= 23) {
+          result.time = `${String(h).padStart(2, '0')}:00`
+          result.hasTime = true
+          result.patterns.push(/\ba las \d{1,2}\b/i)
+        }
       }
+      working = working.replace(/\ba las \d{1,2}\b/, ' ')
     }
   }
 
   // ── 4. Date ────────────────────────────────────────────────────────────────
 
   // "pasado mañana"
-  if (/\bpasado ma[ñn]ana\b/.test(working)) {
-    result.date = format(addDays(today, 2), 'yyyy-MM-dd')
-    result.patterns.push(/\bpasado ma[ñn]ana\b/i)
-    working = working.replace(/\bpasado ma[ñn]ana\b/, ' ')
+  {
+    const m = working.match(/\bpasado ma[ñn]ana\b/)
+    if (m) {
+      if (!disabled(m[0])) {
+        result.date = format(addDays(today, 2), 'yyyy-MM-dd')
+        result.patterns.push(/\bpasado ma[ñn]ana\b/i)
+      }
+      working = working.replace(/\bpasado ma[ñn]ana\b/, ' ')
+    }
   }
 
   // "mañana" — only when NOT preceded by "la " or "esta " (those mean "morning")
   if (!result.date) {
-    // Protect "por la mañana", "de la mañana", "esta mañana", etc.
-    if (/(?<!(?:la|esta) )\bma[ñn]ana\b/.test(working)) {
-      result.date = format(addDays(today, 1), 'yyyy-MM-dd')
-      result.patterns.push(/(?<!(?:la|esta) )\bma[ñn]ana\b/i)
+    const m = working.match(/(?<!(?:la|esta) )\bma[ñn]ana\b/)
+    if (m) {
+      if (!disabled(m[0])) {
+        result.date = format(addDays(today, 1), 'yyyy-MM-dd')
+        result.patterns.push(/(?<!(?:la|esta) )\bma[ñn]ana\b/i)
+      }
       working = working.replace(/(?<!(?:la|esta) )\bma[ñn]ana\b/, ' ')
     }
   }
 
   // "ayer"
-  if (!result.date && /\bayer\b/.test(working)) {
-    result.date = format(addDays(today, -1), 'yyyy-MM-dd')
-    result.patterns.push(/\bayer\b/i)
-    working = working.replace(/\bayer\b/, ' ')
+  if (!result.date) {
+    const m = working.match(/\bayer\b/)
+    if (m) {
+      if (!disabled(m[0])) {
+        result.date = format(addDays(today, -1), 'yyyy-MM-dd')
+        result.patterns.push(/\bayer\b/i)
+      }
+      working = working.replace(/\bayer\b/, ' ')
+    }
   }
 
   // "hoy"
-  if (!result.date && /\bhoy\b/.test(working)) {
-    result.date = format(today, 'yyyy-MM-dd')
-    result.patterns.push(/\bhoy\b/i)
-    working = working.replace(/\bhoy\b/, ' ')
+  if (!result.date) {
+    const m = working.match(/\bhoy\b/)
+    if (m) {
+      if (!disabled(m[0])) {
+        result.date = format(today, 'yyyy-MM-dd')
+        result.patterns.push(/\bhoy\b/i)
+      }
+      working = working.replace(/\bhoy\b/, ' ')
+    }
   }
 
   // "este fin de semana"
-  if (!result.date && /\beste fin de semana\b/.test(working)) {
-    // Next Saturday
-    const dayOfWeek = getDay(today)
-    const daysToSat = dayOfWeek <= 6 ? 6 - dayOfWeek || 7 : 7
-    result.date = format(addDays(today, daysToSat), 'yyyy-MM-dd')
-    result.patterns.push(/\beste fin de semana\b/i)
-    working = working.replace(/\beste fin de semana\b/, ' ')
+  if (!result.date) {
+    const m = working.match(/\beste fin de semana\b/)
+    if (m) {
+      if (!disabled(m[0])) {
+        // Next Saturday
+        const dayOfWeek = getDay(today)
+        const daysToSat = dayOfWeek <= 6 ? 6 - dayOfWeek || 7 : 7
+        result.date = format(addDays(today, daysToSat), 'yyyy-MM-dd')
+        result.patterns.push(/\beste fin de semana\b/i)
+      }
+      working = working.replace(/\beste fin de semana\b/, ' ')
+    }
   }
 
   // "próxima semana"
-  if (!result.date && /\bpr[oó]xima semana\b/.test(working)) {
-    const dayOfWeek = getDay(today)
-    const daysUntilMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek
-    result.date = format(addDays(today, daysUntilMonday), 'yyyy-MM-dd')
-    result.patterns.push(/\bpr[oó]xima semana\b/i)
-    working = working.replace(/\bpr[oó]xima semana\b/, ' ')
+  if (!result.date) {
+    const m = working.match(/\bpr[oó]xima semana\b/)
+    if (m) {
+      if (!disabled(m[0])) {
+        const dayOfWeek = getDay(today)
+        const daysUntilMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek
+        result.date = format(addDays(today, daysUntilMonday), 'yyyy-MM-dd')
+        result.patterns.push(/\bpr[oó]xima semana\b/i)
+      }
+      working = working.replace(/\bpr[oó]xima semana\b/, ' ')
+    }
   }
 
   // "próximo/a {day name}"
@@ -270,14 +324,16 @@ export function parseNLPTokens(text: string): NLPResult {
     const re = new RegExp(`\\bpr[oó]xim[oa]\\s+(${DAY_NAMES_PATTERN})\\b`)
     const m = working.match(re)
     if (m) {
-      const normalized = m[1]!.replace('é', 'e').replace('á', 'a')
-      const targetDay = DAY_MAP[normalized] ?? DAY_MAP[m[1]!]
-      if (targetDay !== undefined) {
-        const next = nextDay(today, targetDay as 0 | 1 | 2 | 3 | 4 | 5 | 6)
-        result.date = format(next, 'yyyy-MM-dd')
-        result.patterns.push(new RegExp(`\\bpr[oó]xim[oa]\\s+(?:${DAY_NAMES_PATTERN})\\b`, 'i'))
-        working = working.replace(re, ' ')
+      if (!disabled(m[0])) {
+        const normalized = m[1]!.replace('é', 'e').replace('á', 'a')
+        const targetDay = DAY_MAP[normalized] ?? DAY_MAP[m[1]!]
+        if (targetDay !== undefined) {
+          const next = nextDay(today, targetDay as 0 | 1 | 2 | 3 | 4 | 5 | 6)
+          result.date = format(next, 'yyyy-MM-dd')
+          result.patterns.push(new RegExp(`\\bpr[oó]xim[oa]\\s+(?:${DAY_NAMES_PATTERN})\\b`, 'i'))
+        }
       }
+      working = working.replace(re, ' ')
     }
   }
 
@@ -285,22 +341,24 @@ export function parseNLPTokens(text: string): NLPResult {
   if (!result.date) {
     const m = working.match(/\ben (\d+)\s+(d[ií]as?|semanas?|mes(?:es)?|a[ñn]os?)\b/)
     if (m) {
-      const n = parseInt(m[1]!)
-      const unit = m[2]!
-      let target: Date
-      if (/d[ií]a/.test(unit)) {
-        target = addDays(today, n)
-      } else if (/semana/.test(unit)) {
-        target = addDays(today, n * 7)
-      } else if (/mes/.test(unit)) {
-        target = new Date(today)
-        target.setMonth(target.getMonth() + n)
-      } else {
-        target = new Date(today)
-        target.setFullYear(target.getFullYear() + n)
+      if (!disabled(m[0])) {
+        const n = parseInt(m[1]!)
+        const unit = m[2]!
+        let target: Date
+        if (/d[ií]a/.test(unit)) {
+          target = addDays(today, n)
+        } else if (/semana/.test(unit)) {
+          target = addDays(today, n * 7)
+        } else if (/mes/.test(unit)) {
+          target = new Date(today)
+          target.setMonth(target.getMonth() + n)
+        } else {
+          target = new Date(today)
+          target.setFullYear(target.getFullYear() + n)
+        }
+        result.date = format(target, 'yyyy-MM-dd')
+        result.patterns.push(/\ben \d+\s+(?:d[ií]as?|semanas?|mes(?:es)?|a[ñn]os?)\b/i)
       }
-      result.date = format(target, 'yyyy-MM-dd')
-      result.patterns.push(/\ben \d+\s+(?:d[ií]as?|semanas?|mes(?:es)?|a[ñn]os?)\b/i)
       working = working.replace(/\ben \d+\s+(?:d[ií]as?|semanas?|mes(?:es)?|a[ñn]os?)\b/, ' ')
     }
   }
@@ -315,23 +373,25 @@ export function parseNLPTokens(text: string): NLPResult {
     )
     const m = working.match(re)
     if (m) {
-      const day = parseInt(m[1]!)
-      const monthKey = m[2]!
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-      const month = MONTH_MAP[monthKey] ?? MONTH_MAP[m[2]!.toLowerCase()]
-      const year = m[3] ? parseInt(m[3]) : today.getFullYear()
-      if (month && day >= 1 && day <= 31) {
-        result.date = format(new Date(year, month - 1, day), 'yyyy-MM-dd')
-        result.patterns.push(
-          new RegExp(
-            `\\b\\d{1,2}\\s+de\\s+(?:${MONTH_NAMES_PATTERN})(?:\\s+(?:de\\s+)?\\d{4})?\\b`,
-            'i',
-          ),
-        )
-        working = working.replace(re, ' ')
+      if (!disabled(m[0])) {
+        const day = parseInt(m[1]!)
+        const monthKey = m[2]!
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+        const month = MONTH_MAP[monthKey] ?? MONTH_MAP[m[2]!.toLowerCase()]
+        const year = m[3] ? parseInt(m[3]) : today.getFullYear()
+        if (month && day >= 1 && day <= 31) {
+          result.date = format(new Date(year, month - 1, day), 'yyyy-MM-dd')
+          result.patterns.push(
+            new RegExp(
+              `\\b\\d{1,2}\\s+de\\s+(?:${MONTH_NAMES_PATTERN})(?:\\s+(?:de\\s+)?\\d{4})?\\b`,
+              'i',
+            ),
+          )
+        }
       }
+      working = working.replace(re, ' ')
     }
   }
 
@@ -339,18 +399,20 @@ export function parseNLPTokens(text: string): NLPResult {
   if (!result.date) {
     const m = working.match(/\b(\d{1,2})[/\-](\d{1,2})(?:[/\-](\d{2,4}))?\b/)
     if (m) {
-      const day = parseInt(m[1]!)
-      const month = parseInt(m[2]!)
-      let year = today.getFullYear()
-      if (m[3]) {
-        const y = parseInt(m[3])
-        year = y < 100 ? 2000 + y : y
+      if (!disabled(m[0])) {
+        const day = parseInt(m[1]!)
+        const month = parseInt(m[2]!)
+        let year = today.getFullYear()
+        if (m[3]) {
+          const y = parseInt(m[3])
+          year = y < 100 ? 2000 + y : y
+        }
+        if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+          result.date = format(new Date(year, month - 1, day), 'yyyy-MM-dd')
+          result.patterns.push(/\b\d{1,2}[/\-]\d{1,2}(?:[/\-]\d{2,4})?\b/)
+        }
       }
-      if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
-        result.date = format(new Date(year, month - 1, day), 'yyyy-MM-dd')
-        result.patterns.push(/\b\d{1,2}[/\-]\d{1,2}(?:[/\-]\d{2,4})?\b/)
-        working = working.replace(/\b(\d{1,2})[/\-](\d{1,2})(?:[/\-](\d{2,4}))?\b/, ' ')
-      }
+      working = working.replace(/\b(\d{1,2})[/\-](\d{1,2})(?:[/\-](\d{2,4}))?\b/, ' ')
     }
   }
 
@@ -359,14 +421,16 @@ export function parseNLPTokens(text: string): NLPResult {
     const re = new RegExp(`\\b(${DAY_NAMES_PATTERN})\\b`)
     const m = working.match(re)
     if (m) {
-      const normalized = m[1]!.replace('é', 'e').replace('á', 'a')
-      const targetDay = DAY_MAP[normalized] ?? DAY_MAP[m[1]!]
-      if (targetDay !== undefined) {
-        const currentDay = getDay(today)
-        if (targetDay !== currentDay) {
-          const next = nextDay(today, targetDay as 0 | 1 | 2 | 3 | 4 | 5 | 6)
-          result.date = format(next, 'yyyy-MM-dd')
-          result.patterns.push(new RegExp(`\\b(?:${DAY_NAMES_PATTERN})\\b`, 'i'))
+      if (!disabled(m[0])) {
+        const normalized = m[1]!.replace('é', 'e').replace('á', 'a')
+        const targetDay = DAY_MAP[normalized] ?? DAY_MAP[m[1]!]
+        if (targetDay !== undefined) {
+          const currentDay = getDay(today)
+          if (targetDay !== currentDay) {
+            const next = nextDay(today, targetDay as 0 | 1 | 2 | 3 | 4 | 5 | 6)
+            result.date = format(next, 'yyyy-MM-dd')
+            result.patterns.push(new RegExp(`\\b(?:${DAY_NAMES_PATTERN})\\b`, 'i'))
+          }
         }
       }
     }

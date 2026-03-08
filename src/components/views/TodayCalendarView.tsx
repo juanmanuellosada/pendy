@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { toast } from 'sonner'
-import { Calendar, CheckSquare, X, AlertCircle, Pencil } from 'lucide-react'
+import { Calendar, CheckSquare, X, AlertCircle, Pencil, Plus } from 'lucide-react'
 import { useCompleteTask, useUpdateTask } from '@/hooks/useTasks'
 import { useProjects } from '@/hooks/useProjects'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
@@ -126,12 +126,14 @@ export function TodayCalendarView({
     date: Date
     hour: number
     durationMinutes?: number
+    allDay?: boolean
   } | null>(null)
   const [creatingTaskInfo, setCreatingTaskInfo] = useState<{
     date: string
     time: string
     durationMinutes: number
   } | null>(null)
+  const [hoveredAllDayRow, setHoveredAllDayRow] = useState(false)
 
   // Drag-to-create state
   const [createDrag, setCreateDrag] = useState<{
@@ -370,50 +372,73 @@ export function TodayCalendarView({
             </div>
           )}
 
-          {/* All-day section */}
-          {hasAllDaySection && (
-            <div className="mb-2">
-              <div className="flex">
-                <div
-                  className="w-14 shrink-0 pr-2 pt-1 text-right text-xs"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  Todo el día
-                </div>
-                <div
-                  className="flex-1 border-l py-1 pl-2"
-                  style={{ borderColor: 'var(--border-secondary)' }}
-                >
-                  {allDayTasks.map((task) => (
-                    <TaskTooltip key={task.id} task={task}>
-                      <TimelineTaskCard task={task} />
-                    </TaskTooltip>
-                  ))}
-                  {allDayEvents.map((event) => (
-                    <AllDayEventChip
-                      key={event.id}
-                      event={event}
-                      onEdit={() => setEditingEvent(event)}
-                    />
-                  ))}
-                  {/* Habit chips for unscheduled habits */}
-                  {unscheduledHabits.map((habit) => (
-                    <HabitChip
-                      key={habit.id}
-                      habit={habit}
-                      completions={habitCompletions}
-                      date={today}
-                      onToggle={() =>
-                        toggleHabitCompletion.mutate({ habitId: habit.id, date: today })
+          {/* All-day section — siempre visible para poder crear eventos/tareas todo el día */}
+          <div className="mb-2">
+            <div className="flex">
+              <div
+                className="w-14 shrink-0 pr-2 pt-1 text-right text-xs"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                Todo el día
+              </div>
+              <div
+                className="relative flex-1 border-l py-1 pl-2 min-h-[28px]"
+                style={{ borderColor: 'var(--border-secondary)' }}
+                onMouseEnter={() => setHoveredAllDayRow(true)}
+                onMouseLeave={() => setHoveredAllDayRow(false)}
+              >
+                {allDayTasks.map((task) => (
+                  <TaskTooltip key={task.id} task={task}>
+                    <TimelineTaskCard task={task} />
+                  </TaskTooltip>
+                ))}
+                {allDayEvents.map((event) => (
+                  <AllDayEventChip
+                    key={event.id}
+                    event={event}
+                    onEdit={() => setEditingEvent(event)}
+                  />
+                ))}
+                {/* Habit chips for unscheduled habits */}
+                {unscheduledHabits.map((habit) => (
+                  <HabitChip
+                    key={habit.id}
+                    habit={habit}
+                    completions={habitCompletions}
+                    date={today}
+                    onToggle={() =>
+                      toggleHabitCompletion.mutate({ habitId: habit.id, date: today })
+                    }
+                    onDragStart={(e) => startHabitDrag(habit, e)}
+                    onEdit={() => setSelectedHabit(habit.id, todayDateStr)}
+                  />
+                ))}
+                {/* Hover buttons */}
+                {hoveredAllDayRow && (
+                  <div className="absolute right-1 top-1 flex items-center gap-0.5 z-10">
+                    <button
+                      onClick={() => setCreatingEventInfo({ date: today, hour: 9, allDay: true })}
+                      className="rounded p-0.5 transition-opacity hover:opacity-70"
+                      style={{ color: '#4285F4', backgroundColor: 'var(--bg-primary)' }}
+                      title="Nuevo evento de calendario todo el día"
+                    >
+                      <Plus size={10} />
+                    </button>
+                    <button
+                      onClick={() =>
+                        setCreatingTaskInfo({ date: todayDateStr, time: '', durationMinutes: 0 })
                       }
-                      onDragStart={(e) => startHabitDrag(habit, e)}
-                      onEdit={() => setSelectedHabit(habit.id, todayDateStr)}
-                    />
-                  ))}
-                </div>
+                      className="rounded p-0.5 transition-opacity hover:opacity-70"
+                      style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-primary)' }}
+                      title="Nueva tarea todo el día"
+                    >
+                      <CheckSquare size={10} />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-          )}
+          </div>
 
           {/* Timeline */}
           <div
@@ -582,6 +607,7 @@ export function TodayCalendarView({
             defaultDate={creatingEventInfo.date}
             defaultHour={creatingEventInfo.hour}
             defaultDurationMinutes={creatingEventInfo.durationMinutes}
+            defaultAllDay={creatingEventInfo.allDay}
             onClose={() => setCreatingEventInfo(null)}
           />
         )}
@@ -990,7 +1016,7 @@ function TimedTaskBlock({
             className="shrink-0 w-3 h-3 rounded-full border-2 flex items-center justify-center transition-colors hover:opacity-80"
             style={{
               borderColor: color,
-              backgroundColor: task.is_completed ? color : 'transparent',
+              backgroundColor: task.is_completed ? color : color + '30',
             }}
             onClick={(e) => {
               e.stopPropagation()
