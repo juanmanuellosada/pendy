@@ -274,7 +274,12 @@ export function TaskDetail({ fullScreen = false, taskId: propTaskId }: TaskDetai
   const save = async (updates: Partial<Task>) => {
     if (!task) return
     setSaving(true)
-    await updateTask.mutateAsync({ id: task.id, updates })
+    // Always include current local title & description so unsaved edits aren't
+    // overwritten when a partial save (e.g. date change) triggers a server refetch.
+    await updateTask.mutateAsync({
+      id: task.id,
+      updates: { title, description: description || null, ...updates },
+    })
     setSaving(false)
   }
 
