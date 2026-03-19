@@ -673,6 +673,17 @@ function TimelineGrid({
     habitDragRef.current = habitDrag
   }, [habitDrag])
 
+  // All-day task drag state (from all-day chip to timeline, cross-column)
+  const [allDayTaskDrag, setAllDayTaskDrag] = useState<{
+    task: Task
+    ghostHour: number | null
+    ghostCol: number | null
+  } | null>(null)
+  const allDayTaskDragRef = useRef(allDayTaskDrag)
+  useEffect(() => {
+    allDayTaskDragRef.current = allDayTaskDrag
+  }, [allDayTaskDrag])
+
   // Drag-to-create state
   const [createDrag, setCreateDrag] = useState<{
     col: number
@@ -1180,6 +1191,64 @@ function TimelineGrid({
     [HOUR_HEIGHT, days, getColFromX, onSetHabitDefaultTime, onUpsertHabitSchedule],
   )
 
+  /* ── All-day task drag from all-day chip to timeline (multi-column) ── */
+  const startAllDayTaskDragInGrid = useCallback(
+    (task: Task, e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setAllDayTaskDrag({ task, ghostHour: null, ghostCol: null })
+
+      const onMove = (ev: MouseEvent) => {
+        if (!gridRef.current) return
+        const rect = gridRef.current.getBoundingClientRect()
+        const y = ev.clientY - rect.top
+        if (y < 0) {
+          setAllDayTaskDrag((p) => (p ? { ...p, ghostHour: null, ghostCol: null } : null))
+          return
+        }
+        const rawHour = pxToHours(y, HOUR_HEIGHT)
+        const snappedMin = snapMinutes(Math.round(rawHour * 60))
+        const snapped = Math.max(START_HOUR, snappedMin / 60)
+        const col = getColFromX(ev.clientX)
+        setAllDayTaskDrag((p) =>
+          p
+            ? { ...p, ghostHour: snapped, ghostCol: col >= 0 && col < days.length ? col : null }
+            : null,
+        )
+      }
+
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+        const state = allDayTaskDragRef.current
+        setAllDayTaskDrag(null)
+        if (!state?.ghostHour || state.ghostCol === null) return
+
+        const targetDay = days[state.ghostCol]
+        if (!targetDay) return
+
+        const h = Math.floor(state.ghostHour)
+        const m = Math.round((state.ghostHour - h) * 60)
+        const newDt = new Date(targetDay)
+        newDt.setHours(h, m, 0, 0)
+        const dateStr = format(targetDay, 'yyyy-MM-dd')
+
+        updateTask.mutate({
+          id: state.task.id,
+          updates: {
+            has_time: true,
+            due_date: dateStr,
+            due_datetime: newDt.toISOString(),
+          },
+        })
+      }
+
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
+    },
+    [HOUR_HEIGHT, days, getColFromX, updateTask],
+  )
+
   const isDragSameCol = !!(
     drag &&
     didMove &&
@@ -1260,7 +1329,7 @@ function TimelineGrid({
             >
               {dd.allDay.map((t) => (
                 <TaskTooltip key={t.id} task={t}>
-                  <AllDayChip task={t} />
+                  <AllDayChip task={t} onDragStart={(e) => startAllDayTaskDragInGrid(t, e)} />
                 </TaskTooltip>
               ))}
               {dd.allDayEvents.map((ev) => (
@@ -1454,6 +1523,36 @@ function TimelineGrid({
                   />
                 )
               })}
+              {/* All-day task drag ghost preview in this column */}
+              {allDayTaskDrag?.ghostHour !== null &&
+                allDayTaskDrag?.ghostHour !== undefined &&
+                allDayTaskDrag.ghostCol === colIdx && (
+                  <div
+                    className="pointer-events-none absolute left-0.5 right-0.5 z-20 rounded-md border-l-2"
+                    style={{
+                      top: (allDayTaskDrag.ghostHour - START_HOUR) * HOUR_HEIGHT,
+                      height: Math.max(
+                        ((allDayTaskDrag.task.duration_minutes ?? 60) / 60) * HOUR_HEIGHT,
+                        (MIN_DURATION / 60) * HOUR_HEIGHT,
+                      ),
+                      backgroundColor: `${PRIORITY_COLORS[allDayTaskDrag.task.priority] ?? PRIORITY_COLORS[4]}25`,
+                      borderLeftColor:
+                        PRIORITY_COLORS[allDayTaskDrag.task.priority] ?? PRIORITY_COLORS[4],
+                      outline: `1.5px dashed ${PRIORITY_COLORS[allDayTaskDrag.task.priority] ?? PRIORITY_COLORS[4]}`,
+                      outlineOffset: '-1px',
+                    }}
+                  >
+                    <p
+                      className="truncate px-1.5 py-0.5 text-[11px] font-medium"
+                      style={{
+                        color: PRIORITY_COLORS[allDayTaskDrag.task.priority] ?? PRIORITY_COLORS[4],
+                      }}
+                    >
+                      {stripLabelTokensFromText(stripHtmlTags(allDayTaskDrag.task.title))}
+                    </p>
+                  </div>
+                )}
+
               {/* Habit drag ghost preview in this column */}
               {habitDrag?.ghostHour !== null &&
                 habitDrag?.ghostHour !== undefined &&
@@ -2489,10 +2588,12 @@ function CalendarHabitBlock({
 
 function AllDayChip({
   task,
+  onDragStart,
   onMouseEnter,
   onMouseLeave,
 }: {
   task: Task
+  onDragStart?: (e: React.MouseEvent) => void
   onMouseEnter?: (e: React.MouseEvent) => void
   onMouseLeave?: (e: React.MouseEvent) => void
 }) {
@@ -2506,15 +2607,17 @@ function AllDayChip({
     <>
       <div
         className={cn(
-          'mb-0.5 flex cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-[11px] overflow-hidden min-w-0',
+          'mb-0.5 flex items-center gap-1 rounded px-1 py-0.5 text-[11px] overflow-hidden min-w-0',
           task.is_completed && 'opacity-50',
           isVirtual && 'opacity-70',
+          !isVirtual && onDragStart ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
         )}
         style={{
           backgroundColor: `${color}20`,
           ...(isVirtual ? { outline: `1px dashed ${color}60` } : {}),
         }}
         onClick={() => setSelectedTaskId(originalTaskId(task.id))}
+        onMouseDown={!isVirtual ? onDragStart : undefined}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
         onContextMenu={(e) => {

@@ -121,6 +121,7 @@ export function TodayCalendarView({
   const [now, setNow] = useState(new Date())
 
   const { setSelectedHabit } = useAppStore()
+  const updateTask = useUpdateTask()
 
   // Editor state
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null)
@@ -186,6 +187,16 @@ export function TodayCalendarView({
     habitDragRef.current = habitDrag
   }, [habitDrag])
 
+  // All-day task drag state (from all-day zone to timeline)
+  const [allDayTaskDrag, setAllDayTaskDrag] = useState<{
+    task: Task
+    ghostHour: number | null
+  } | null>(null)
+  const allDayTaskDragRef = useRef(allDayTaskDrag)
+  useEffect(() => {
+    allDayTaskDragRef.current = allDayTaskDrag
+  }, [allDayTaskDrag])
+
   // Update current time every minute
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 60_000)
@@ -242,6 +253,57 @@ export function TodayCalendarView({
       document.addEventListener('mouseup', onUp)
     },
     [hourHeight, todayDateStr, setHabitDefaultTime, upsertHabitSchedule],
+  )
+
+  // Drag all-day task from the all-day zone to a specific hour in the timeline
+  const startAllDayTaskDrag = useCallback(
+    (task: Task, e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setAllDayTaskDrag({ task, ghostHour: null })
+
+      const onMove = (ev: MouseEvent) => {
+        if (!gridRef.current) return
+        const rect = gridRef.current.getBoundingClientRect()
+        const scrollTop = containerRef.current?.scrollTop ?? 0
+        const y = ev.clientY - rect.top + scrollTop
+        if (y < 0) {
+          setAllDayTaskDrag((p) => (p ? { ...p, ghostHour: null } : null))
+          return
+        }
+        const rawHour = pxToHours(y, hourHeight)
+        const snappedMin = snapMinutes(Math.round(rawHour * 60))
+        const snapped = Math.max(START_HOUR, snappedMin / 60)
+        setAllDayTaskDrag((p) => (p ? { ...p, ghostHour: snapped } : null))
+      }
+
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+        const state = allDayTaskDragRef.current
+        if (!state?.ghostHour) {
+          setAllDayTaskDrag(null)
+          return
+        }
+        const h = Math.floor(state.ghostHour)
+        const m = Math.round((state.ghostHour - h) * 60)
+        const newDt = new Date(today)
+        newDt.setHours(h, m, 0, 0)
+        updateTask.mutate({
+          id: state.task.id,
+          updates: {
+            has_time: true,
+            due_date: todayDateStr,
+            due_datetime: newDt.toISOString(),
+          },
+        })
+        setAllDayTaskDrag(null)
+      }
+
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
+    },
+    [hourHeight, today, todayDateStr, updateTask],
   )
 
   // Split tasks into three buckets:
@@ -390,7 +452,10 @@ export function TodayCalendarView({
               >
                 {allDayTasks.map((task) => (
                   <TaskTooltip key={task.id} task={task}>
-                    <TimelineTaskCard task={task} />
+                    <TimelineTaskCard
+                      task={task}
+                      onDragStart={(e) => startAllDayTaskDrag(task, e)}
+                    />
                   </TaskTooltip>
                 ))}
                 {allDayEvents.map((event) => (
@@ -572,6 +637,35 @@ export function TodayCalendarView({
                     />
                   )
                 })}
+
+                {/* Ghost preview while dragging an all-day task to the timeline */}
+                {allDayTaskDrag?.ghostHour !== null && allDayTaskDrag?.ghostHour !== undefined && (
+                  <div
+                    className="pointer-events-none absolute left-1 right-1 z-20 rounded-md border-l-2"
+                    style={{
+                      top: (allDayTaskDrag.ghostHour - START_HOUR) * hourHeight,
+                      height: Math.max(
+                        ((allDayTaskDrag.task.duration_minutes ?? 60) / 60) * hourHeight,
+                        (MIN_DURATION / 60) * hourHeight,
+                      ),
+                      backgroundColor: `${PRIORITY_COLORS[allDayTaskDrag.task.priority] ?? PRIORITY_COLORS[4]}25`,
+                      borderLeftColor:
+                        PRIORITY_COLORS[allDayTaskDrag.task.priority] ?? PRIORITY_COLORS[4],
+                      opacity: 0.85,
+                      outline: `1.5px dashed ${PRIORITY_COLORS[allDayTaskDrag.task.priority] ?? PRIORITY_COLORS[4]}`,
+                      outlineOffset: '-1px',
+                    }}
+                  >
+                    <p
+                      className="truncate px-2 py-0.5 text-xs font-medium"
+                      style={{
+                        color: PRIORITY_COLORS[allDayTaskDrag.task.priority] ?? PRIORITY_COLORS[4],
+                      }}
+                    >
+                      {stripLabelTokensFromText(stripHtmlTags(allDayTaskDrag.task.title))}
+                    </p>
+                  </div>
+                )}
 
                 {/* Ghost preview while dragging a habit chip */}
                 {habitDrag?.ghostHour !== null && habitDrag?.ghostHour !== undefined && (
@@ -1785,10 +1879,12 @@ function TimedHabitBlock({
 
 function TimelineTaskCard({
   task,
+  onDragStart,
   onMouseEnter,
   onMouseLeave,
 }: {
   task: Task
+  onDragStart?: (e: React.MouseEvent) => void
   onMouseEnter?: (e: React.MouseEvent) => void
   onMouseLeave?: (e: React.MouseEvent) => void
 }) {
@@ -1801,11 +1897,13 @@ function TimelineTaskCard({
     <>
       <div
         className={cn(
-          'mb-1 flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-colors',
+          'mb-1 flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors',
           task.is_completed && 'opacity-50',
+          onDragStart ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
         )}
         style={{ backgroundColor: `${color}18` }}
         onClick={() => setSelectedTaskId(task.id)}
+        onMouseDown={onDragStart}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
         onContextMenu={(e) => {
