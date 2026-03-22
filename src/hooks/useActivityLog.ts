@@ -19,18 +19,29 @@ export function useUndo() {
 
   return useMutation({
     mutationFn: async () => {
-      if (!user) return
+      if (!user) return null
       const [latest] = await activityService.getLatest(user.id, 1)
       if (!latest) {
         toast.info('Nada que deshacer')
-        return
+        return null
       }
-      await activityService.undo(latest)
+      const title = await activityService.undo(latest)
       await activityService.deleteEntry(latest.id)
+      return { action: latest.action, title }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all })
-      toast.success('Acción deshecha')
+      if (!result) return
+      const label = result.title ? `"${result.title}"` : 'acción'
+      if (result.action === 'completed') {
+        toast.success(`Completar ${label} deshecho`)
+      } else if (result.action === 'deleted') {
+        toast.success(`Eliminación de ${label} deshecha`)
+      } else if (result.action === 'updated') {
+        toast.success(`Edición de ${label} deshecha`)
+      } else {
+        toast.success('Acción deshecha')
+      }
     },
     onError: () => {
       toast.error('No se pudo deshacer la acción')

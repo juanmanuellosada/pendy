@@ -321,6 +321,26 @@ function evaluateField(node: FieldNode, task: Task, ctx: FilterContext): boolean
       return true
     }
 
+    case 'subtask': {
+      const val = values[0]?.toLowerCase()
+      if (val === 'true') return task.parent_id != null
+      if (val === 'false') return task.parent_id == null
+      return true
+    }
+
+    case 'created': {
+      if (!task.created_at) return false
+      const dateOnly = task.created_at.split('T')[0]!
+      if (operator === 'before') return dateOnly < values[0]!
+      if (operator === 'after') return dateOnly > values[0]!
+      return dateOnly === values[0]!
+    }
+
+    case 'no_project': {
+      const project = ctx.projects.find((p) => p.id === task.project_id)
+      return project?.is_inbox === true
+    }
+
     default:
       return true
   }

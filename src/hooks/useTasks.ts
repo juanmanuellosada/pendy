@@ -137,11 +137,13 @@ export function useUpdateTask() {
     onMutate: async ({ id, updates }) => {
       const queries = queryClient.getQueriesData<Task[]>({ queryKey: taskKeys.all })
       const snapshots: [readonly unknown[], Task[]][] = []
+      let oldTask: Task | undefined
 
       for (const [key, data] of queries) {
         if (Array.isArray(data) && data.some((t) => t.id === id)) {
           await queryClient.cancelQueries({ queryKey: key })
           snapshots.push([key, data])
+          if (!oldTask) oldTask = data.find((t) => t.id === id)
           queryClient.setQueryData(
             key,
             data.map((t) => (t.id === id ? { ...t, ...updates } : t)),
@@ -149,13 +151,37 @@ export function useUpdateTask() {
         }
       }
 
-      return { snapshots }
+      return { snapshots, oldTask }
     },
     onError: (_err, _vars, context) => {
       context?.snapshots.forEach(([key, data]) => {
         queryClient.setQueryData(key, data)
       })
       toast.error('No se pudo actualizar la tarea')
+    },
+    onSuccess: (_data, { id, updates }, context) => {
+      if (user && context?.oldTask) {
+        const oldTask = context.oldTask
+        const loggableKeys = Object.keys(updates).filter((k) => k !== 'label_ids')
+        if (loggableKeys.length > 0) {
+          const changes: Record<string, unknown> = { _title: oldTask.title }
+          for (const key of loggableKeys) {
+            changes[key] = {
+              old: oldTask[key as keyof Task],
+              new: updates[key as keyof typeof updates],
+            }
+          }
+          activityService
+            .log({
+              user_id: user.id,
+              entity_type: 'task',
+              entity_id: id,
+              action: 'updated',
+              changes,
+            })
+            .catch(() => {})
+        }
+      }
     },
     onSettled: (_data, _err, { id }, context) => {
       // Only invalidate queries that actually contained this task
@@ -207,7 +233,7 @@ export function useCompleteTask() {
       })
       toast.error('No se pudo completar la tarea')
     },
-    onSuccess: (_data, { id, completed }) => {
+    onSuccess: (_data, { id, completed, task }) => {
       if (user) {
         activityService
           .log({
@@ -215,7 +241,10 @@ export function useCompleteTask() {
             entity_type: 'task',
             entity_id: id,
             action: 'completed',
-            changes: { is_completed: { old: !completed, new: completed } },
+            changes: {
+              _title: task?.title,
+              is_completed: { old: !completed, new: completed },
+            },
           })
           .catch(() => {})
       }
@@ -303,9 +332,37 @@ export function useReorderTasks() {
 
 export function useDeleteTask() {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
 
   return useMutation({
-    mutationFn: (id: string) => taskService.deleteTask(id),
+    mutationFn: async (idOrTask: string | Task) => {
+      const id = typeof idOrTask === 'string' ? idOrTask : idOrTask.id
+      if (user) {
+        // Find task snapshot from cache for undo
+        let snapshot: Task | undefined = typeof idOrTask === 'object' ? idOrTask : undefined
+        if (!snapshot) {
+          const queries = queryClient.getQueriesData<Task[]>({ queryKey: taskKeys.all })
+          for (const [, data] of queries) {
+            if (Array.isArray(data)) {
+              snapshot = data.find((t) => t.id === id)
+              if (snapshot) break
+            }
+          }
+        }
+        if (snapshot) {
+          activityService
+            .log({
+              user_id: user.id,
+              entity_type: 'task',
+              entity_id: id,
+              action: 'deleted',
+              changes: { _snapshot: snapshot as unknown as Record<string, unknown> },
+            })
+            .catch(() => {})
+        }
+      }
+      return taskService.deleteTask(id)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all })
     },

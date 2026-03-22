@@ -1429,7 +1429,7 @@ function TimelineGrid({
       <div
         ref={containerRef}
         className="overflow-y-auto"
-        style={{ maxHeight: 'calc(100vh - 260px)' }}
+        style={{ maxHeight: 'calc(100vh - 260px)', scrollbarGutter: 'stable' }}
       >
         <div
           ref={gridRef}
