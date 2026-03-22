@@ -1848,7 +1848,7 @@ function TimedHabitBlock({
                   className="shrink-0 text-[10px] whitespace-nowrap"
                   style={{ color: `${habit.color}BB` }}
                 >
-                  {timeStart}
+                  {timeStart}–{timeEnd}
                 </span>
               )}
             </div>

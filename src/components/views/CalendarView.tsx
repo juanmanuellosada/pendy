@@ -632,6 +632,7 @@ function TimelineGrid({
   const HOUR_HEIGHT = useContext(HourHeightCtx)
   const containerRef = useRef<HTMLDivElement>(null)
   const gridRef = useRef<HTMLDivElement>(null)
+  const allDayRowRef = useRef<HTMLDivElement>(null)
   const nowLineRef = useRef<HTMLDivElement>(null)
   const updateTask = useUpdateTask()
   const { updateEvent: updateCalendarEvent } = useCalendarEventMutations()
@@ -673,11 +674,12 @@ function TimelineGrid({
     habitDragRef.current = habitDrag
   }, [habitDrag])
 
-  // All-day task drag state (from all-day chip to timeline, cross-column)
+  // All-day task drag state (from all-day chip to timeline or other all-day column)
   const [allDayTaskDrag, setAllDayTaskDrag] = useState<{
     task: Task
-    ghostHour: number | null
-    ghostCol: number | null
+    ghostHour: number | null // set when hovering the timeline
+    ghostCol: number | null // column for timeline ghost
+    allDayTargetCol: number | null // column when hovering the all-day row
   } | null>(null)
   const allDayTaskDragRef = useRef(allDayTaskDrag)
   useEffect(() => {
@@ -1196,24 +1198,38 @@ function TimelineGrid({
     (task: Task, e: React.MouseEvent) => {
       e.preventDefault()
       e.stopPropagation()
-      setAllDayTaskDrag({ task, ghostHour: null, ghostCol: null })
+      setAllDayTaskDrag({ task, ghostHour: null, ghostCol: null, allDayTargetCol: null })
 
       const onMove = (ev: MouseEvent) => {
+        const col = getColFromX(ev.clientX)
+        const validCol = col >= 0 && col < days.length ? col : null
+
+        // Check if cursor is over the all-day row
+        if (allDayRowRef.current) {
+          const allDayRect = allDayRowRef.current.getBoundingClientRect()
+          if (ev.clientY >= allDayRect.top && ev.clientY <= allDayRect.bottom) {
+            setAllDayTaskDrag((p) =>
+              p ? { ...p, allDayTargetCol: validCol, ghostHour: null, ghostCol: null } : null,
+            )
+            return
+          }
+        }
+
+        // Check if cursor is over the timeline
         if (!gridRef.current) return
         const rect = gridRef.current.getBoundingClientRect()
         const y = ev.clientY - rect.top
         if (y < 0) {
-          setAllDayTaskDrag((p) => (p ? { ...p, ghostHour: null, ghostCol: null } : null))
+          setAllDayTaskDrag((p) =>
+            p ? { ...p, ghostHour: null, ghostCol: null, allDayTargetCol: null } : null,
+          )
           return
         }
         const rawHour = pxToHours(y, HOUR_HEIGHT)
         const snappedMin = snapMinutes(Math.round(rawHour * 60))
         const snapped = Math.max(START_HOUR, snappedMin / 60)
-        const col = getColFromX(ev.clientX)
         setAllDayTaskDrag((p) =>
-          p
-            ? { ...p, ghostHour: snapped, ghostCol: col >= 0 && col < days.length ? col : null }
-            : null,
+          p ? { ...p, ghostHour: snapped, ghostCol: validCol, allDayTargetCol: null } : null,
         )
       }
 
@@ -1222,25 +1238,32 @@ function TimelineGrid({
         document.removeEventListener('mouseup', onUp)
         const state = allDayTaskDragRef.current
         setAllDayTaskDrag(null)
-        if (!state?.ghostHour || state.ghostCol === null) return
+        if (!state) return
 
-        const targetDay = days[state.ghostCol]
-        if (!targetDay) return
-
-        const h = Math.floor(state.ghostHour)
-        const m = Math.round((state.ghostHour - h) * 60)
-        const newDt = new Date(targetDay)
-        newDt.setHours(h, m, 0, 0)
-        const dateStr = format(targetDay, 'yyyy-MM-dd')
-
-        updateTask.mutate({
-          id: state.task.id,
-          updates: {
-            has_time: true,
-            due_date: dateStr,
-            due_datetime: newDt.toISOString(),
-          },
-        })
+        if (state.allDayTargetCol !== null) {
+          // Dropped on all-day zone → move to that day, keep no specific time
+          const targetDay = days[state.allDayTargetCol]
+          if (!targetDay) return
+          const dateStr = format(targetDay, 'yyyy-MM-dd')
+          if (dateStr === state.task.due_date) return
+          updateTask.mutate({
+            id: state.task.id,
+            updates: { due_date: dateStr, has_time: false, due_datetime: null },
+          })
+        } else if (state.ghostHour !== null && state.ghostCol !== null) {
+          // Dropped on timeline → assign specific time
+          const targetDay = days[state.ghostCol]
+          if (!targetDay) return
+          const h = Math.floor(state.ghostHour)
+          const m = Math.round((state.ghostHour - h) * 60)
+          const newDt = new Date(targetDay)
+          newDt.setHours(h, m, 0, 0)
+          const dateStr = format(targetDay, 'yyyy-MM-dd')
+          updateTask.mutate({
+            id: state.task.id,
+            updates: { has_time: true, due_date: dateStr, due_datetime: newDt.toISOString() },
+          })
+        }
       }
 
       document.addEventListener('mousemove', onMove)
@@ -1304,6 +1327,7 @@ function TimelineGrid({
 
       {/* All-day row — siempre visible para poder crear eventos/tareas todo el día */}
       <div
+        ref={allDayRowRef}
         className="grid border-b"
         style={{
           gridTemplateColumns: `56px repeat(${days.length}, 1fr)`,
@@ -1319,11 +1343,21 @@ function TimelineGrid({
         {dayData.map((dd, i) => {
           const dateStr = format(dd.day, 'yyyy-MM-dd')
           const isHovered = hoveredAllDayCol === i
+          const isAllDayDropTarget = allDayTaskDrag?.allDayTargetCol === i
           return (
             <div
               key={i}
-              className="relative min-h-[28px] border-l p-1 flex flex-col gap-0.5 overflow-hidden min-w-0"
-              style={{ borderColor: 'var(--border-secondary)' }}
+              className="relative min-h-[28px] border-l p-1 flex flex-col gap-0.5 overflow-hidden min-w-0 transition-colors"
+              style={{
+                borderColor: 'var(--border-secondary)',
+                ...(isAllDayDropTarget
+                  ? {
+                      backgroundColor: `${PRIORITY_COLORS[allDayTaskDrag!.task.priority] ?? PRIORITY_COLORS[4]}18`,
+                      outline: `1.5px dashed ${PRIORITY_COLORS[allDayTaskDrag!.task.priority] ?? PRIORITY_COLORS[4]}`,
+                      outlineOffset: '-1px',
+                    }
+                  : {}),
+              }}
               onMouseEnter={() => setHoveredAllDayCol(i)}
               onMouseLeave={() => setHoveredAllDayCol(null)}
             >
@@ -2556,6 +2590,14 @@ function CalendarHabitBlock({
           >
             {stripHtmlTags(habit.name)}
           </p>
+          {!showTime && (
+            <span
+              className="shrink-0 text-[10px] whitespace-nowrap"
+              style={{ color: `${habit.color}BB` }}
+            >
+              {startLabel}–{endLabel}
+            </span>
+          )}
           <span
             className="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
             style={{ backgroundColor: `${habit.color}22`, color: habit.color }}
