@@ -1927,15 +1927,16 @@ function CalendarTimelineBlock({
 
   const baseTop = (effectiveHour - START_HOUR) * HOUR_HEIGHT + activeDragDy
   const [resizeDelta, setResizeDelta] = useState(0)
+  const [topResizeDelta, setTopResizeDelta] = useState(0)
   const [resizing, setResizing] = useState(false)
 
   const currentHeight = Math.max(
-    (effectiveDuration / 60) * HOUR_HEIGHT + resizeDelta,
+    (effectiveDuration / 60) * HOUR_HEIGHT - topResizeDelta + resizeDelta,
     (MIN_DURATION / 60) * HOUR_HEIGHT,
   )
   const renderHeight = currentHeight
 
-  const displayHours = pxToHours(Math.max(0, baseTop), HOUR_HEIGHT)
+  const displayHours = pxToHours(Math.max(0, baseTop + topResizeDelta), HOUR_HEIGHT)
   const displayH = Math.floor(displayHours)
   const displayM = Math.round((displayHours - displayH) * 60)
   const durMin = Math.max(MIN_DURATION, Math.round((currentHeight / HOUR_HEIGHT) * 60))
@@ -2002,6 +2003,62 @@ function CalendarTimelineBlock({
     [effectiveDuration, event, updateEvent, HOUR_HEIGHT],
   )
 
+  const handleTopResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setResizing(true)
+      const startY = e.clientY
+      let latestDelta = 0
+
+      const onMove = (ev: MouseEvent) => {
+        latestDelta = ev.clientY - startY
+        setTopResizeDelta(latestDelta)
+      }
+      const onUp = async () => {
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+        setResizing(false)
+        setTopResizeDelta(0)
+
+        if (Math.abs(latestDelta) >= 4) {
+          const endHour = effectiveHour + effectiveDuration / 60
+          const newStartPx = Math.max(0, (effectiveHour - START_HOUR) * HOUR_HEIGHT + latestDelta)
+          const newStartHour = START_HOUR + newStartPx / HOUR_HEIGHT
+          const newStartMin = Math.max(0, snapMinutes(Math.round(newStartHour * 60)))
+          const newStartHourSnapped = newStartMin / 60
+          const newDuration = Math.max(
+            MIN_DURATION,
+            Math.round((endHour - newStartHourSnapped) * 60),
+          )
+
+          if (event.calendarId) {
+            const newStart = new Date(event.start)
+            newStart.setHours(Math.floor(newStartMin / 60), newStartMin % 60, 0, 0)
+            const newEnd = new Date(newStart.getTime() + newDuration * 60_000)
+            try {
+              await updateEvent.mutateAsync({
+                eventId: event.id,
+                calendarId: event.calendarId,
+                start: newStart,
+                end: newEnd,
+              })
+            } catch (err) {
+              const msg =
+                err instanceof Error && err.message === 'PERMISSION_DENIED'
+                  ? 'Sin permiso para editar este evento. Reconecta Google Calendar con permisos de escritura.'
+                  : 'No se pudo cambiar la hora de inicio del evento. Intenta de nuevo.'
+              toast.error(msg)
+            }
+          }
+        }
+      }
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
+    },
+    [effectiveHour, effectiveDuration, event, updateEvent, HOUR_HEIGHT],
+  )
+
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('[data-resize-handle]')) return
     e.preventDefault()
@@ -2022,7 +2079,7 @@ function CalendarTimelineBlock({
               : 'cursor-pointer opacity-90 hover:opacity-100',
         )}
         style={{
-          top: Math.max(0, baseTop),
+          top: Math.max(0, baseTop + topResizeDelta),
           height: renderHeight,
           borderLeftColor: color,
           backgroundColor: `${color}1A`,
@@ -2055,7 +2112,17 @@ function CalendarTimelineBlock({
           </p>
         )}
 
-        {/* Resize handle */}
+        {/* Top resize handle */}
+        <div
+          data-resize-handle
+          className="absolute top-0 left-0 right-0 flex cursor-n-resize items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
+          style={{ height: 7, zIndex: 1 }}
+          onMouseDown={handleTopResizeStart}
+        >
+          <div className="h-0.5 w-6 rounded-full" style={{ backgroundColor: color }} />
+        </div>
+
+        {/* Bottom resize handle */}
         <div
           data-resize-handle
           className="absolute bottom-0 left-0 right-0 flex cursor-s-resize items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
@@ -2114,11 +2181,15 @@ function TimelineTaskBlock({
   const baseHeight = (duration / 60) * HOUR_HEIGHT
 
   const [resizeDelta, setResizeDelta] = useState(0)
+  const [topResizeDelta, setTopResizeDelta] = useState(0)
   const [resizing, setResizing] = useState(false)
-  const currentHeight = Math.max(baseHeight + resizeDelta, (MIN_DURATION / 60) * HOUR_HEIGHT)
+  const currentHeight = Math.max(
+    baseHeight - topResizeDelta + resizeDelta,
+    (MIN_DURATION / 60) * HOUR_HEIGHT,
+  )
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
 
-  const displayHours = pxToHours(Math.max(0, currentTop), HOUR_HEIGHT)
+  const displayHours = pxToHours(Math.max(0, currentTop + topResizeDelta), HOUR_HEIGHT)
   const displayH = Math.floor(displayHours)
   const displayM = Math.round((displayHours - displayH) * 60)
   const durationMin = Math.max(MIN_DURATION, Math.round((currentHeight / HOUR_HEIGHT) * 60))
@@ -2169,6 +2240,47 @@ function TimelineTaskBlock({
     [isVirtual, baseHeight, task.id, updateTask],
   )
 
+  const handleTopResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      if (isVirtual) return
+      e.preventDefault()
+      e.stopPropagation()
+      setResizing(true)
+      const startY = e.clientY
+
+      const onMove = (ev: MouseEvent) => setTopResizeDelta(ev.clientY - startY)
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+        setResizing(false)
+        setTopResizeDelta((prev) => {
+          if (Math.abs(prev) < 4) return 0
+
+          const endHour = effectiveHour + duration / 60
+          const newStartPx = Math.max(0, (effectiveHour - START_HOUR) * HOUR_HEIGHT + prev)
+          const newStartHour = START_HOUR + newStartPx / HOUR_HEIGHT
+          const newStartMin = Math.max(0, snapMinutes(Math.round(newStartHour * 60)))
+          const newStartHourSnapped = newStartMin / 60
+          const newDuration = Math.max(
+            MIN_DURATION,
+            Math.round((endHour - newStartHourSnapped) * 60),
+          )
+
+          const newDt = new Date(task.due_datetime!)
+          newDt.setHours(Math.floor(newStartMin / 60), newStartMin % 60, 0, 0)
+          updateTask.mutate({
+            id: task.id,
+            updates: { due_datetime: newDt.toISOString(), duration_minutes: newDuration },
+          })
+          return 0
+        })
+      }
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
+    },
+    [isVirtual, effectiveHour, duration, task, updateTask],
+  )
+
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('[data-resize-handle]')) return
     if ((e.target as HTMLElement).closest('button')) return
@@ -2187,7 +2299,7 @@ function TimelineTaskBlock({
         isSameColDrag ? 'shadow-lg z-30' : resizing ? 'shadow-lg z-30' : 'cursor-pointer',
       )}
       style={{
-        top: currentTop,
+        top: Math.max(0, currentTop + topResizeDelta),
         height: currentHeight,
         borderLeftColor: color,
         backgroundColor: `${color}18`,
@@ -2325,6 +2437,16 @@ function TimelineTaskBlock({
         </div>
       )}
 
+      {/* Top resize handle */}
+      <div
+        data-resize-handle
+        className="absolute top-0 left-0 right-0 flex cursor-n-resize items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
+        style={{ height: 7, zIndex: 1 }}
+        onMouseDown={handleTopResizeStart}
+      >
+        <div className="h-0.5 w-6 rounded-full" style={{ backgroundColor: color }} />
+      </div>
+
       <div
         data-resize-handle
         className="absolute bottom-0 left-0 right-0 flex cursor-s-resize items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
@@ -2446,6 +2568,7 @@ function CalendarHabitBlock({
   const [localDuration, setLocalDuration] = useState<number | null>(null)
   const [activeDragDy, setActiveDragDy] = useState(0)
   const [resizeDelta, setResizeDelta] = useState(0)
+  const [topResizeDelta, setTopResizeDelta] = useState(0)
   const [interacting, setInteracting] = useState(false)
   const didMove = useRef(false)
 
@@ -2466,12 +2589,12 @@ function CalendarHabitBlock({
 
   const baseTop = (baseHour - START_HOUR) * HOUR_HEIGHT + activeDragDy
   const currentHeight = Math.max(
-    (baseDuration / 60) * HOUR_HEIGHT + resizeDelta,
+    (baseDuration / 60) * HOUR_HEIGHT - topResizeDelta + resizeDelta,
     (MIN_DURATION / 60) * HOUR_HEIGHT,
   )
   const renderHeight = currentHeight
 
-  const displayHours = pxToHours(Math.max(0, baseTop), HOUR_HEIGHT)
+  const displayHours = pxToHours(Math.max(0, baseTop + topResizeDelta), HOUR_HEIGHT)
   const displayH = Math.floor(displayHours)
   const displayM = Math.round((displayHours - displayH) * 60)
   const durMin = Math.max(MIN_DURATION, Math.round((currentHeight / HOUR_HEIGHT) * 60))
@@ -2557,6 +2680,49 @@ function CalendarHabitBlock({
     [baseDuration, HOUR_HEIGHT, onUpdateDuration],
   )
 
+  /* ── Top resize handle (changes start time, keeps end fixed) ── */
+  const handleTopResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setInteracting(true)
+      const startYVal = e.clientY
+
+      const onMove = (ev: MouseEvent) => setTopResizeDelta(ev.clientY - startYVal)
+
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+        setInteracting(false)
+
+        setTopResizeDelta((prev) => {
+          if (Math.abs(prev) < 4) return 0
+
+          const endHour = baseHour + baseDuration / 60
+          const newStartPx = Math.max(0, (baseHour - START_HOUR) * HOUR_HEIGHT + prev)
+          const newStartHour = START_HOUR + newStartPx / HOUR_HEIGHT
+          const newStartMin = Math.max(0, snapMinutes(Math.round(newStartHour * 60)))
+          const newStartHourSnapped = newStartMin / 60
+          const newDuration = Math.max(
+            MIN_DURATION,
+            Math.round((endHour - newStartHourSnapped) * 60),
+          )
+
+          setLocalHour(newStartHourSnapped)
+          setLocalDuration(newDuration)
+          onReschedule(hourToTimeStr(newStartHourSnapped))
+          onUpdateDuration(newDuration)
+
+          return 0
+        })
+      }
+
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
+    },
+    [baseHour, baseDuration, HOUR_HEIGHT, onReschedule, onUpdateDuration],
+  )
+
   return (
     <>
       <div
@@ -2568,7 +2734,7 @@ function CalendarHabitBlock({
             : 'cursor-pointer opacity-90 hover:opacity-100',
         )}
         style={{
-          top: Math.max(0, baseTop),
+          top: Math.max(0, baseTop + topResizeDelta),
           height: renderHeight,
           borderLeftColor: habit.color,
           backgroundColor: `${habit.color}1A`,
@@ -2578,6 +2744,15 @@ function CalendarHabitBlock({
         onMouseDown={handleDragStart}
         {...tooltipHandlers}
       >
+        {/* Top resize handle */}
+        <div
+          data-resize-handle
+          className="absolute top-0 left-0 right-0 flex cursor-n-resize items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
+          style={{ height: 7, zIndex: 1 }}
+          onMouseDown={handleTopResizeStart}
+        >
+          <div className="h-0.5 w-6 rounded-full" style={{ backgroundColor: habit.color }} />
+        </div>
         <div className="flex items-center gap-1">
           <HabitCheckbox completed={completed} color={habit.color} onChange={onToggle} size="sm" />
           {habit.icon && <span className="shrink-0 text-[10px]">{habit.icon}</span>}

@@ -930,6 +930,7 @@ function TimedTaskBlock({
   // Live drag/resize offsets (px, only non-zero while actively dragging)
   const [dragOffset, setDragOffset] = useState(0)
   const [resizeDelta, setResizeDelta] = useState(0)
+  const [topResizeDelta, setTopResizeDelta] = useState(0)
   const [interacting, setInteracting] = useState(false)
   const didMove = useRef(false)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
@@ -952,15 +953,15 @@ function TimedTaskBlock({
     }
   }, [task.duration_minutes, localDuration])
 
-  const currentTop = (baseHour - START_HOUR) * HOUR_HEIGHT + dragOffset
+  const currentTop = (baseHour - START_HOUR) * HOUR_HEIGHT + dragOffset + topResizeDelta
   const currentHeight = Math.max(
-    (baseDuration / 60) * HOUR_HEIGHT + resizeDelta,
+    (baseDuration / 60) * HOUR_HEIGHT - topResizeDelta + resizeDelta,
     (MIN_DURATION / 60) * HOUR_HEIGHT,
   )
   const renderHeight = currentHeight
 
   // Computed display times
-  const displayHours = pxToHours(currentTop, HOUR_HEIGHT)
+  const displayHours = pxToHours(Math.max(0, currentTop), HOUR_HEIGHT)
   const displayH = Math.floor(displayHours)
   const displayM = Math.round((displayHours - displayH) * 60)
   const displayDurationMin = Math.max(MIN_DURATION, Math.round((currentHeight / HOUR_HEIGHT) * 60))
@@ -1035,7 +1036,7 @@ function TimedTaskBlock({
     [baseHour, baseDuration, dt, task.id, updateTask],
   )
 
-  /* ── Resize to change duration ── */
+  /* ── Resize to change duration (bottom handle) ── */
   const handleResizeStart = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault()
@@ -1082,6 +1083,54 @@ function TimedTaskBlock({
     [baseDuration, task.id, updateTask],
   )
 
+  /* ── Resize to change start time (top handle, keeps end fixed) ── */
+  const handleTopResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setInteracting(true)
+      const startYVal = e.clientY
+
+      const onMove = (ev: MouseEvent) => setTopResizeDelta(ev.clientY - startYVal)
+
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+        setInteracting(false)
+
+        setTopResizeDelta((prev) => {
+          if (Math.abs(prev) < 4) return 0
+
+          const endHour = baseHour + baseDuration / 60
+          const newStartPx = Math.max(0, (baseHour - START_HOUR) * HOUR_HEIGHT + prev)
+          const newStartHour = START_HOUR + newStartPx / HOUR_HEIGHT
+          const newStartMin = Math.max(0, snapMinutes(Math.round(newStartHour * 60)))
+          const newStartHourSnapped = newStartMin / 60
+          const newDuration = Math.max(
+            MIN_DURATION,
+            Math.round((endHour - newStartHourSnapped) * 60),
+          )
+
+          setLocalHour(newStartHourSnapped)
+          setLocalDuration(newDuration)
+
+          const newDt = new Date(dt)
+          newDt.setHours(Math.floor(newStartMin / 60), newStartMin % 60, 0, 0)
+          updateTask.mutate({
+            id: task.id,
+            updates: { due_datetime: newDt.toISOString(), duration_minutes: newDuration },
+          })
+
+          return 0
+        })
+      }
+
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
+    },
+    [baseHour, baseDuration, dt, task.id, updateTask],
+  )
+
   const handleClick = () => {
     if (!didMove.current) {
       setSelectedTaskId(task.id)
@@ -1097,7 +1146,7 @@ function TimedTaskBlock({
         interacting ? 'shadow-lg z-30' : 'cursor-pointer',
       )}
       style={{
-        top: currentTop,
+        top: Math.max(0, currentTop),
         height: renderHeight,
         borderLeftColor: color,
         backgroundColor: `${color}18`,
@@ -1114,6 +1163,15 @@ function TimedTaskBlock({
         setContextMenu({ x: e.clientX, y: e.clientY })
       }}
     >
+      {/* Top resize handle */}
+      <div
+        data-resize-handle
+        className="absolute top-0 left-0 right-0 flex cursor-n-resize items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
+        style={{ height: 7, zIndex: 1 }}
+        onMouseDown={handleTopResizeStart}
+      >
+        <div className="h-1 w-8 rounded-full" style={{ backgroundColor: color }} />
+      </div>
       {contextMenu && (
         <TaskContextMenu
           task={task}
@@ -1702,14 +1760,16 @@ function TimedHabitBlock({
     if (localHour !== null && Math.abs(serverHour - localHour) < 0.01) setLocalHour(null)
   }, [scheduledTime, serverHour, localHour])
 
-  const currentTop = (baseHour - START_HOUR) * hourHeight + dragOffset
+  const [topResizeDelta, setTopResizeDelta] = useState(0)
+
+  const currentTop = (baseHour - START_HOUR) * hourHeight + dragOffset + topResizeDelta
   const currentHeight = Math.max(
-    (baseDuration / 60) * hourHeight + resizeDelta,
+    (baseDuration / 60) * hourHeight - topResizeDelta + resizeDelta,
     (MIN_DURATION / 60) * hourHeight,
   )
   const renderHeight = currentHeight
 
-  const displayHours = pxToHours(currentTop, hourHeight)
+  const displayHours = pxToHours(Math.max(0, currentTop), hourHeight)
   const displayH = Math.floor(displayHours)
   const displayM = Math.round((displayHours - displayH) * 60)
   const durMin = Math.max(MIN_DURATION, Math.round((currentHeight / hourHeight) * 60))
@@ -1797,6 +1857,48 @@ function TimedHabitBlock({
     [baseDuration, hourHeight],
   )
 
+  /* ── Resize top handle (changes start time, keeps end fixed) ── */
+  const handleTopResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setInteracting(true)
+      const startYVal = e.clientY
+
+      const onMove = (ev: MouseEvent) => setTopResizeDelta(ev.clientY - startYVal)
+
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+        setInteracting(false)
+
+        setTopResizeDelta((prev) => {
+          if (Math.abs(prev) < 4) return 0
+
+          const endHour = baseHour + baseDuration / 60
+          const newStartPx = Math.max(0, (baseHour - START_HOUR) * hourHeight + prev)
+          const newStartHour = START_HOUR + newStartPx / hourHeight
+          const newStartMin = Math.max(0, snapMinutes(Math.round(newStartHour * 60)))
+          const newStartHourSnapped = newStartMin / 60
+          const newDuration = Math.max(
+            MIN_DURATION,
+            Math.round((endHour - newStartHourSnapped) * 60),
+          )
+
+          setLocalHour(newStartHourSnapped)
+          setLocalDuration(newDuration)
+          onReschedule(hourToTimeStr(newStartHourSnapped))
+
+          return 0
+        })
+      }
+
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
+    },
+    [baseHour, baseDuration, hourHeight, onReschedule],
+  )
+
   return (
     <>
       <div
@@ -1806,7 +1908,7 @@ function TimedHabitBlock({
           interacting ? 'shadow-lg z-30' : 'cursor-pointer',
         )}
         style={{
-          top: currentTop,
+          top: Math.max(0, currentTop),
           height: renderHeight,
           borderLeftColor: habit.color,
           backgroundColor: `${habit.color}18`,
@@ -1816,6 +1918,15 @@ function TimedHabitBlock({
         onMouseDown={handleDragStart}
         {...tooltipHandlers}
       >
+        {/* Top resize handle */}
+        <div
+          data-resize-handle
+          className="absolute top-0 left-0 right-0 flex cursor-n-resize items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
+          style={{ height: 7, zIndex: 1 }}
+          onMouseDown={handleTopResizeStart}
+        >
+          <div className="h-1 w-8 rounded-full" style={{ backgroundColor: habit.color }} />
+        </div>
         <div className="flex items-start gap-1.5">
           <div className="mt-0.5 shrink-0">
             <HabitCheckbox
