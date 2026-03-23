@@ -18,6 +18,7 @@ import {
 } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { parseLocalDate } from '@/lib/utils'
+import { parseNLPTokens } from '@/services/dateParser'
 import { useFloatingPosition } from '@/hooks/useFloatingPosition'
 import {
   Calendar,
@@ -278,6 +279,9 @@ export function DateTimePicker({
   const [customDays, setCustomDays] = useState<string[]>([])
   const [customUseLastDay, setCustomUseLastDay] = useState(false)
 
+  const [nlpText, setNlpText] = useState('')
+  const nlpInputRef = useRef<HTMLInputElement>(null)
+
   const containerRef = useRef<HTMLDivElement>(null)
   const floatingStyle = useFloatingPosition(containerRef, open && !inline, 288) // w-72 = 288px
   const today = useMemo(() => new Date(), [])
@@ -510,6 +514,123 @@ export function DateTimePicker({
     onRecurrenceChange,
   ])
 
+  // ── NLP text input ───────────────────────────────────────────────────────────
+  // Parse "fin [date]" from the NLP text, returning { endDate, stripped }
+  const parseNLPEndDate = useCallback(
+    (text: string): { endDate: string | null; stripped: string } => {
+      const t = new Date()
+      // "fin YYYY-MM-DD"
+      let m = text.match(/\bfin\s+(\d{4})-(\d{2})-(\d{2})\b/i)
+      if (m) {
+        return { endDate: `${m[1]}-${m[2]}-${m[3]}`, stripped: text.replace(m[0], '').trim() }
+      }
+      // "fin DD/MM/YYYY" or "fin DD/MM" or "fin DD-MM-YYYY" or "fin DD-MM"
+      m = text.match(/\bfin\s+(\d{1,2})[/\-](\d{1,2})(?:[/\-](\d{2,4}))?\b/i)
+      if (m) {
+        const day = parseInt(m[1]!)
+        const month = parseInt(m[2]!)
+        const rawYear = m[3] ? parseInt(m[3]) : null
+        const year = rawYear !== null ? (rawYear < 100 ? 2000 + rawYear : rawYear) : t.getFullYear()
+        if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+          return {
+            endDate: format(new Date(year, month - 1, day), 'yyyy-MM-dd'),
+            stripped: text.replace(m[0], '').trim(),
+          }
+        }
+      }
+      return { endDate: null, stripped: text }
+    },
+    [],
+  )
+
+  // Live preview of NLP text
+  const nlpPreview = useMemo(() => {
+    if (!nlpText.trim()) return null
+    const { endDate, stripped } = parseNLPEndDate(nlpText)
+    const parsed = parseNLPTokens(stripped)
+    const chips: { label: string; color: string }[] = []
+    if (parsed.date) {
+      const d = parseLocalDate(parsed.date)
+      let label = ''
+      if (isSameDay(d, new Date())) label = 'Hoy'
+      else {
+        const tomorrow = addDays(new Date(), 1)
+        if (isSameDay(d, tomorrow)) label = 'Mañana'
+        else label = format(d, "d 'de' MMM", { locale: es })
+      }
+      if (parsed.hasTime && parsed.time) label += ` ${parsed.time}`
+      chips.push({ label, color: '#22C55E' })
+    }
+    if (parsed.durationMinutes !== null) {
+      chips.push({ label: formatDuration(parsed.durationMinutes), color: '#8B5CF6' })
+    }
+    if (parsed.isRecurring && parsed.recurrenceRule) {
+      const freqMatch = parsed.recurrenceRule.match(/FREQ=(\w+)/)
+      const intervalMatch = parsed.recurrenceRule.match(/INTERVAL=(\d+)/)
+      const freq = freqMatch?.[1] ?? ''
+      const interval = intervalMatch ? parseInt(intervalMatch[1]!) : 1
+      const labels: Record<string, string> = {
+        DAILY: interval > 1 ? `Cada ${interval} días` : 'Cada día',
+        WEEKLY: interval > 1 ? `Cada ${interval} sem.` : 'Cada semana',
+        MONTHLY: interval > 1 ? `Cada ${interval} meses` : 'Cada mes',
+        YEARLY: interval > 1 ? `Cada ${interval} años` : 'Cada año',
+      }
+      chips.push({ label: labels[freq] ?? 'Repite', color: '#F59E0B' })
+    }
+    if (endDate) {
+      chips.push({
+        label: `Fin ${format(parseLocalDate(endDate), 'd MMM', { locale: es })}`,
+        color: '#EC1E2A',
+      })
+    }
+    return chips.length > 0 ? chips : null
+  }, [nlpText, parseNLPEndDate])
+
+  const handleNLPApply = useCallback(() => {
+    if (!nlpText.trim()) return
+    const { endDate, stripped } = parseNLPEndDate(nlpText)
+    const parsed = parseNLPTokens(stripped)
+
+    if (parsed.date) {
+      const d = parseLocalDate(parsed.date)
+      onDateChange(parsed.date)
+      setViewMonth(d)
+    }
+    if (parsed.hasTime && parsed.time) {
+      onHasTimeChange(true)
+      onTimeChange(parsed.time)
+      setTimeExpanded(true)
+    }
+    if (parsed.durationMinutes !== null) {
+      onDurationChange(parsed.durationMinutes)
+    }
+    if (parsed.isRecurring && parsed.recurrenceRule) {
+      let rule = parsed.recurrenceRule
+      if (endDate) {
+        rule += `;UNTIL=${endDate.replace(/-/g, '')}T235959Z`
+      }
+      onRecurrenceChange(true, rule, recurrenceFrom)
+      setRepeatExpanded(true)
+    } else if (endDate && isRecurring && recurrenceRule) {
+      // Add/replace end date in existing rule
+      let rule = recurrenceRule.replace(/;UNTIL=[^;]+/, '')
+      rule += `;UNTIL=${endDate.replace(/-/g, '')}T235959Z`
+      onRecurrenceChange(true, rule, recurrenceFrom)
+    }
+    setNlpText('')
+  }, [
+    nlpText,
+    parseNLPEndDate,
+    onDateChange,
+    onHasTimeChange,
+    onTimeChange,
+    onDurationChange,
+    onRecurrenceChange,
+    recurrenceFrom,
+    isRecurring,
+    recurrenceRule,
+  ])
+
   // Trigger label — includes time + duration when set
   const triggerLabel = useMemo(() => {
     if (!selectedDate) return null
@@ -658,6 +779,64 @@ export function DateTimePicker({
           >
             {dateHeaderLabel}
           </div>
+
+          {/* NLP text input */}
+          <div className="px-3 pb-2">
+            <div
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5"
+              style={{
+                border: '1px solid var(--border-primary)',
+                backgroundColor: 'var(--bg-secondary)',
+              }}
+            >
+              <input
+                ref={nlpInputRef}
+                type="text"
+                value={nlpText}
+                onChange={(e) => setNlpText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleNLPApply()
+                  } else if (e.key === 'Escape') {
+                    setNlpText('')
+                  }
+                }}
+                placeholder="ej: mañana 14:00 cada semana fin 30/06"
+                className="flex-1 bg-transparent text-xs outline-none"
+                style={{ color: 'var(--text-primary)' }}
+              />
+              {nlpText && (
+                <button
+                  type="button"
+                  onClick={handleNLPApply}
+                  className="flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold transition-colors"
+                  style={{ backgroundColor: 'var(--color-primary)', color: '#fff' }}
+                >
+                  ↵
+                </button>
+              )}
+            </div>
+            {nlpPreview && (
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {nlpPreview.map((chip) => (
+                  <span
+                    key={chip.label}
+                    className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                    style={{
+                      backgroundColor: chip.color + '22',
+                      color: chip.color,
+                      border: `1px solid ${chip.color}44`,
+                    }}
+                  >
+                    {chip.label}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="mx-3 border-t" style={{ borderColor: 'var(--border-primary)' }} />
 
           {/* Quick shortcuts */}
           <div className="px-1 py-1">
