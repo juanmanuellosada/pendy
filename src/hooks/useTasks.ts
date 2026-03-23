@@ -164,7 +164,9 @@ export function useUpdateTask() {
         const oldTask = context.oldTask
         const loggableKeys = Object.keys(updates).filter((k) => k !== 'label_ids')
         if (loggableKeys.length > 0) {
-          const changes: Record<string, unknown> = { _title: oldTask.title }
+          const changes: Record<string, { old: unknown; new: unknown }> = {
+            _title: { old: oldTask.title, new: oldTask.title },
+          }
           for (const key of loggableKeys) {
             changes[key] = {
               old: oldTask[key as keyof Task],
@@ -242,7 +244,7 @@ export function useCompleteTask() {
             entity_id: id,
             action: 'completed',
             changes: {
-              _title: task?.title,
+              _title: { old: task?.title, new: task?.title },
               is_completed: { old: !completed, new: completed },
             },
           })
@@ -356,7 +358,7 @@ export function useDeleteTask() {
               entity_type: 'task',
               entity_id: id,
               action: 'deleted',
-              changes: { _snapshot: snapshot as unknown as Record<string, unknown> },
+              changes: { _snapshot: { old: snapshot, new: null } },
             })
             .catch(() => {})
         }
