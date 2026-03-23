@@ -6,7 +6,7 @@ import { AlignLeft, Hash, Calendar, Repeat, Tag } from 'lucide-react'
 import { useProjects } from '@/hooks/useProjects'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { TaskCheckbox } from '@/components/tasks/TaskCheckbox'
-import { cn, stripHtmlTags, stripLabelTokensFromText, stripLabelTokensFromHtml } from '@/lib/utils'
+import { cn, stripHtmlTags, stripLabelTokensFromHtml } from '@/lib/utils'
 import type { Task } from '@/lib/types'
 
 interface TaskTooltipProps {
