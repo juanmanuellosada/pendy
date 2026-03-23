@@ -118,6 +118,13 @@ export const TaskItem = memo(function TaskItem({
             (task.is_completed || completing) && !isSelectMode && 'line-through opacity-50',
           )}
           style={{ color: 'var(--text-primary)' }}
+          onClick={(e) => {
+            const anchor = (e.target as HTMLElement).closest('a')
+            if (anchor && (e.ctrlKey || e.metaKey)) {
+              e.stopPropagation()
+              window.open(anchor.getAttribute('href') ?? '', '_blank', 'noopener')
+            }
+          }}
           dangerouslySetInnerHTML={{
             __html: stripLabelTokensFromHtml(task.title).replace(/^<p>(.*)<\/p>$/, '$1'),
           }}

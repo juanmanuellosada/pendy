@@ -6,7 +6,7 @@ import { AlignLeft, Hash, Calendar, Repeat, Tag } from 'lucide-react'
 import { useProjects } from '@/hooks/useProjects'
 import { useAllTaskLabelsMap } from '@/hooks/useLabels'
 import { TaskCheckbox } from '@/components/tasks/TaskCheckbox'
-import { cn, stripHtmlTags, stripLabelTokensFromText } from '@/lib/utils'
+import { cn, stripHtmlTags, stripLabelTokensFromText, stripLabelTokensFromHtml } from '@/lib/utils'
 import type { Task } from '@/lib/types'
 
 interface TaskTooltipProps {
@@ -151,13 +151,14 @@ export function TaskTooltip({ task, children, disabled }: TaskTooltipProps) {
               </div>
               <p
                 className={cn(
-                  'text-sm font-medium leading-snug',
+                  'tiptap text-sm font-medium leading-snug',
                   task.is_completed && 'line-through opacity-60',
                 )}
                 style={{ color: 'var(--text-primary)' }}
-              >
-                {stripLabelTokensFromText(stripHtmlTags(task.title))}
-              </p>
+                dangerouslySetInnerHTML={{
+                  __html: stripLabelTokensFromHtml(task.title).replace(/^<p>(.*)<\/p>$/, '$1'),
+                }}
+              />
             </div>
 
             {/* Description */}

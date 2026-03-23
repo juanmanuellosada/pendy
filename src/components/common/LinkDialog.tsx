@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
 interface LinkDialogProps {
@@ -30,13 +31,13 @@ export function LinkDialog({ open, initialUrl, initialText, onSubmit, onClose }:
     onSubmit(url.trim(), showText ? text.trim() : undefined)
   }
 
-  return (
+  return createPortal(
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-50 bg-black/30 animate-fade-backdrop" onClick={onClose} />
+      <div className="fixed inset-0 z-[500] bg-black/30 animate-fade-backdrop" onClick={onClose} />
       {/* Dialog */}
       <div
-        className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm rounded-xl border p-5 shadow-lg animate-scale-in"
+        className="fixed left-1/2 top-1/2 z-[500] -translate-x-1/2 -translate-y-1/2 w-full max-w-sm rounded-xl border p-5 shadow-lg animate-scale-in"
         style={{
           backgroundColor: 'var(--bg-primary)',
           borderColor: 'var(--border-primary)',
@@ -135,6 +136,7 @@ export function LinkDialog({ open, initialUrl, initialText, onSubmit, onClose }:
           </div>
         </form>
       </div>
-    </>
+    </>,
+    document.body,
   )
 }
