@@ -282,6 +282,95 @@ export function DateTimePicker({
   const [nlpText, setNlpText] = useState('')
   const nlpInputRef = useRef<HTMLInputElement>(null)
 
+  // Build a human-readable NLP string from the current picker values
+  const buildNLPText = useCallback((): string => {
+    const parts: string[] = []
+    const todayDate = new Date()
+
+    // Date
+    if (date) {
+      const d = parseLocalDate(date)
+      if (isSameDay(d, todayDate)) parts.push('hoy')
+      else if (isSameDay(d, addDays(todayDate, 1))) parts.push('mañana')
+      else parts.push(format(d, 'dd/MM/yyyy'))
+    }
+
+    // Time
+    if (hasTime && time) parts.push(time)
+
+    // Recurrence
+    if (isRecurring && recurrenceRule) {
+      const freqMatch = recurrenceRule.match(/FREQ=(\w+)/)
+      const intervalMatch = recurrenceRule.match(/INTERVAL=(\d+)/)
+      const bydayMatch = recurrenceRule.match(/BYDAY=([^;]+)/)
+      const bymonthDayMatch = recurrenceRule.match(/BYMONTHDAY=(-?\d+)/)
+      const untilMatch = recurrenceRule.match(/UNTIL=(\d{8})/)
+
+      const freq = freqMatch?.[1] ?? ''
+      const interval = intervalMatch ? parseInt(intervalMatch[1]!) : 1
+
+      if (freq === 'WEEKLY' && bydayMatch) {
+        const days = bydayMatch[1]!.split(',')
+        const dayNameMap: Record<string, string> = {
+          MO: 'lunes',
+          TU: 'martes',
+          WE: 'miércoles',
+          TH: 'jueves',
+          FR: 'viernes',
+          SA: 'sábado',
+          SU: 'domingo',
+        }
+        if (days.length === 5 && ['MO', 'TU', 'WE', 'TH', 'FR'].every((d) => days.includes(d))) {
+          parts.push('cada día laborable')
+        } else if (days.length === 1) {
+          parts.push(`cada ${dayNameMap[days[0]!] ?? days[0]}`)
+        } else {
+          parts.push(interval > 1 ? `cada ${interval} semanas` : 'cada semana')
+        }
+      } else if (freq === 'MONTHLY' && bymonthDayMatch?.[1] === '-1') {
+        parts.push('cada mes')
+      } else {
+        const freqMap: Record<string, [string, string]> = {
+          DAILY: ['cada día', 'cada %d días'],
+          WEEKLY: ['cada semana', 'cada %d semanas'],
+          MONTHLY: ['cada mes', 'cada %d meses'],
+          YEARLY: ['cada año', 'cada %d años'],
+        }
+        const [singular, plural] = freqMap[freq] ?? ['cada día', 'cada %d días']
+        parts.push(interval > 1 ? plural!.replace('%d', String(interval)) : singular!)
+      }
+
+      // End date
+      if (untilMatch) {
+        const y = untilMatch[1]!.slice(0, 4)
+        const m = untilMatch[1]!.slice(4, 6)
+        const d = untilMatch[1]!.slice(6, 8)
+        parts.push(`fin ${d}/${m}/${y}`)
+      }
+    }
+
+    return parts.join(' ')
+  }, [date, time, hasTime, isRecurring, recurrenceRule])
+
+  // Pre-fill NLP text when picker opens (or on mount for inline)
+  useEffect(() => {
+    if (open || inline) {
+      setNlpText(buildNLPText())
+    } else {
+      setNlpText('')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  // Also update NLP text when values change externally while open (e.g. clicking calendar)
+  // but only if the user is not actively typing in the input
+  useEffect(() => {
+    if ((open || inline) && document.activeElement !== nlpInputRef.current) {
+      setNlpText(buildNLPText())
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date, time, hasTime, isRecurring, recurrenceRule])
+
   const containerRef = useRef<HTMLDivElement>(null)
   const floatingStyle = useFloatingPosition(containerRef, open && !inline, 288) // w-72 = 288px
   const today = useMemo(() => new Date(), [])
