@@ -120,8 +120,9 @@ export const TaskItem = memo(function TaskItem({
           style={{ color: 'var(--text-primary)' }}
           onClick={(e) => {
             const anchor = (e.target as HTMLElement).closest('a')
-            if (anchor && (e.ctrlKey || e.metaKey)) {
+            if (anchor) {
               e.stopPropagation()
+              e.preventDefault()
               window.open(anchor.getAttribute('href') ?? '', '_blank', 'noopener')
             }
           }}

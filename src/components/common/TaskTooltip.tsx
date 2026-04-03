@@ -22,7 +22,8 @@ interface TaskTooltipProps {
 export function TaskTooltip({ task, children, disabled }: TaskTooltipProps) {
   const [show, setShow] = useState(false)
   const [pos, setPos] = useState<{ x: number; y: number; w: number }>({ x: 0, y: 0, w: 0 })
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const showTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
 
   const { data: projects } = useProjects()
@@ -35,38 +36,60 @@ export function TaskTooltip({ task, children, disabled }: TaskTooltipProps) {
     : null
   const description = task.description ? stripHtmlTags(task.description).trim() : ''
 
+  const clearTimers = () => {
+    if (showTimerRef.current) {
+      clearTimeout(showTimerRef.current)
+      showTimerRef.current = null
+    }
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current)
+      hideTimerRef.current = null
+    }
+  }
+
   const handleMouseEnter = (e: React.MouseEvent) => {
     if (disabled) return
+    clearTimers()
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     setPos({ x: rect.left, y: rect.top, w: rect.width })
-    timerRef.current = setTimeout(() => setShow(true), 400)
+    showTimerRef.current = setTimeout(() => setShow(true), 400)
   }
 
   const handleMouseLeave = () => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current)
-      timerRef.current = null
+    if (showTimerRef.current) {
+      clearTimeout(showTimerRef.current)
+      showTimerRef.current = null
     }
-    setShow(false)
+    // Small delay so mouse can move from trigger to tooltip without it disappearing
+    hideTimerRef.current = setTimeout(() => setShow(false), 150)
+  }
+
+  const handleTooltipMouseEnter = () => {
+    // Cancel pending hide when hovering over the tooltip itself
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current)
+      hideTimerRef.current = null
+    }
+  }
+
+  const handleTooltipMouseLeave = () => {
+    hideTimerRef.current = setTimeout(() => setShow(false), 150)
   }
 
   // Hide when disabled changes (e.g., drag starts)
   useEffect(() => {
     if (disabled) {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current)
-        timerRef.current = null
-      }
+      clearTimers()
       setShow(false)
     }
-  }, [disabled])
+  }, [disabled]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Clean up timer on unmount
+  // Clean up timers on unmount
   useEffect(
     () => () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
+      clearTimers()
     },
-    [],
+    [], // eslint-disable-line react-hooks/exhaustive-deps
   )
 
   // Position tooltip
@@ -119,7 +142,8 @@ export function TaskTooltip({ task, children, disabled }: TaskTooltipProps) {
           children.props.onMouseLeave?.(e)
         },
         onMouseDown: (e: React.MouseEvent) => {
-          handleMouseLeave() // cancel/hide tooltip on interaction
+          clearTimers()
+          setShow(false)
           children.props.onMouseDown?.(e)
         },
       })
@@ -132,7 +156,9 @@ export function TaskTooltip({ task, children, disabled }: TaskTooltipProps) {
         createPortal(
           <div
             ref={tooltipRef}
-            className="fixed z-[100] w-64 rounded-xl p-3 shadow-2xl border pointer-events-none animate-fade-in"
+            onMouseEnter={handleTooltipMouseEnter}
+            onMouseLeave={handleTooltipMouseLeave}
+            className="fixed z-[100] w-64 rounded-xl p-3 shadow-2xl border animate-fade-in"
             style={{
               backgroundColor: 'var(--bg-primary)',
               borderColor: 'var(--border-primary)',
@@ -155,6 +181,14 @@ export function TaskTooltip({ task, children, disabled }: TaskTooltipProps) {
                   task.is_completed && 'line-through opacity-60',
                 )}
                 style={{ color: 'var(--text-primary)' }}
+                onClick={(e) => {
+                  const anchor = (e.target as HTMLElement).closest('a')
+                  if (anchor) {
+                    e.stopPropagation()
+                    e.preventDefault()
+                    window.open(anchor.getAttribute('href') ?? '', '_blank', 'noopener')
+                  }
+                }}
                 dangerouslySetInnerHTML={{
                   __html: stripLabelTokensFromHtml(task.title).replace(/^<p>(.*)<\/p>$/, '$1'),
                 }}
