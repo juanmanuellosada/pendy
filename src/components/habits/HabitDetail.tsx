@@ -25,6 +25,62 @@ import { stripHtmlTags } from '@/lib/utils'
 import { TitleEditor } from '@/components/tasks/TitleEditor'
 import type { Habit } from '@/lib/types'
 
+// ── Selector de hora personalizado (HH : MM) ──────────────────────────────────
+function TimeSelect({
+  value,
+  onChange,
+  accentColor,
+}: {
+  value: string
+  onChange: (v: string) => void
+  accentColor?: string
+}) {
+  const [hStr, mStr] = value ? value.split(':') : ['', '']
+  const hVal = hStr ?? '00'
+  const mVal = mStr ? String((Math.round(parseInt(mStr) / 5) * 5) % 60).padStart(2, '0') : '00'
+
+  return (
+    <div
+      className="flex items-center rounded-lg overflow-hidden"
+      style={{
+        border: `1px solid ${value && accentColor ? accentColor : 'var(--border-primary)'}`,
+        backgroundColor: 'var(--bg-secondary)',
+      }}
+    >
+      <select
+        value={hVal}
+        onChange={(e) => onChange(`${e.target.value}:${mVal}`)}
+        className="outline-none text-sm font-medium px-2 py-2 cursor-pointer appearance-none"
+        style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+      >
+        {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map((h) => (
+          <option key={h} value={h}>
+            {h}
+          </option>
+        ))}
+      </select>
+      <span
+        className="text-sm font-medium select-none"
+        style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)' }}
+      >
+        :
+      </span>
+      <select
+        value={mVal}
+        onChange={(e) => onChange(`${hVal}:${e.target.value}`)}
+        className="outline-none text-sm font-medium px-2 py-2 cursor-pointer appearance-none"
+        style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+      >
+        {Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0')).map((m) => (
+          <option key={m} value={m}>
+            {m}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
 const PRESET_COLORS = [
   '#283B56',
   '#EC1E2A',
@@ -349,27 +405,37 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
               Horario
             </p>
             <div className="flex items-end gap-3">
-              <div className="flex-1">
+              <div>
                 <label
                   className="mb-1 block text-xs font-medium"
                   style={{ color: 'var(--text-secondary)' }}
                 >
                   Inicio
                 </label>
-                <input
-                  type="time"
-                  value={localTime}
-                  onChange={(e) => setLocalTime(e.target.value)}
-                  className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors"
-                  style={{
-                    borderColor: localTime ? form.color : 'var(--border-primary)',
-                    backgroundColor: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)',
-                  }}
-                />
+                {localTime ? (
+                  <TimeSelect value={localTime} onChange={setLocalTime} accentColor={form.color} />
+                ) : (
+                  <button
+                    onClick={() => setLocalTime('09:00')}
+                    className="rounded-lg border px-3 py-2 text-sm transition-colors"
+                    style={{
+                      borderColor: 'var(--border-primary)',
+                      backgroundColor: 'var(--bg-secondary)',
+                      color: 'var(--text-muted)',
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')
+                    }
+                  >
+                    Asignar hora
+                  </button>
+                )}
               </div>
               {endTime && (
-                <div className="flex-1">
+                <div>
                   <label
                     className="mb-1 block text-xs font-medium"
                     style={{ color: 'var(--text-secondary)' }}
@@ -377,16 +443,44 @@ function HabitDetailInner({ habitId, dateStr }: { habitId: string; dateStr: stri
                     Fin (estimado)
                   </label>
                   <div
-                    className="w-full rounded-lg border px-3 py-2 text-sm"
+                    className="flex items-center rounded-lg overflow-hidden"
                     style={{
-                      borderColor: 'var(--border-secondary)',
+                      border: '1px solid var(--border-primary)',
                       backgroundColor: 'var(--bg-secondary)',
-                      color: 'var(--text-muted)',
                     }}
                   >
-                    {endTime}
+                    <span
+                      className="px-2 py-2 text-sm font-medium select-none"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      {endTime.split(':')[0]}
+                    </span>
+                    <span
+                      className="text-sm font-medium select-none"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      :
+                    </span>
+                    <span
+                      className="px-2 py-2 text-sm font-medium select-none"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      {endTime.split(':')[1]}
+                    </span>
                   </div>
                 </div>
+              )}
+              {localTime && (
+                <button
+                  onClick={() => setLocalTime('')}
+                  className="mb-0.5 rounded p-1.5 transition-colors"
+                  style={{ color: 'var(--text-muted)' }}
+                  title="Quitar hora"
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                >
+                  <X size={14} />
+                </button>
               )}
             </div>
 
