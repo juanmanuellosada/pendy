@@ -1762,10 +1762,15 @@ function TimedHabitBlock({
 
   const [topResizeDelta, setTopResizeDelta] = useState(0)
 
+  const isMobile = useIsMobile()
   const currentTop = (baseHour - START_HOUR) * hourHeight + dragOffset + topResizeDelta
+  // On mobile the timeline is compressed, so enforce a 32 px tap-target minimum
+  const mobileMinHeight = isMobile
+    ? Math.max((MIN_DURATION / 60) * hourHeight, 32)
+    : (MIN_DURATION / 60) * hourHeight
   const currentHeight = Math.max(
     (baseDuration / 60) * hourHeight - topResizeDelta + resizeDelta,
-    (MIN_DURATION / 60) * hourHeight,
+    mobileMinHeight,
   )
   const renderHeight = currentHeight
 
