@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react'
+import { useEffect, useCallback, useState, useRef } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -6,6 +6,10 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import Highlight from '@tiptap/extension-highlight'
 import { Markdown } from 'tiptap-markdown'
+import { Table } from '@tiptap/extension-table'
+import { TableRow } from '@tiptap/extension-table-row'
+import { TableHeader } from '@tiptap/extension-table-header'
+import { TableCell } from '@tiptap/extension-table-cell'
 import {
   Bold,
   Italic,
@@ -25,10 +29,17 @@ import {
   Highlighter,
   Undo2,
   Redo2,
+  Table as TableIcon,
+  Info,
+  Lightbulb,
+  FileText,
+  AlertTriangle,
+  AlertCircle,
 } from 'lucide-react'
 import { LinkDialog } from '@/components/common/LinkDialog'
 import { LinkBubble } from '@/components/common/LinkBubble'
 import { BreakMarksOnSpace, NormalizeCheckboxPaste } from '@/lib/tiptapExtensions'
+import { Callout } from './extensions/Callout'
 
 interface MarkdownEditorProps {
   content: string
@@ -90,6 +101,9 @@ export function MarkdownEditor({
   // Force re-render on selection change so toolbar buttons reflect active formats
   const [, setTick] = useState(0)
 
+  const [calloutMenuOpen, setCalloutMenuOpen] = useState(false)
+  const calloutMenuRef = useRef<HTMLDivElement>(null)
+
   const [linkDialogOpen, setLinkDialogOpen] = useState(false)
   const [linkInitialUrl, setLinkInitialUrl] = useState('')
   const [linkInitialText, setLinkInitialText] = useState<string | undefined>(undefined)
@@ -124,6 +138,11 @@ export function MarkdownEditor({
       }),
       BreakMarksOnSpace,
       NormalizeCheckboxPaste,
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      Callout,
     ],
     content,
     onUpdate: ({ editor: ed }) => {
@@ -140,6 +159,18 @@ export function MarkdownEditor({
       editor.off('selectionUpdate', onSelectionUpdate)
     }
   }, [editor])
+
+  // Close callout dropdown on outside click
+  useEffect(() => {
+    if (!calloutMenuOpen) return
+    const handleClick = (e: MouseEvent) => {
+      if (calloutMenuRef.current && !calloutMenuRef.current.contains(e.target as Node)) {
+        setCalloutMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [calloutMenuOpen])
 
   useEffect(() => {
     if (!editor) return
@@ -367,6 +398,75 @@ export function MarkdownEditor({
           <ToolbarButton onClick={openLinkDialog} isActive={editor.isActive('link')} label="Enlace">
             <LinkIcon size={14} />
           </ToolbarButton>
+
+          <Separator />
+
+          {/* Table */}
+          <ToolbarButton
+            onClick={cmd(() =>
+              editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
+            )}
+            isActive={editor.isActive('table')}
+            label="Insertar tabla"
+          >
+            <TableIcon size={14} />
+          </ToolbarButton>
+
+          {/* Callout dropdown */}
+          <div ref={calloutMenuRef} className="relative">
+            <ToolbarButton
+              onClick={() => setCalloutMenuOpen((v) => !v)}
+              isActive={editor.isActive('callout') || calloutMenuOpen}
+              label="Insertar callout"
+            >
+              <Info size={14} />
+            </ToolbarButton>
+
+            {calloutMenuOpen && (
+              <div
+                className="absolute left-0 top-full z-50 mt-1 w-40 overflow-hidden rounded-lg border shadow-md"
+                style={{
+                  backgroundColor: 'var(--bg-primary)',
+                  borderColor: 'var(--border-primary)',
+                }}
+              >
+                {(
+                  [
+                    { type: 'info', label: 'Info', Icon: Info, color: '#3B82F6' },
+                    { type: 'tip', label: 'Tip', Icon: Lightbulb, color: '#22C55E' },
+                    { type: 'note', label: 'Nota', Icon: FileText, color: '#6B7280' },
+                    {
+                      type: 'warning',
+                      label: 'Advertencia',
+                      Icon: AlertTriangle,
+                      color: '#F59E0B',
+                    },
+                    { type: 'danger', label: 'Peligro', Icon: AlertCircle, color: '#EC1E2A' },
+                  ] as const
+                ).map(({ type, label, Icon, color }) => (
+                  <button
+                    key={type}
+                    type="button"
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-sm transition-colors"
+                    style={{ color: 'var(--text-primary)' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--bg-hover)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent'
+                    }}
+                    onClick={() => {
+                      editor.chain().focus().setCallout({ type, title: '' }).run()
+                      setCalloutMenuOpen(false)
+                    }}
+                  >
+                    <Icon size={13} style={{ color }} />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <Separator />
 
