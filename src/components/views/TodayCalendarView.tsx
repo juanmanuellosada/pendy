@@ -33,7 +33,6 @@ import {
   getEventColor,
   getCalendarName,
 } from '@/components/common/CalendarEventTooltip'
-import { useIsMobile } from '@/hooks/useIsMobile'
 import {
   habitAppearsOnDate,
   getScheduledTimeForDate,
@@ -113,7 +112,6 @@ export function TodayCalendarView({
   showCompleted = true,
   showHabits = true,
 }: TodayCalendarViewProps) {
-  const isMobile = useIsMobile()
   const hourHeight = HOUR_HEIGHT
   const containerRef = useRef<HTMLDivElement>(null)
   const gridRef = useRef<HTMLDivElement>(null)
