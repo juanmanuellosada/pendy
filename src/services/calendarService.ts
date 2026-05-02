@@ -360,27 +360,42 @@ export async function fetchGoogleEvents(
   calendarMeta?: { calendarName?: string; calendarColor?: string },
 ): Promise<CalendarEvent[]> {
   const encodedId = encodeURIComponent(calendarId)
-  const params = new URLSearchParams({
+  const baseParams = new URLSearchParams({
     timeMin: from.toISOString(),
     timeMax: to.toISOString(),
     singleEvents: 'true',
     orderBy: 'startTime',
-    maxResults: '100',
+    maxResults: '250',
   })
 
-  const response = await fetch(
-    `https://www.googleapis.com/calendar/v3/calendars/${encodedId}/events?${params.toString()}`,
-    { headers: { Authorization: `Bearer ${accessToken}` } },
-  )
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const allItems: any[] = []
+  let pageToken: string | undefined
+  const MAX_PAGES = 10 // safety cap — 2500 events per range should never be hit in practice
 
-  if (!response.ok) {
-    if (response.status === 401) throw new Error('TOKEN_EXPIRED')
-    throw new Error(`Google Calendar API error: ${response.status}`)
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const params = new URLSearchParams(baseParams)
+    if (pageToken) params.set('pageToken', pageToken)
+
+    const response = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${encodedId}/events?${params.toString()}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    )
+
+    if (!response.ok) {
+      if (response.status === 401) throw new Error('TOKEN_EXPIRED')
+      throw new Error(`Google Calendar API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    allItems.push(...(data.items ?? []))
+
+    if (!data.nextPageToken) break
+    pageToken = data.nextPageToken
   }
 
-  const data = await response.json()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let events: CalendarEvent[] = (data.items ?? []).map((item: any) =>
+  let events: CalendarEvent[] = allItems.map((item: any) =>
     normalizeGoogleEvent(item, { calendarId, ...calendarMeta }),
   )
 
