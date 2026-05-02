@@ -210,7 +210,7 @@ export function CalendarView({
   // En mobile, semana y 4 días se colapsan a vista de día
   const effectiveMode: CalendarMode =
     isMobile && (calendarMode === 'week' || calendarMode === '4days') ? 'day' : calendarMode
-  const hourHeight = isMobile ? 48 : HOUR_HEIGHT
+  const hourHeight = HOUR_HEIGHT
 
   const [currentDate, setCurrentDate] = useState(() => {
     const d = new Date()
@@ -2701,15 +2701,10 @@ function CalendarHabitBlock({
     if (localHour !== null && Math.abs(serverHour - localHour) < 0.01) setLocalHour(null)
   }, [scheduledTime, serverHour, localHour])
 
-  const isMobile = useIsMobile()
   const baseTop = (baseHour - START_HOUR) * HOUR_HEIGHT + activeDragDy
-  // On mobile the timeline is compressed, so enforce a 32 px tap-target minimum
-  const mobileMinHeight = isMobile
-    ? Math.max((MIN_DURATION / 60) * HOUR_HEIGHT, 32)
-    : (MIN_DURATION / 60) * HOUR_HEIGHT
   const currentHeight = Math.max(
     (baseDuration / 60) * HOUR_HEIGHT - topResizeDelta + resizeDelta,
-    mobileMinHeight,
+    (MIN_DURATION / 60) * HOUR_HEIGHT,
   )
   const renderHeight = currentHeight
 
