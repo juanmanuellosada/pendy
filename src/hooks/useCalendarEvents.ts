@@ -7,6 +7,7 @@ import {
   updateGoogleEvent,
   deleteGoogleEvent,
   moveGoogleEvent,
+  updateSyncStatus,
 } from '@/services/calendarService'
 import { useCalendarIntegrations, useRefreshCalendarToken } from './useCalendarIntegrations'
 import { useAuth } from './useAuth'
@@ -83,16 +84,23 @@ async function fetchGoogleEventsWithRefresh(
   }
 
   try {
-    return await fetchAll(access_token)
+    const events = await fetchAll(access_token)
+    updateSyncStatus(integration.id, 'ok')
+    return events
   } catch (err) {
     if (err instanceof Error && err.message === 'TOKEN_EXPIRED') {
       try {
         const refreshed = await refreshFn()
-        return await fetchAll(refreshed.access_token)
+        const events = await fetchAll(refreshed.access_token)
+        updateSyncStatus(integration.id, 'ok')
+        return events
       } catch {
+        updateSyncStatus(integration.id, 'token_expired', 'Token expirado, reconectá tu calendario')
         return []
       }
     }
+    const msg = err instanceof Error ? err.message : 'Error de sincronización'
+    updateSyncStatus(integration.id, 'error', msg)
     return []
   }
 }
@@ -110,8 +118,10 @@ export function useTodayCalendarEvents() {
   return useQuery<CalendarEvent[]>({
     queryKey: ['calendarEvents', 'today', user?.id],
     enabled: !!user && !!googleIntegration,
-    staleTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
     select: rehydrateEvents,
     queryFn: async () => {
       const from = startOfDay(new Date())
@@ -148,8 +158,10 @@ export function useUpcomingCalendarEvents(days: number) {
   return useQuery<CalendarEvent[]>({
     queryKey: ['calendarEvents', 'upcoming', user?.id, days],
     enabled: !!user && !!googleIntegration,
-    staleTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
     select: rehydrateEvents,
     queryFn: async () => {
       const today = startOfDay(new Date())
@@ -184,8 +196,10 @@ export function useCalendarEventsByRange(from: Date | null, to: Date | null) {
   return useQuery<CalendarEvent[]>({
     queryKey: ['calendarEvents', 'range', user?.id, fromKey, toKey],
     enabled: !!user && !!googleIntegration && !!from && !!to,
-    staleTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
     select: rehydrateEvents,
     queryFn: async () => {
       const makeRefreshFn = async () => {

@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo, useEffect, useCallback, createContext, useContext } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { RRule } from 'rrule'
 import { createPortal } from 'react-dom'
 import {
@@ -17,9 +18,20 @@ import {
   isToday,
   isSameMonth,
   isSameDay,
+  formatDistanceToNow,
 } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { ChevronLeft, ChevronRight, Plus, Calendar, CheckSquare, X, Pencil } from 'lucide-react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Calendar,
+  CheckSquare,
+  X,
+  Pencil,
+  RefreshCw,
+  AlertCircle,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import {
   useCalendarTasks,
@@ -58,6 +70,7 @@ import {
 import { CalendarEventEditor } from '@/components/common/CalendarEventEditor'
 import type { CalendarMode } from '@/stores/uiStore'
 import { useCalendarEventsByRange } from '@/hooks/useCalendarEvents'
+import { useCalendarIntegrations, useConnectCalendar } from '@/hooks/useCalendarIntegrations'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import {
   habitAppearsOnDate,
@@ -251,7 +264,48 @@ export function CalendarView({
 
   const rangeFrom = days.length > 0 ? days[0]! : null
   const rangeTo = days.length > 0 ? days[days.length - 1]! : null
-  const { data: calendarEvents = [] } = useCalendarEventsByRange(rangeFrom, rangeTo)
+  const { data: calendarEvents = [], isFetching: isCalendarFetching } = useCalendarEventsByRange(
+    rangeFrom,
+    rangeTo,
+  )
+
+  const queryClient = useQueryClient()
+  const { data: integrations = [] } = useCalendarIntegrations()
+  const { startOAuth } = useConnectCalendar()
+
+  // Banner de reconexión — dismissable por sesión
+  const BANNER_KEY = 'calendar_reconnect_banner_dismissed'
+  const [bannerDismissed, setBannerDismissed] = useState(
+    () => sessionStorage.getItem(BANNER_KEY) === '1',
+  )
+  const dismissBanner = () => {
+    sessionStorage.setItem(BANNER_KEY, '1')
+    setBannerDismissed(true)
+  }
+
+  // Tick cada 60 s para actualizar el texto "hace X min"
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setTick((n) => n + 1), 60_000)
+    return () => clearInterval(id)
+  }, [])
+
+  const expiredIntegrations = integrations.filter(
+    (i) => i.provider === 'google' && i.sync_status === 'token_expired',
+  )
+  const showReconnectBanner = !bannerDismissed && expiredIntegrations.length > 0
+
+  // Última sincronización exitosa entre todas las integraciones activas
+  const lastSyncedAt = integrations
+    .filter((i) => i.provider === 'google' && i.is_active && i.last_synced_at)
+    .map((i) => new Date(i.last_synced_at!).getTime())
+    .reduce<number | null>((max, t) => (max === null || t > max ? t : max), null)
+
+  const lastSyncLabel = isCalendarFetching
+    ? 'Sincronizando...'
+    : lastSyncedAt !== null
+      ? `Sincronizado ${formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true, locale: es })}`
+      : null
 
   // Habits data
   const { data: habits = [] } = useHabits()
@@ -366,6 +420,48 @@ export function CalendarView({
     <HourHeightCtx.Provider value={hourHeight}>
       <>
         <div className="flex flex-col animate-fade-in">
+          {/* Banner de reconexión */}
+          {showReconnectBanner && (
+            <div
+              className="flex items-start gap-3 rounded-lg p-3 mb-4 border-l-4"
+              style={{
+                backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                borderLeftColor: '#F59E0B',
+              }}
+            >
+              <AlertCircle size={18} className="mt-0.5 shrink-0" style={{ color: '#F59E0B' }} />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm" style={{ color: 'var(--text-primary)' }}>
+                  {expiredIntegrations.length > 1
+                    ? 'Tus calendarios de Google se desconectaron. Reconectalos para volver a sincronizar.'
+                    : 'Tu calendario de Google se desconectó. Reconectalo para volver a sincronizar.'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => startOAuth()}
+                  className="rounded-md px-3 py-1 text-xs font-medium transition-colors"
+                  style={{
+                    backgroundColor: '#F59E0B',
+                    color: '#ffffff',
+                  }}
+                >
+                  Reconectar
+                </button>
+                <button
+                  onClick={dismissBanner}
+                  className="rounded p-0.5 transition-colors"
+                  style={{ color: 'var(--text-muted)' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  aria-label="Cerrar"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Navigation */}
           <div className="flex items-center gap-2 mb-5">
             <button
@@ -405,6 +501,24 @@ export function CalendarView({
             >
               {periodLabel}
             </span>
+            <div className="ml-auto flex items-center gap-2">
+              {lastSyncLabel && (
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  {lastSyncLabel}
+                </span>
+              )}
+              <button
+                onClick={() => queryClient.invalidateQueries({ queryKey: ['calendarEvents'] })}
+                className="rounded-lg p-1.5 transition-colors"
+                style={{ color: 'var(--text-secondary)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                title={lastSyncLabel ? lastSyncLabel : 'Refrescar calendario'}
+                aria-label="Refrescar calendario"
+              >
+                <RefreshCw size={14} className={isCalendarFetching ? 'animate-spin' : ''} />
+              </button>
+            </div>
           </div>
 
           {/* ── Timeline mode (week / 4days / day) ── */}

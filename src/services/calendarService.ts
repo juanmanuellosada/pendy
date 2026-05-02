@@ -1,4 +1,27 @@
+import { supabase } from '@/lib/supabase'
 import type { CalendarEvent, CalendarEventReminder, GoogleCalendarListEntry } from '@/lib/types'
+
+// ─── Sync status helper ───────────────────────────────────────────────────────
+
+/** Actualiza los campos de metadata de sincronización en calendar_integrations.
+ *  Fire-and-forget: no lanza, solo loggea errores para no bloquear el render. */
+export function updateSyncStatus(
+  integrationId: string,
+  status: 'ok' | 'token_expired' | 'error',
+  errorMessage?: string,
+): void {
+  supabase
+    .from('calendar_integrations')
+    .update({
+      sync_status: status,
+      last_sync_error: errorMessage ?? null,
+      ...(status === 'ok' ? { last_synced_at: new Date().toISOString() } : {}),
+    })
+    .eq('id', integrationId)
+    .then(({ error }) => {
+      if (error) console.error('[calendarService] updateSyncStatus error:', error)
+    })
+}
 
 // ─── PKCE helpers ────────────────────────────────────────────────────────────
 

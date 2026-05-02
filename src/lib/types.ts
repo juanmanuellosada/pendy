@@ -245,6 +245,9 @@ export interface CalendarIntegration {
   email: string | null
   is_active: boolean
   selected_calendar_ids: string[]
+  last_synced_at: string | null
+  last_sync_error: string | null
+  sync_status: 'ok' | 'token_expired' | 'error'
   created_at: string
   updated_at: string
 }
