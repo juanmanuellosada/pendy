@@ -7,6 +7,7 @@ import {
   endOfMonth,
   startOfWeek,
   endOfWeek,
+  endOfDay,
   addMonths,
   subMonths,
   addWeeks,
@@ -263,7 +264,7 @@ export function CalendarView({
   const { data: recurringTasks = [] } = useRecurringTasks()
 
   const rangeFrom = days.length > 0 ? days[0]! : null
-  const rangeTo = days.length > 0 ? days[days.length - 1]! : null
+  const rangeTo = days.length > 0 ? endOfDay(days[days.length - 1]!) : null // include full last day
   const { data: calendarEvents = [], isFetching: isCalendarFetching } = useCalendarEventsByRange(
     rangeFrom,
     rangeTo,

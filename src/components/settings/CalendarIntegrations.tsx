@@ -75,7 +75,12 @@ export function CalendarIntegrations({
   const [newName, setNewName] = useState('')
   const [newColor, setNewColor] = useState(CALENDAR_COLORS[5])
 
-  const selectedIds: string[] = googleIntegration?.selected_calendar_ids ?? ['primary']
+  // null = never configured → treat all loaded calendars as selected (visual only, not persisted)
+  const rawSelectedIds = googleIntegration?.selected_calendar_ids
+  const selectedIds: string[] =
+    rawSelectedIds === null || rawSelectedIds === undefined
+      ? calendarList.map((c) => c.id)
+      : rawSelectedIds
 
   const handleDisconnect = () => {
     showConfirmDialog({

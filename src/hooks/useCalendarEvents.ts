@@ -51,8 +51,7 @@ async function fetchGoogleEventsWithRefresh(
     }
   }
 
-  const calendarIds =
-    integration.selected_calendar_ids?.length > 0 ? integration.selected_calendar_ids : ['primary']
+  const rawSelected = integration.selected_calendar_ids
 
   const fetchAll = async (token: string) => {
     let calendarList: GoogleCalendarListEntry[] = []
@@ -61,6 +60,14 @@ async function fetchGoogleEventsWithRefresh(
     } catch {
       // ignore — events will render without calendar metadata
     }
+
+    // null = never configured → sync all available calendars
+    // []   = user explicitly cleared selection → sync nothing
+    // [...] = respect user's explicit selection
+    const calendarIds =
+      rawSelected === null || rawSelected === undefined
+        ? calendarList.map((c) => c.id)
+        : rawSelected
 
     const results = await Promise.all(
       calendarIds.map((id) => {
