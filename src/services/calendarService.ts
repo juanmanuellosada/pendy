@@ -217,19 +217,40 @@ function normalizeGoogleEvent(
 export async function fetchGoogleCalendarList(
   accessToken: string,
 ): Promise<GoogleCalendarListEntry[]> {
-  const response = await fetch(
-    'https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=50',
-    { headers: { Authorization: `Bearer ${accessToken}` } },
-  )
+  const SAFETY_PAGE_CAP = 50 // anti-infinite-loop guard; 50*250 = 12500 calendars is unreachable in practice
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const allItems: any[] = []
+  let pageToken: string | undefined
 
-  if (!response.ok) {
-    if (response.status === 401) throw new Error('TOKEN_EXPIRED')
-    throw new Error(`Google Calendar API error: ${response.status}`)
+  for (let page = 0; page < SAFETY_PAGE_CAP; page++) {
+    const params = new URLSearchParams({ maxResults: '250' })
+    if (pageToken) params.set('pageToken', pageToken)
+
+    const response = await fetch(
+      `https://www.googleapis.com/calendar/v3/users/me/calendarList?${params.toString()}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    )
+
+    if (!response.ok) {
+      if (response.status === 401) throw new Error('TOKEN_EXPIRED')
+      throw new Error(`Google Calendar API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    allItems.push(...(data.items ?? []))
+
+    if (!data.nextPageToken) break
+    pageToken = data.nextPageToken
+
+    if (page === SAFETY_PAGE_CAP - 1) {
+      console.warn(
+        `fetchGoogleCalendarList: safety cap reached (${allItems.length} calendars fetched)`,
+      )
+    }
   }
 
-  const data = await response.json()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data.items ?? []).map(
+  return allItems.map(
     (item: any): GoogleCalendarListEntry => ({
       id: item.id,
       summary: item.summary ?? item.id,
@@ -371,9 +392,9 @@ export async function fetchGoogleEvents(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const allItems: any[] = []
   let pageToken: string | undefined
-  const MAX_PAGES = 10 // safety cap — 2500 events per range should never be hit in practice
+  const SAFETY_PAGE_CAP = 500 // anti-infinite-loop guard; 500*250 = 125000 events is unreachable in practice
 
-  for (let page = 0; page < MAX_PAGES; page++) {
+  for (let page = 0; page < SAFETY_PAGE_CAP; page++) {
     const params = new URLSearchParams(baseParams)
     if (pageToken) params.set('pageToken', pageToken)
 
@@ -392,6 +413,12 @@ export async function fetchGoogleEvents(
 
     if (!data.nextPageToken) break
     pageToken = data.nextPageToken
+
+    if (page === SAFETY_PAGE_CAP - 1) {
+      console.warn(
+        `fetchGoogleEvents: safety cap reached (${allItems.length} events fetched, calendar: ${calendarId})`,
+      )
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
