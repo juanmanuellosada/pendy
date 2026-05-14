@@ -1,8 +1,11 @@
 # install-prompts Specification
 
 ## Purpose
+
 TBD - created by archiving change add-install-options-in-settings. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Hook de instalación expone estado de entorno
 
 El sistema SHALL exponer un hook `useInstallPrompt()` en `src/hooks/useInstallPrompt.ts` que retorne un objeto con los siguientes campos, calculados a partir del entorno de ejecución:
@@ -125,4 +128,3 @@ Estas funciones MUST funcionar en entornos SSR / Node tests (retornar `'other'`,
 
 - **WHEN** `navigator.platform === 'Linux x86_64'`
 - **THEN** `detectOS()` retorna `'linux'`
-

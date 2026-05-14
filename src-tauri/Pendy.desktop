@@ -1,0 +1,12 @@
+[Desktop Entry]
+Categories={{categories}}
+{{#if comment}}Comment={{comment}}
+{{/if}}Exec={{exec}}
+{{#if icon}}Icon={{icon}}
+{{/if}}{{#if mime_type}}MimeType={{mime_type}}
+{{/if}}Name={{name}}
+GenericName=Gestor de tareas
+StartupWMClass=Pendy
+Terminal=false
+Type=Application
+Keywords=tasks;todo;productivity;tareas;hábitos;pendientes;

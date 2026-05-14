@@ -45,7 +45,7 @@ Restart the shell so `cargo` and `rustc` are on `$PATH`.
 pnpm tauri:dev
 ```
 
-This starts the Vite dev server and opens a native window pointing to it. The `isTauri()` helper returns `true` inside this window, so `set_app_badge` is invoked via D-Bus instead of the browser Badging API.
+This starts the Vite dev server and opens a native window pointing to it. The `isTauri()` helper returns `true` inside this window, so the frontend emits a `set-app-badge` event that Rust receives and forwards as a Unity Launcher Entry D-Bus signal, instead of using the browser Badging API.
 
 ### Build a production binary
 
@@ -62,6 +62,25 @@ NO_STRIP=true pnpm tauri:build
 ```
 
 The resulting AppImage is ~5% larger but otherwise identical. CI runners on Ubuntu 22.04 don't need this flag.
+
+### Audio in the AppImage
+
+`tauri.conf.json` sets `bundle.linux.appimage.bundleMediaFramework: true`, which embeds GStreamer plugins inside the AppImage (~60 MB extra). Without it, WebKit2GTK inside the sandboxed bundle can't reach the host's GStreamer and sounds fall back to silent.
+
+On first launch you'll see many `GStreamer-WARNING External plugin loader failed` lines in stderr — this is cosmetic. The `gst-plugin-scanner` helper isn't on PATH inside the bundle, so plugins load in-process. First sound may take 10-15s; subsequent launches are fast.
+
+### Installing the AppImage on KDE
+
+Easiest path with auto-integration into the menu, icon registration, and badge association:
+
+```bash
+yay -S appimagelauncher    # or paru -S appimagelauncher
+mkdir -p ~/Applications
+mv path/to/Pendy_<version>_amd64.AppImage ~/Applications/
+~/Applications/Pendy_<version>_amd64.AppImage   # first run prompts "Integrate?"
+```
+
+Click **Integrate and run**. AppImageLauncher creates a `.desktop` entry, extracts the icon to the system icon theme, and (importantly) sets `StartupWMClass=Pendy` so the badge signal associates with the window. The Rust badge code discovers this `.desktop` basename automatically at runtime.
 
 ### Activating badge indicators in KDE Plasma Task Manager
 

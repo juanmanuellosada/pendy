@@ -1,8 +1,11 @@
 # release-pipeline Specification
 
 ## Purpose
+
 TBD - created by archiving change add-install-options-in-settings. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Workflow de release Linux automatizado
 
 El repo SHALL contener un workflow de GitHub Actions en `.github/workflows/release.yml` que se dispare al pushear un tag con formato `v*.*.*` y produzca automáticamente la AppImage de Linux como asset de un draft release.
@@ -53,4 +56,3 @@ El workflow SHALL fijar la versión del CLI de Tauri usando la dependencia ya de
 
 - **WHEN** el workflow ejecuta `tauri build`
 - **THEN** lo hace vía el CLI instalado en `node_modules/.bin/tauri` (resuelto por la action de tauri o por `pnpm tauri build`), no por un binario global
-

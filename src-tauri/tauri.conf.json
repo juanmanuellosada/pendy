@@ -11,6 +11,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Pendy",
         "width": 1280,
         "height": 800
@@ -25,9 +26,16 @@
     "targets": ["appimage"],
     "linux": {
       "deb": {
-        "depends": []
+        "depends": [],
+        "desktopTemplate": "Pendy.desktop"
+      },
+      "appimage": {
+        "bundleMediaFramework": true
       }
     },
+    "shortDescription": "Personal task management",
+    "longDescription": "Pendy is a personal task management app with tasks, habits, projects, labels, recurring tasks, comments, attachments and reminders. Runs as PWA on web and as native app on desktop.",
+    "category": "Productivity",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

@@ -33,14 +33,15 @@ export function useAppBadge() {
     if (todayCount === undefined) return
 
     if (isTauri()) {
-      // Native desktop path: invoke Tauri command (dynamic import keeps this
-      // module out of the PWA bundle entirely)
+      // Native desktop path: emit a Tauri event (instead of invoke command,
+      // because Tauri 2's ACL rejects custom app-level commands without a
+      // plugin namespace — events use core:event:default which is permissive).
       void (async () => {
         try {
-          const { invoke } = await import('@tauri-apps/api/core')
-          await invoke('set_app_badge', { count: todayCount })
+          const { emit } = await import('@tauri-apps/api/event')
+          await emit('set-app-badge', { count: todayCount })
         } catch (e) {
-          console.warn('[badge] tauri invoke failed', e)
+          console.warn('[badge] tauri emit failed', e)
         }
       })()
       return

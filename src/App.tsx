@@ -79,8 +79,15 @@ export default function App() {
     <>
       <Suspense fallback={<LoadingScreen />}>
         <Routes>
-          {/* Landing page */}
-          <Route path="/" element={<LandingPage />} />
+          {/* Landing page — redirect logged-in users to the app */}
+          <Route
+            path="/"
+            element={
+              <AuthRoute>
+                <LandingPage />
+              </AuthRoute>
+            }
+          />
 
           {/* Auth routes */}
           <Route
