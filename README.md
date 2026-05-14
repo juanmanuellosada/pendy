@@ -55,6 +55,14 @@ pnpm tauri:build
 
 Produces an AppImage under `src-tauri/target/release/bundle/appimage/`.
 
+On Arch / CachyOS the bundler may fail with `Strip call failed ... unknown type [0x13] section .relr.dyn`. The cause is that the `linuxdeploy` AppImage shipped by Tauri carries an older `strip` that doesn't understand modern relative-relocation sections produced by current system libraries. Workaround: skip the strip step.
+
+```bash
+NO_STRIP=true pnpm tauri:build
+```
+
+The resulting AppImage is ~5% larger but otherwise identical. CI runners on Ubuntu 22.04 don't need this flag.
+
 ### Activating badge indicators in KDE Plasma Task Manager
 
 By default, KDE Plasma shows badges from applications that emit the Unity Launcher Entry D-Bus signal. If the badge does not appear:
