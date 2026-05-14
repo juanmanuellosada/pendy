@@ -1,8 +1,11 @@
 # desktop-badge Specification
 
 ## Purpose
+
 TBD - created by archiving change add-desktop-badge-indicator. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Badge count source of truth
 
 El sistema SHALL calcular el "badge count" como la suma de tareas no completadas con `due_date = hoy` más hábitos pendientes para hoy (respetando la preferencia `showHabitsInToday` del usuario), reusando los hooks existentes `useTodayTasks`, `useTodayHabits` y `useHabitCompletions`. La fórmula de cálculo MUST permanecer idéntica entre la rama nativa (Tauri) y la rama PWA: solo cambia el canal de publicación.
@@ -87,4 +90,3 @@ En Linux, el sistema SHALL usar un _bus name_ en `org.pendy.AppBadge.<pid>` (o e
 
 - **WHEN** se lanzan dos `tauri dev` simultáneos
 - **THEN** ambos procesos registran conexiones D-Bus distintas sin chocar y cada uno controla el badge de su propia ventana
-

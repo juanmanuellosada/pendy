@@ -1,8 +1,11 @@
 # desktop-shell Specification
 
 ## Purpose
+
 TBD - created by archiving change add-desktop-badge-indicator. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Estructura mínima de Tauri v2
 
 El proyecto SHALL contener una carpeta `src-tauri/` con la estructura mínima requerida por Tauri v2: `Cargo.toml`, `tauri.conf.json`, `src/main.rs`, `src/lib.rs`, `capabilities/default.json`, `icons/` y `build.rs`. El crate Rust MUST compilar sin warnings en Rust stable.
@@ -63,4 +66,3 @@ El archivo `src-tauri/capabilities/default.json` SHALL otorgar a la ventana prin
 
 - **WHEN** se revisa `default.json`
 - **THEN** la lista de permisos contiene únicamente `core:default` (o equivalente mínimo) más el permiso explícito para `set_app_badge`
-

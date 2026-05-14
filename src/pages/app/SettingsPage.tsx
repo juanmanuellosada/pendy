@@ -8,6 +8,7 @@ import { useProjects } from '@/hooks/useProjects'
 import { useExchangeCalendarCode } from '@/hooks/useCalendarIntegrations'
 import { CalendarIntegrations } from '@/components/settings/CalendarIntegrations'
 import { PushNotifications } from '@/components/settings/PushNotifications'
+import { InstallOptions } from '@/components/settings/InstallOptions'
 import { supabase } from '@/lib/supabase'
 import { Moon, Sun, Monitor, Pencil, Check, X } from 'lucide-react'
 import type { ThemeMode } from '@/styles/themes'
@@ -308,6 +309,9 @@ export default function SettingsPage() {
             ))}
           </div>
         </section>
+
+        {/* Install options section */}
+        <InstallOptions />
 
         {/* General preferences */}
         <section className="rounded-xl border p-4" style={{ borderColor: 'var(--border-primary)' }}>

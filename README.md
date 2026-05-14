@@ -64,3 +64,17 @@ By default, KDE Plasma shows badges from applications that emit the Unity Launch
 3. Click **OK**.
 
 The badge count reflects tasks and habits pending for today, matching what the Today view shows.
+
+## Releases
+
+Linux AppImage binaries are produced automatically by `.github/workflows/release.yml` when a version tag is pushed:
+
+```bash
+# Bump version in package.json and src-tauri/tauri.conf.json first, then:
+git tag v0.x.y
+git push --tags
+```
+
+GitHub Actions builds the AppImage on `ubuntu-22.04` and uploads it to a **draft** release. Open the draft on GitHub, write the release notes, and publish it manually — `https://github.com/juanmanuellosada/pendy/releases/latest` will then redirect to it, feeding the "Descargar para Linux" button in Settings → Aplicación.
+
+macOS and Windows are not built by CI yet; their Rust implementations exist as stubs.
