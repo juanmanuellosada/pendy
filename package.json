@@ -13,7 +13,10 @@
     "test:run": "vitest run",
     "test:ui": "vitest --ui",
     "preview": "vite preview",
-    "prepare": "husky"
+    "prepare": "husky",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "tauri": "tauri"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -51,6 +54,7 @@
     "@tiptap/pm": "^3.20.0",
     "@tiptap/react": "^3.20.0",
     "@tiptap/starter-kit": "^3.20.0",
+    "@tauri-apps/api": "^2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -69,10 +73,14 @@
     "zod": "^4.3.6",
     "zustand": "^5.0.11"
   },
+  "optionalDependencies": {
+    "@tauri-apps/api": "^2"
+  },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/vite": "^4.1.18",
+    "@tauri-apps/cli": "^2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",

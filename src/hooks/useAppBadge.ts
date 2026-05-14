@@ -3,6 +3,7 @@ import { format } from 'date-fns'
 import { useTodayTasks } from '@/hooks/useTasks'
 import { useTodayHabits, useHabitCompletions } from '@/hooks/useHabits'
 import { useUIStore } from '@/stores/uiStore'
+import { isTauri } from '@/lib/platform'
 
 /**
  * Sincroniza el badge del ícono de la PWA con el conteo de tareas pendientes para hoy.
@@ -29,6 +30,23 @@ export function useAppBadge() {
   const todayCount = todayTasks.filter((t) => !t.is_completed).length + pendingHabitsCount
 
   useEffect(() => {
+    if (todayCount === undefined) return
+
+    if (isTauri()) {
+      // Native desktop path: invoke Tauri command (dynamic import keeps this
+      // module out of the PWA bundle entirely)
+      void (async () => {
+        try {
+          const { invoke } = await import('@tauri-apps/api/core')
+          await invoke('set_app_badge', { count: todayCount })
+        } catch (e) {
+          console.warn('[badge] tauri invoke failed', e)
+        }
+      })()
+      return
+    }
+
+    // PWA path (unchanged):
     // 1. Try Badging API from main thread (works on desktop + Android)
     if ('setAppBadge' in navigator) {
       if (todayCount > 0) {

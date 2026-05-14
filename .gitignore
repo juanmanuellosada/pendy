@@ -40,3 +40,7 @@ supabase/.env
 
 # MCP config (contains API tokens — use .mcp.json.example as template)
 .mcp.json
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/
