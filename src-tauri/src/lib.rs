@@ -1,4 +1,5 @@
 mod badge;
+mod oauth;
 
 use serde::Deserialize;
 use tauri::Listener;
@@ -31,6 +32,9 @@ pub fn run() {
                 });
             });
             eprintln!("[badge] listener registered with id={id}");
+
+            oauth::register_listener(app.handle());
+
             Ok(())
         })
         .run(tauri::generate_context!())

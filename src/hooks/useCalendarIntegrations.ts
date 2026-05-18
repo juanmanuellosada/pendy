@@ -1,8 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from './useAuth'
 import {
   generatePKCE,
+  generateOAuthState,
   buildGoogleOAuthUrl,
   fetchGoogleCalendarList,
   createGoogleCalendar,
@@ -11,8 +13,13 @@ import {
   setGoogleCalendarColor,
 } from '@/services/calendarService'
 import type { CalendarIntegration, GoogleCalendarListEntry } from '@/lib/types'
+import { isTauri } from '@/lib/platform'
 
-const REDIRECT_URI = `${window.location.origin}${import.meta.env.BASE_URL}app/settings`
+// D5: REDIRECT_URI is evaluated once at module load; the runtime environment
+// never changes so a module-level constant is correct.
+const REDIRECT_URI = isTauri()
+  ? 'http://127.0.0.1:8765'
+  : `${window.location.origin}${import.meta.env.BASE_URL}app/settings`
 
 // ─── Query key factory ────────────────────────────────────────────────────────
 const calendarKeys = {
@@ -40,11 +47,88 @@ export function useCalendarIntegrations() {
 }
 
 // ─── Connect Google: generate PKCE + redirect ─────────────────────────────────
+
+/** sessionStorage key for the per-attempt random OAuth state (CSRF). */
+const OAUTH_STATE_KEY = 'oauth_state_google'
+
+/** JS-side timeout (ms): slightly longer than the Rust 300 s budget so the
+ *  promise always rejects if the Rust side never emits — prevents a forever-hang
+ *  and ensures sessionStorage is always cleaned up. */
+const DESKTOP_OAUTH_TIMEOUT_MS = 310_000
+
 export function useConnectCalendar() {
+  const exchangeMutation = useExchangeCalendarCode()
+
   const startOAuth = async () => {
     const { codeVerifier, codeChallenge } = await generatePKCE()
+    const oauthState = generateOAuthState()
+
     sessionStorage.setItem('pkce_verifier_google', codeVerifier)
-    window.location.href = buildGoogleOAuthUrl(codeChallenge, REDIRECT_URI)
+    sessionStorage.setItem(OAUTH_STATE_KEY, oauthState)
+
+    const authUrl = buildGoogleOAuthUrl(codeChallenge, REDIRECT_URI, oauthState)
+
+    if (isTauri()) {
+      // D6 Desktop path: loopback server captures the code without a page reload.
+      // Uses the event-based pattern (gotcha #4): emit "start-oauth-loopback",
+      // listen once for "oauth-loopback-result". Events are allowed by default
+      // via core:event:default — no ACL configuration needed.
+      try {
+        // Dynamic import keeps @tauri-apps/api out of the web bundle entirely.
+        const { emit, once } = await import('@tauri-apps/api/event')
+
+        const result = await new Promise<{ code: string; state: string }>((resolve, reject) => {
+          // JS-side timeout: rejects if Rust never emits within the budget.
+          const timeoutId = setTimeout(() => {
+            sessionStorage.removeItem('pkce_verifier_google')
+            sessionStorage.removeItem(OAUTH_STATE_KEY)
+            reject(new Error('La conexión expiró. Volvé a intentarlo.'))
+          }, DESKTOP_OAUTH_TIMEOUT_MS)
+
+          once<{ code: string; state: string } | { error: string }>(
+            'oauth-loopback-result',
+            (event) => {
+              clearTimeout(timeoutId)
+              const payload = event.payload
+              if ('error' in payload) {
+                reject(new Error(payload.error))
+              } else {
+                resolve(payload)
+              }
+            },
+          ).then(() => {
+            // Listener registered; now trigger the Rust side.
+            emit('start-oauth-loopback', { authUrl })
+          })
+        })
+
+        // Validate CSRF state before exchanging the code.
+        const storedState = sessionStorage.getItem(OAUTH_STATE_KEY)
+        sessionStorage.removeItem(OAUTH_STATE_KEY)
+
+        if (!storedState || result.state !== storedState) {
+          sessionStorage.removeItem('pkce_verifier_google')
+          toast.error('Error de seguridad: la respuesta OAuth no es válida.')
+          return
+        }
+
+        await exchangeMutation.mutateAsync({ code: result.code })
+      } catch (err: unknown) {
+        sessionStorage.removeItem('pkce_verifier_google')
+        sessionStorage.removeItem(OAUTH_STATE_KEY)
+        const message =
+          err instanceof Error
+            ? err.message
+            : typeof err === 'string'
+              ? err
+              : 'Error al conectar Google Calendar'
+        toast.error(message)
+      }
+      return
+    }
+
+    // Web path: full-page redirect; SettingsPage captures ?code= and validates state.
+    window.location.href = authUrl
   }
 
   return { startOAuth }

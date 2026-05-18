@@ -11,6 +11,7 @@ import { PushNotifications } from '@/components/settings/PushNotifications'
 import { InstallOptions } from '@/components/settings/InstallOptions'
 import { supabase } from '@/lib/supabase'
 import { Moon, Sun, Monitor, Pencil, Check, X } from 'lucide-react'
+import { Select } from '@/components/common/Select'
 import type { ThemeMode } from '@/styles/themes'
 import type { Profile } from '@/lib/types'
 
@@ -48,22 +49,7 @@ function SettingSelect({
       <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
         {label}
       </span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border px-3 py-1.5 text-sm"
-        style={{
-          backgroundColor: 'var(--bg-primary)',
-          borderColor: 'var(--border-primary)',
-          color: 'var(--text-primary)',
-        }}
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+      <Select value={value} options={options} onChange={onChange} />
     </div>
   )
 }
@@ -237,11 +223,26 @@ export default function SettingsPage() {
   const navigate = useNavigate()
   const exchangeCode = useExchangeCalendarCode()
 
-  // Capturamos el code al montar y lo guardamos en estado
+  // Capturamos el code al montar y lo guardamos en estado.
+  // Validamos el `state` contra el valor random almacenado en sessionStorage
+  // para proteger contra CSRF (un `state` fijo sería explotable).
   const [pendingCode, setPendingCode] = useState<string | null>(() => {
-    const code = new URLSearchParams(window.location.search).get('code')
-    const state = new URLSearchParams(window.location.search).get('state')
-    return code && state === 'google' ? code : null
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+    const returnedState = params.get('state')
+    const storedState = sessionStorage.getItem('oauth_state_google')
+
+    // Clear the stored state regardless — it's single-use.
+    sessionStorage.removeItem('oauth_state_google')
+
+    if (!code || !returnedState || !storedState || returnedState !== storedState) {
+      if (code) {
+        // code present but state mismatch — log and discard
+        console.error('[OAuth] state mismatch, discarding code')
+      }
+      return null
+    }
+    return code
   })
 
   // Limpiamos la URL inmediatamente si hay un code
