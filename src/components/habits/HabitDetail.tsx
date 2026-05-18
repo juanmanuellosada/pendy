@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { X, Clock, Repeat, Trash2, Flame, Minus, Plus } from 'lucide-react'
+import { Select } from '@/components/common/Select'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useAppStore } from '@/stores/appStore'
@@ -40,43 +41,41 @@ function TimeSelect({
   const mVal = mStr ? String((Math.round(parseInt(mStr) / 5) * 5) % 60).padStart(2, '0') : '00'
 
   return (
-    <div
-      className="flex items-center rounded-lg overflow-hidden"
-      style={{
-        border: `1px solid ${value && accentColor ? accentColor : 'var(--border-primary)'}`,
-        backgroundColor: 'var(--bg-secondary)',
-      }}
-    >
-      <select
+    <div className="flex items-center gap-0.5">
+      <Select
         value={hVal}
-        onChange={(e) => onChange(`${e.target.value}:${mVal}`)}
-        className="outline-none text-sm font-medium px-2 py-2 cursor-pointer appearance-none"
-        style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
-      >
-        {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map((h) => (
-          <option key={h} value={h}>
-            {h}
-          </option>
-        ))}
-      </select>
+        options={Array.from({ length: 24 }, (_, i) => {
+          const h = String(i).padStart(2, '0')
+          return { value: h, label: h }
+        })}
+        onChange={(h) => onChange(`${h}:${mVal}`)}
+        style={{
+          backgroundColor: 'var(--bg-secondary)',
+          borderColor: value && accentColor ? accentColor : 'var(--border-primary)',
+          minWidth: 0,
+        }}
+        className="w-16 text-center font-medium"
+      />
       <span
-        className="text-sm font-medium select-none"
-        style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)' }}
+        className="text-sm font-medium select-none px-0.5"
+        style={{ color: 'var(--text-muted)' }}
       >
         :
       </span>
-      <select
+      <Select
         value={mVal}
-        onChange={(e) => onChange(`${hVal}:${e.target.value}`)}
-        className="outline-none text-sm font-medium px-2 py-2 cursor-pointer appearance-none"
-        style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
-      >
-        {Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0')).map((m) => (
-          <option key={m} value={m}>
-            {m}
-          </option>
-        ))}
-      </select>
+        options={Array.from({ length: 12 }, (_, i) => {
+          const m = String(i * 5).padStart(2, '0')
+          return { value: m, label: m }
+        })}
+        onChange={(m) => onChange(`${hVal}:${m}`)}
+        style={{
+          backgroundColor: 'var(--bg-secondary)',
+          borderColor: value && accentColor ? accentColor : 'var(--border-primary)',
+          minWidth: 0,
+        }}
+        className="w-16 text-center font-medium"
+      />
     </div>
   )
 }

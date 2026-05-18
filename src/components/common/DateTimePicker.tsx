@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { Select } from '@/components/common/Select'
 import {
   format,
   addDays,
@@ -1080,53 +1081,44 @@ export function DateTimePicker({
 
             {timeExpanded && (
               <div className="px-3 pb-2 pt-1 flex items-center gap-2">
-                {/* HH : MM selects — explicit bg para tema oscuro */}
-                <div
-                  className="flex items-center rounded-lg overflow-hidden flex-shrink-0"
-                  style={{ border: '1px solid var(--border-primary)' }}
-                >
-                  <select
-                    value={(time ?? '09:00').split(':')[0]}
-                    onChange={(e) => {
+                {/* HH : MM selects */}
+                <div className="flex items-center gap-0.5 flex-shrink-0">
+                  <Select
+                    value={(time ?? '09:00').split(':')[0]!}
+                    options={Array.from({ length: 24 }, (_, i) => {
+                      const h = String(i).padStart(2, '0')
+                      return { value: h, label: h }
+                    })}
+                    onChange={(h) => {
                       const m = (time ?? '09:00').split(':')[1] ?? '00'
-                      onTimeChange(`${e.target.value}:${m}`)
+                      onTimeChange(`${h}:${m}`)
                       if (!hasTime) onHasTimeChange(true)
                     }}
-                    className="outline-none text-sm font-medium px-2 py-1.5 cursor-pointer appearance-none"
-                    style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
-                  >
-                    {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map((h) => (
-                      <option key={h} value={h}>
-                        {h}
-                      </option>
-                    ))}
-                  </select>
+                    style={{ backgroundColor: 'var(--bg-secondary)', minWidth: 0 }}
+                    className="w-16 text-center font-medium"
+                  />
                   <span
                     className="text-sm font-medium select-none px-0.5"
-                    style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)' }}
+                    style={{ color: 'var(--text-muted)' }}
                   >
                     :
                   </span>
-                  <select
+                  <Select
                     value={String(
                       (Math.round(parseInt((time ?? '09:00').split(':')[1] ?? '0') / 5) * 5) % 60,
                     ).padStart(2, '0')}
-                    onChange={(e) => {
+                    options={Array.from({ length: 12 }, (_, i) => {
+                      const m = String(i * 5).padStart(2, '0')
+                      return { value: m, label: m }
+                    })}
+                    onChange={(m) => {
                       const h = (time ?? '09:00').split(':')[0] ?? '09'
-                      onTimeChange(`${h}:${e.target.value}`)
+                      onTimeChange(`${h}:${m}`)
                       if (!hasTime) onHasTimeChange(true)
                     }}
-                    className="outline-none text-sm font-medium px-2 py-1.5 cursor-pointer appearance-none"
-                    style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
-                  >
-                    {Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0')).map(
-                      (m) => (
-                        <option key={m} value={m}>
-                          {m}
-                        </option>
-                      ),
-                    )}
-                  </select>
+                    style={{ backgroundColor: 'var(--bg-secondary)', minWidth: 0 }}
+                    className="w-16 text-center font-medium"
+                  />
                 </div>
 
                 {/* Duración — intervalos de 5 min + Personalizado */}
@@ -1163,38 +1155,33 @@ export function DateTimePicker({
                     </span>
                   </div>
                 ) : (
-                  <select
+                  <Select
                     value={(() => {
                       if (durationMinutes === null) return ''
                       const isPreset = DURATION_PRESETS.some((p) => p.value === durationMinutes)
                       return isPreset ? String(durationMinutes) : 'custom'
                     })()}
-                    onChange={(e) => {
-                      const val = e.target.value
-                      if (val === 'custom') {
+                    options={[
+                      ...DURATION_PRESETS.map((opt) => ({
+                        value: opt.value !== null ? String(opt.value) : '',
+                        label: opt.label,
+                      })),
+                      ...(durationMinutes !== null &&
+                      !DURATION_PRESETS.some((p) => p.value === durationMinutes)
+                        ? [{ value: 'custom', label: formatDuration(durationMinutes) }]
+                        : []),
+                      { value: 'custom_new', label: 'Personalizado...' },
+                    ]}
+                    onChange={(val) => {
+                      if (val === 'custom' || val === 'custom_new') {
                         setShowCustomDuration(true)
                       } else {
                         onDurationChange(val === '' ? null : parseInt(val, 10))
                       }
                     }}
-                    className="flex-1 rounded-lg border px-2 py-1.5 text-xs outline-none appearance-none cursor-pointer"
-                    style={{
-                      backgroundColor: 'var(--bg-secondary)',
-                      borderColor: 'var(--border-primary)',
-                      color: 'var(--text-primary)',
-                    }}
-                  >
-                    {DURATION_PRESETS.map((opt) => (
-                      <option key={String(opt.value)} value={opt.value ?? ''}>
-                        {opt.label}
-                      </option>
-                    ))}
-                    {durationMinutes !== null &&
-                      !DURATION_PRESETS.some((p) => p.value === durationMinutes) && (
-                        <option value="custom">{formatDuration(durationMinutes)}</option>
-                      )}
-                    <option value="custom">Personalizado...</option>
-                  </select>
+                    className="flex-1 text-xs"
+                    style={{ backgroundColor: 'var(--bg-secondary)' }}
+                  />
                 )}
               </div>
             )}
@@ -1366,22 +1353,13 @@ export function DateTimePicker({
                   color: 'var(--text-primary)',
                 }}
               />
-              <select
+              <Select
                 value={customFreq}
-                onChange={(e) => setCustomFreq(e.target.value as typeof customFreq)}
-                className="flex-1 rounded-lg border px-2 py-1.5 text-xs outline-none appearance-none cursor-pointer"
-                style={{
-                  backgroundColor: 'var(--bg-secondary)',
-                  borderColor: 'var(--border-primary)',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                {FREQ_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                options={[...FREQ_OPTIONS]}
+                onChange={(val) => setCustomFreq(val as typeof customFreq)}
+                className="flex-1 text-xs"
+                style={{ backgroundColor: 'var(--bg-secondary)' }}
+              />
             </div>
           </div>
 
