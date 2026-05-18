@@ -32,6 +32,6 @@
 
 - [x] 4.1 `pnpm build` y `pnpm lint` pasan sin errores.
 - [ ] 4.2 Regresión web: en `pnpm dev`, conectar Google Calendar sigue funcionando con el redirect de página completa.
-- [ ] 4.3 En `pnpm tauri:dev`, conectar Google Calendar: se abre el navegador del sistema, el consentimiento retorna por el loopback y la integración queda activa en la tabla `calendar_integrations`.
+- [x] 4.3 En `pnpm tauri:dev`, conectar Google Calendar: se abre el navegador del sistema, el consentimiento retorna por el loopback y la integración queda activa en la tabla `calendar_integrations`. (Verificado en el AppImage 0.1.1.)
 - [ ] 4.4 Caso de error: con el puerto `8765` ocupado, la UI muestra un mensaje de error legible y no se cuelga.
 - [x] 4.5 Documentar el paso manual de Google Cloud Console (paso 1.1) en las notas de build de Tauri del proyecto.
