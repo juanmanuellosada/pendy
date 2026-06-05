@@ -8,6 +8,7 @@ import type { Habit, HabitCompletion, HabitSchedule } from '@/lib/types'
 export const habitKeys = {
   all: ['habits'] as const,
   list: (userId: string) => [...habitKeys.all, 'list', userId] as const,
+  archived: (userId: string) => [...habitKeys.all, 'archived', userId] as const,
   completions: (userId: string, from: string, to: string) =>
     [...habitKeys.all, 'completions', userId, from, to] as const,
   allCompletions: (userId: string) => [...habitKeys.all, 'completions', userId] as const,
@@ -26,6 +27,15 @@ export function useHabits() {
   return useQuery({
     queryKey: habitKeys.list(user?.id ?? ''),
     queryFn: () => habitService.getHabits(user!.id),
+    enabled: !!user,
+  })
+}
+
+export function useArchivedHabits() {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: habitKeys.archived(user?.id ?? ''),
+    queryFn: () => habitService.getArchivedHabits(user!.id),
     enabled: !!user,
   })
 }
@@ -149,6 +159,7 @@ export function useUpdateHabit() {
     }) => habitService.updateHabit(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: habitKeys.list(user!.id) })
+      queryClient.invalidateQueries({ queryKey: habitKeys.archived(user!.id) })
     },
   })
 }

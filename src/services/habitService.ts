@@ -15,6 +15,18 @@ export const habitService = {
     return data ?? []
   },
 
+  async getArchivedHabits(userId: string): Promise<Habit[]> {
+    const { data, error } = await supabase
+      .from('habits')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_archived', true)
+      .order('updated_at', { ascending: false })
+
+    if (error) throw error
+    return data ?? []
+  },
+
   async createHabit(habit: Omit<Habit, 'id' | 'created_at' | 'updated_at'>): Promise<Habit> {
     const { data, error } = await supabase.from('habits').insert(habit).select().single()
 

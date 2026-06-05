@@ -1,8 +1,21 @@
-import { useState } from 'react'
-import { Plus, Repeat, Flame, Trophy, CheckCircle2, Pencil, Trash2, Archive } from 'lucide-react'
+import React, { useState } from 'react'
+import {
+  Plus,
+  Repeat,
+  Flame,
+  Trophy,
+  CheckCircle2,
+  Pencil,
+  Trash2,
+  Archive,
+  ArchiveRestore,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react'
 import { format, subDays, startOfWeek } from 'date-fns'
 import {
   useHabits,
+  useArchivedHabits,
   useHabitCompletionsExtended,
   useToggleHabitCompletion,
   useDeleteHabit,
@@ -24,6 +37,11 @@ import type { Habit, HabitCompletion } from '@/lib/types'
 
 export function HabitsView() {
   const { data: habits = [], isLoading } = useHabits()
+  const {
+    data: archivedHabits = [],
+    isLoading: isLoadingArchived,
+    isError: isErrorArchived,
+  } = useArchivedHabits()
   const { data: completions = [] } = useHabitCompletionsExtended()
   const toggleCompletion = useToggleHabitCompletion()
   const deleteHabit = useDeleteHabit()
@@ -32,6 +50,7 @@ export function HabitsView() {
 
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null)
+  const [showArchived, setShowArchived] = useState(false)
 
   const today = new Date()
 
@@ -68,6 +87,10 @@ export function HabitsView() {
 
   const handleArchive = (habit: Habit) => {
     updateHabit.mutate({ id: habit.id, updates: { is_archived: true } })
+  }
+
+  const handleUnarchive = (habit: Habit) => {
+    updateHabit.mutate({ id: habit.id, updates: { is_archived: false } })
   }
 
   const handleCloseEditor = () => {
@@ -199,6 +222,54 @@ export function HabitsView() {
           )}
         </div>
       )}
+
+      {/* Archived habits section */}
+      <div className="mt-8">
+        <button
+          onClick={() => setShowArchived((v) => !v)}
+          className="flex items-center gap-2 text-sm font-medium transition-colors"
+          style={{ color: 'var(--text-secondary)' }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+        >
+          <Archive size={15} />
+          {showArchived ? 'Ocultar archivados' : 'Ver archivados'}
+          {showArchived ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </button>
+
+        {showArchived && (
+          <div className="mt-3">
+            {isLoadingArchived ? (
+              <div className="space-y-2">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-12 animate-pulse rounded-lg"
+                    style={{ backgroundColor: 'var(--bg-secondary)' }}
+                  />
+                ))}
+              </div>
+            ) : isErrorArchived ? (
+              <p className="text-sm" style={{ color: 'var(--color-accent)' }}>
+                No se pudieron cargar los hábitos archivados.
+              </p>
+            ) : archivedHabits.length === 0 ? (
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                No tenés hábitos archivados.
+              </p>
+            ) : (
+              <div
+                className="divide-y overflow-hidden rounded-xl"
+                style={{ border: '1px solid var(--border-secondary)' }}
+              >
+                {archivedHabits.map((habit) => (
+                  <ArchivedHabitRow key={habit.id} habit={habit} onUnarchive={handleUnarchive} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       <HabitEditor
         key={editingHabit?.id ?? 'new'}
@@ -475,3 +546,64 @@ function HabitRow({
     </div>
   )
 }
+
+// ── ArchivedHabitRow ───────────────────────────────────────────────────────────
+
+const ArchivedHabitRow = React.memo(function ArchivedHabitRow({
+  habit,
+  onUnarchive,
+}: {
+  habit: Habit
+  onUnarchive: (h: Habit) => void
+}) {
+  const recLabel = getRecurrenceLabel(habit)
+
+  return (
+    <div
+      className="group flex items-center gap-3 px-4 py-3 transition-colors"
+      style={{
+        borderLeft: `3px solid ${habit.color}`,
+        backgroundColor: 'var(--bg-primary)',
+        opacity: 0.7,
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = 'var(--bg-hover)'
+        e.currentTarget.style.opacity = '1'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = 'var(--bg-primary)'
+        e.currentTarget.style.opacity = '0.7'
+      }}
+    >
+      {/* Info */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex items-center gap-1.5">
+          {habit.icon && <span className="text-sm leading-none">{habit.icon}</span>}
+          <span
+            className="min-w-0 truncate text-sm font-medium"
+            style={{ color: 'var(--text-secondary)' }}
+            dangerouslySetInnerHTML={{
+              __html: stripLabelTokensFromHtml(habit.name).replace(/^<p>(.*)<\/p>$/, '$1'),
+            }}
+          />
+        </div>
+        <span className="mt-0.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+          {recLabel}
+        </span>
+      </div>
+
+      {/* Unarchive action */}
+      <button
+        onClick={() => onUnarchive(habit)}
+        className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium opacity-0 transition-all group-hover:opacity-100"
+        style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)' }}
+        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-active)')}
+        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
+        title="Desarchivar"
+      >
+        <ArchiveRestore size={14} />
+        <span className="hidden sm:inline">Desarchivar</span>
+      </button>
+    </div>
+  )
+})
