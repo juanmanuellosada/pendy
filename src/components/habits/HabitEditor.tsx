@@ -4,7 +4,62 @@ import { useCreateHabit, useUpdateHabit } from '@/hooks/useHabits'
 import { useAuth } from '@/hooks/useAuth'
 import { stripHtmlTags } from '@/lib/utils'
 import { TitleEditor } from '@/components/tasks/TitleEditor'
+import { Select } from '@/components/common/Select'
 import type { Habit } from '@/lib/types'
+
+// ── Selector de hora (HH : MM) ────────────────────────────────────────────────
+function TimeSelect({
+  value,
+  onChange,
+  accentColor,
+}: {
+  value: string
+  onChange: (v: string) => void
+  accentColor?: string
+}) {
+  const [hStr, mStr] = value ? value.split(':') : ['', '']
+  const hVal = hStr ?? '00'
+  const mVal = mStr ? String((Math.round(parseInt(mStr) / 5) * 5) % 60).padStart(2, '0') : '00'
+
+  return (
+    <div className="flex items-center gap-0.5">
+      <Select
+        value={hVal}
+        options={Array.from({ length: 24 }, (_, i) => {
+          const h = String(i).padStart(2, '0')
+          return { value: h, label: h }
+        })}
+        onChange={(h) => onChange(`${h}:${mVal}`)}
+        style={{
+          backgroundColor: 'var(--bg-secondary)',
+          borderColor: value && accentColor ? accentColor : 'var(--border-primary)',
+          minWidth: 0,
+        }}
+        className="w-16 text-center font-medium"
+      />
+      <span
+        className="text-sm font-medium select-none px-0.5"
+        style={{ color: 'var(--text-muted)' }}
+      >
+        :
+      </span>
+      <Select
+        value={mVal}
+        options={Array.from({ length: 12 }, (_, i) => {
+          const m = String(i * 5).padStart(2, '0')
+          return { value: m, label: m }
+        })}
+        onChange={(m) => onChange(`${hVal}:${m}`)}
+        style={{
+          backgroundColor: 'var(--bg-secondary)',
+          borderColor: value && accentColor ? accentColor : 'var(--border-primary)',
+          minWidth: 0,
+        }}
+        className="w-16 text-center font-medium"
+      />
+    </div>
+  )
+}
 
 const PRESET_COLORS = [
   '#283B56',
@@ -37,6 +92,7 @@ interface FormState {
   recurrence_type: 'daily' | 'times_per_week' | 'specific_days'
   times_per_week: number
   specific_days: number[]
+  scheduled_time: string | null
 }
 
 const DEFAULT_FORM: FormState = {
@@ -47,6 +103,7 @@ const DEFAULT_FORM: FormState = {
   recurrence_type: 'daily',
   times_per_week: 3,
   specific_days: [],
+  scheduled_time: null,
 }
 
 export function HabitEditor({ open, onClose, habit }: HabitEditorProps) {
@@ -64,6 +121,7 @@ export function HabitEditor({ open, onClose, habit }: HabitEditorProps) {
           recurrence_type: habit.recurrence_type,
           times_per_week: habit.times_per_week ?? 3,
           specific_days: habit.specific_days ?? [],
+          scheduled_time: habit.scheduled_time ? habit.scheduled_time.slice(0, 5) : null,
         }
       : DEFAULT_FORM,
   )
@@ -105,7 +163,7 @@ export function HabitEditor({ open, onClose, habit }: HabitEditorProps) {
       recurrence_type: form.recurrence_type,
       times_per_week: form.recurrence_type === 'times_per_week' ? form.times_per_week : null,
       specific_days: form.recurrence_type === 'specific_days' ? form.specific_days : [],
-      scheduled_time: null,
+      scheduled_time: form.scheduled_time ? form.scheduled_time + ':00' : null,
       is_active: true,
       is_archived: false,
       sort_order: 0,
@@ -270,6 +328,60 @@ export function HabitEditor({ open, onClose, habit }: HabitEditorProps) {
                 min (1–480)
               </span>
             </div>
+          </div>
+
+          {/* Hora por defecto */}
+          <div>
+            <label
+              className="mb-2 block text-xs font-medium"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              Hora por defecto
+            </label>
+            <div className="flex items-center gap-2">
+              {form.scheduled_time !== null ? (
+                <>
+                  <TimeSelect
+                    value={form.scheduled_time}
+                    onChange={(v) => set('scheduled_time', v)}
+                    accentColor={form.color}
+                  />
+                  <button
+                    onClick={() => set('scheduled_time', null)}
+                    className="rounded p-1.5 transition-colors"
+                    style={{ color: 'var(--text-muted)' }}
+                    title="Sin hora"
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                    }
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <X size={14} />
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => set('scheduled_time', '09:00')}
+                  className="rounded-lg border px-3 py-2 text-sm transition-colors"
+                  style={{
+                    borderColor: 'var(--border-primary)',
+                    backgroundColor: 'var(--bg-secondary)',
+                    color: 'var(--text-muted)',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')
+                  }
+                >
+                  Asignar hora
+                </button>
+              )}
+            </div>
+            {form.scheduled_time === null && (
+              <p className="mt-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+                Sin hora (todo el día)
+              </p>
+            )}
           </div>
 
           {/* Recurrencia */}
