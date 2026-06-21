@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/pendy/pendy-logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#283B56" />
+    <meta
+      name="description"
+      content="Gestor de tareas personal con recordatorios, proyectos y etiquetas."
+    />
+
+    <!-- PWA manifest -->
+    <link rel="manifest" href="/pendy/manifest.json" />
+
+    <!-- PWA support (mobile-web-app-capable es el estándar; apple- es para iOS legacy) -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Pendy" />
+    <link rel="apple-touch-icon" href="/pendy/apple-touch-icon.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Pendy — Tu sistema de tareas personal" />
+    <meta
+      property="og:description"
+      content="Gestión de tareas y hábitos pensada para la claridad. Proyectos, calendario, rutinas y recordatorios — todo integrado."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/pendy/pendy-logo.png" />
+
+    <title>Pendy - Gestor de Tareas</title>
+    <script type="module" crossorigin src="/pendy/assets/index-Bkm-fWv7.js"></script>
+    <link rel="stylesheet" crossorigin href="/pendy/assets/index-BBx_9Xqa.css">
+  </head>
+  <body class="antialiased">
+    <!-- Restore URL from GitHub Pages 404 redirect -->
+    <script>
+      ;(function (l) {
+        if (l.search[1] === '/') {
+          var decoded = l.search
+            .slice(1)
+            .split('&')
+            .map(function (s) {
+              return s.replace(/~and~/g, '&')
+            })
+            .join('?')
+          window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash)
+        }
+      })(window.location)
+    </script>
+    <div id="root"></div>
+  </body>
+</html>

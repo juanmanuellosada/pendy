@@ -1,0 +1,1 @@
+import{aP as r,s as c,r as l,j as e,aQ as u,bM as o}from"./index-Bkm-fWv7.js";function n(){const{taskId:s}=r(),a=c(t=>t.setSelectedTaskId);return l.useEffect(()=>{a(null)},[a]),s?e.jsx("div",{className:"-m-4 md:-m-6 h-[calc(100vh-3.5rem)]",children:e.jsx(o,{fullScreen:!0,taskId:s})}):e.jsx(u,{to:"/app/today",replace:!0})}export{n as default};
