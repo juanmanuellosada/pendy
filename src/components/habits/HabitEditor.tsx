@@ -2,64 +2,10 @@ import { useState } from 'react'
 import { X, Minus, Plus } from 'lucide-react'
 import { useCreateHabit, useUpdateHabit } from '@/hooks/useHabits'
 import { useAuth } from '@/hooks/useAuth'
+import { useTheme } from '@/hooks/useTheme'
 import { stripHtmlTags } from '@/lib/utils'
 import { TitleEditor } from '@/components/tasks/TitleEditor'
-import { Select } from '@/components/common/Select'
 import type { Habit } from '@/lib/types'
-
-// ── Selector de hora (HH : MM) ────────────────────────────────────────────────
-function TimeSelect({
-  value,
-  onChange,
-  accentColor,
-}: {
-  value: string
-  onChange: (v: string) => void
-  accentColor?: string
-}) {
-  const [hStr, mStr] = value ? value.split(':') : ['', '']
-  const hVal = hStr ?? '00'
-  const mVal = mStr ? String((Math.round(parseInt(mStr) / 5) * 5) % 60).padStart(2, '0') : '00'
-
-  return (
-    <div className="flex items-center gap-0.5">
-      <Select
-        value={hVal}
-        options={Array.from({ length: 24 }, (_, i) => {
-          const h = String(i).padStart(2, '0')
-          return { value: h, label: h }
-        })}
-        onChange={(h) => onChange(`${h}:${mVal}`)}
-        style={{
-          backgroundColor: 'var(--bg-secondary)',
-          borderColor: value && accentColor ? accentColor : 'var(--border-primary)',
-          minWidth: 0,
-        }}
-        className="w-16 text-center font-medium"
-      />
-      <span
-        className="text-sm font-medium select-none px-0.5"
-        style={{ color: 'var(--text-muted)' }}
-      >
-        :
-      </span>
-      <Select
-        value={mVal}
-        options={Array.from({ length: 12 }, (_, i) => {
-          const m = String(i * 5).padStart(2, '0')
-          return { value: m, label: m }
-        })}
-        onChange={(m) => onChange(`${hVal}:${m}`)}
-        style={{
-          backgroundColor: 'var(--bg-secondary)',
-          borderColor: value && accentColor ? accentColor : 'var(--border-primary)',
-          minWidth: 0,
-        }}
-        className="w-16 text-center font-medium"
-      />
-    </div>
-  )
-}
 
 const PRESET_COLORS = [
   '#283B56',
@@ -108,6 +54,7 @@ const DEFAULT_FORM: FormState = {
 
 export function HabitEditor({ open, onClose, habit }: HabitEditorProps) {
   const { user } = useAuth()
+  const { isDark } = useTheme()
   const createHabit = useCreateHabit()
   const updateHabit = useUpdateHabit()
 
@@ -341,10 +288,17 @@ export function HabitEditor({ open, onClose, habit }: HabitEditorProps) {
             <div className="flex items-center gap-2">
               {form.scheduled_time !== null ? (
                 <>
-                  <TimeSelect
-                    value={form.scheduled_time}
-                    onChange={(v) => set('scheduled_time', v)}
-                    accentColor={form.color}
+                  <input
+                    type="time"
+                    value={form.scheduled_time ?? ''}
+                    onChange={(e) => set('scheduled_time', e.target.value || null)}
+                    className="rounded-lg border px-2 py-1.5 text-sm outline-none"
+                    style={{
+                      borderColor: form.color,
+                      backgroundColor: 'var(--bg-secondary)',
+                      color: 'var(--text-primary)',
+                      colorScheme: isDark ? 'dark' : 'light',
+                    }}
                   />
                   <button
                     onClick={() => set('scheduled_time', null)}
