@@ -81,13 +81,30 @@ export function Select({
     return () => document.removeEventListener('mousedown', handler)
   }, [open, closePanel])
 
-  // Close on scroll or resize
+  // Close on scroll or resize.
+  // The scroll listener is deferred by one macrotask (setTimeout 0) so that
+  // the open-time scrollIntoView/focus — scheduled via requestAnimationFrame
+  // in the effect below — fires before the listener is attached. This prevents
+  // the programmatic scroll from immediately closing the panel. Any real user
+  // scroll after the panel is fully open still triggers closePanel normally.
   useEffect(() => {
     if (!open) return
-    window.addEventListener('scroll', closePanel, true)
+    let timeoutId: ReturnType<typeof setTimeout>
+    let scrollListenerActive = false
+
+    const attachScroll = () => {
+      scrollListenerActive = true
+      window.addEventListener('scroll', closePanel, true)
+    }
+
+    timeoutId = setTimeout(attachScroll, 0)
     window.addEventListener('resize', closePanel)
+
     return () => {
-      window.removeEventListener('scroll', closePanel, true)
+      clearTimeout(timeoutId)
+      if (scrollListenerActive) {
+        window.removeEventListener('scroll', closePanel, true)
+      }
       window.removeEventListener('resize', closePanel)
     }
   }, [open, closePanel])
