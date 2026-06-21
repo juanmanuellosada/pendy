@@ -82,29 +82,28 @@ export function Select({
   }, [open, closePanel])
 
   // Close on scroll or resize.
-  // The scroll listener is deferred by one macrotask (setTimeout 0) so that
-  // the open-time scrollIntoView/focus — scheduled via requestAnimationFrame
-  // in the effect below — fires before the listener is attached. This prevents
-  // the programmatic scroll from immediately closing the panel. Any real user
-  // scroll after the panel is fully open still triggers closePanel normally.
+  // The scroll listener uses capture phase (true) to catch ancestor scroll containers.
+  // We ignore scroll events whose target is inside the panel or the trigger — those are
+  // either the open-time scrollIntoView call (panel-internal) or user scrolling the
+  // options list. Only a genuine page/ancestor scroll (target outside both) closes the
+  // panel. This is deterministic and removes the need for any timing hacks.
   useEffect(() => {
     if (!open) return
-    let timeoutId: ReturnType<typeof setTimeout>
-    let scrollListenerActive = false
 
-    const attachScroll = () => {
-      scrollListenerActive = true
-      window.addEventListener('scroll', closePanel, true)
+    const handleScroll = (e: Event) => {
+      if (
+        panelRef.current?.contains(e.target as Node) ||
+        triggerRef.current?.contains(e.target as Node)
+      )
+        return
+      closePanel()
     }
 
-    timeoutId = setTimeout(attachScroll, 0)
+    window.addEventListener('scroll', handleScroll, true)
     window.addEventListener('resize', closePanel)
 
     return () => {
-      clearTimeout(timeoutId)
-      if (scrollListenerActive) {
-        window.removeEventListener('scroll', closePanel, true)
-      }
+      window.removeEventListener('scroll', handleScroll, true)
       window.removeEventListener('resize', closePanel)
     }
   }, [open, closePanel])
